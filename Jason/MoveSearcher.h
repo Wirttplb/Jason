@@ -15,7 +15,7 @@ public:
 	static std::vector<std::array<int, 2>> GetAccessibleSquares(const Position& position, const Position::Piece& piece, bool isWhitePiece);
 
 
-	/// <returns>All legal moves for ONE piece, a move being the new position of a piece (and type because of queening)</returns>
+	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
 	static std::vector<Position::Move> GetLegalMoves(const Position& position, const Position::Piece& piece, bool isWhitePiece);
 
 	static bool IsKingInCheck(const Position& position, bool isWhiteKing);

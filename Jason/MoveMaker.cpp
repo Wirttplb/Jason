@@ -362,6 +362,24 @@ std::optional<Position::Move> MoveMaker::TranslateFromAlgebraic(const Position& 
 		return move; //invalid length
 
 	std::vector<Position::Piece> piece;
+	//castling is easy to parse
+	const bool isKingSideCastle = moveString == "O-O";
+	const bool isQueenSideCastle = moveString == "O-O-O";
+	if (isKingSideCastle || isQueenSideCastle)
+	{
+		piece = position.GetPiecesToPlay(Position::PieceType::King);
+		if (piece.empty())
+		{
+			assert(false); //no king?!
+			return move;
+		}
+
+		move = Position::Move();
+		move->m_From = piece.front();
+		move->m_To = move->m_From;
+		move->m_To.m_Position[0] += isKingSideCastle ? 2 : -2;
+		return move;
+	}
 
 	//first expected char is symbol
 	piece = position.GetPiecesToPlay(LetterToPieceType(moveString[0]));
@@ -424,17 +442,30 @@ std::optional<Position::Move> MoveMaker::TranslateFromAlgebraic(const Position& 
 		}
 		break;
 	}
-	case 4: //capture move or disambiguition
+	case 4: //capture move or disambiguition or queening
 	{
-		if (piece.front().m_Type == Position::PieceType::Pawn) //pawn takes (not abbreviated)
+		if (piece.front().m_Type == Position::PieceType::Pawn) //pawn takes (not abbreviated) or queens a8=Q
 		{
-			if (!isalpha(moveString[0]) || moveString[1] != 'x' || !isalpha(moveString[2]) || !isdigit(moveString[3]))
-				return move;
+			if (moveString[1] == 'x')
+			{
+				if (!isalpha(moveString[0]) || !isalpha(moveString[2]) || !isdigit(moveString[3]))
+					return move;
 
-			fromFile = LetterToNumber(moveString[0]);
-			toFile = LetterToNumber(moveString[2]);
-			const std::string rowString = moveString.substr(3, 1);
-			toRow = std::stoi(rowString) - 1;
+				fromFile = LetterToNumber(moveString[0]);
+				toFile = LetterToNumber(moveString[2]);
+				const std::string rowString = moveString.substr(3, 1);
+				toRow = std::stoi(rowString) - 1;
+			}
+			else if (moveString[2] == '=')
+			{
+				if (!isalpha(moveString[0]) || !isdigit(moveString[1]) || !isalpha(moveString[3]))
+					return move;
+
+				toFile = LetterToNumber(moveString[0]);
+				const std::string rowString = moveString.substr(1, 1);
+				toRow = std::stoi(rowString) - 1;
+				toType = LetterToPieceType(moveString[3]);
+			}
 		}
 		else if (moveString[1] == 'x') //piece takes
 		{
@@ -470,7 +501,7 @@ std::optional<Position::Move> MoveMaker::TranslateFromAlgebraic(const Position& 
 			return move;
 		break;
 	}
-	case 5: //capture move with disambiguition or double disambiguition (not capture) Nfxg5 or N1xg5 or Nf1g5 OR queening
+	case 5: //capture move with disambiguition or double disambiguition (not capture) Nfxg5 or N1xg5 or Nf1g5 OR queening abbreviated bxa=Q
 	{
 		if (moveString[2] == 'x') //capture, single disambiguition
 		{
@@ -514,19 +545,19 @@ std::optional<Position::Move> MoveMaker::TranslateFromAlgebraic(const Position& 
 		}
 		else
 		{
-			if (!isalpha(moveString[0]) || moveString[1] != 'x' || !isalpha(moveString[4]) || !isdigit(moveString[2]) || !isalpha(moveString[4]) || !isdigit(moveString[5]))
+			if (!isalpha(moveString[0]) || moveString[1] != 'x' || !isalpha(moveString[2]) || !isdigit(moveString[3]) ||
+				moveString[4] != '=' || !isalpha(moveString[5]))
 				return move;
 
 			fromFile = LetterToNumber(moveString[0]);
-			std::string rowString = moveString.substr(2, 1);
-			fromRow = std::stoi(rowString) - 1;
-			toFile = LetterToNumber(moveString[4]);
-			rowString = moveString.substr(5, 1);
+			toFile = LetterToNumber(moveString[2]);
+			std::string rowString = moveString.substr(3, 1);
 			toRow = std::stoi(rowString) - 1;
-			toType;
+			toType = LetterToPieceType(moveString[5]);
 		}
-	}
+
 		break;
+	}
 	default:
 		return move;
 	}
@@ -564,9 +595,10 @@ std::optional<Position::Move> MoveMaker::TranslateFromAlgebraic(const Position& 
 		for (const Position::Piece& p : piece)
 		{
 			bool canReachSquare = false;
-			const std::vector<std::array<int, 2>> squares = MoveSearcher::GetAccessibleSquares(position, p, position.IsWhiteToPlay());
-			for (const std::array<int, 2> & square : squares)
+			const std::vector<Position::Move> legalMoves = MoveSearcher::GetLegalMoves(position, p, position.IsWhiteToPlay());
+			for (const Position::Move& legalMove : legalMoves)
 			{
+				const std::array<int, 2>& square = legalMove.m_To.m_Position;
 				if (square == std::array<int, 2>{*toFile, * toRow})
 				{
 					canReachSquare = true;
