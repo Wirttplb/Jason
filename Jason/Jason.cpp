@@ -128,7 +128,8 @@ int main()
             EraseLastLine();
         }
 
-        isGameOver = MoveMaker::CheckGameOver(position);
+        MoveMaker::CheckGameOver(position);
+        isGameOver = (position.GetGameStatus() != Position::GameStatus::Running);
         PrintLastMove(position);
     }
 

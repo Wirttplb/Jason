@@ -18,7 +18,7 @@ public:
 	/// <returns>true if move was applied, false if illegal or game is already over</returns>
 	static bool MakeMove(Position& position, Position::Move& move);
 
-	static bool CheckGameOver(Position& position);
+	static void CheckGameOver(Position& position);
 
 	/// <returns>Update position with given move (NO check for legal move!)</returns>
 	/// <remark>white to play flag not updated, only pieces positions</remark>

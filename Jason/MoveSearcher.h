@@ -18,6 +18,16 @@ public:
 	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
 	static std::vector<Position::Move> GetLegalMoves(const Position& position, const Position::Piece& piece, bool isWhitePiece);
 
+	/// <summary>
+	/// Compute all possible legal positions from one position
+	/// </summary>
+	static std::vector<Position> GetAllPossiblePositions(const Position& position);
+
+	/// <summary>
+	/// Compute all possible legal positions from one position, up to given depth (high memory/cpu usage!)
+	/// </summary>
+	static std::vector<Position> GetAllPossiblePositions(const Position& position, int depth);
+
 	static bool IsKingInCheck(const Position& position, bool isWhiteKing);
 
 private:

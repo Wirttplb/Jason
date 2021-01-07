@@ -3,13 +3,26 @@
 
 class PositionEvaluation
 {
+public:
 	/// <summary>
-	/// return true if white king is in check
+	/// Evaluate a position, with given depth
 	/// </summary>
-	static bool IsWhiteInCheck(const Position& position);
+	/// <param name="position"></param>
+	/// <returns>Score (>0 for white advantage, <0 for black)</returns>
+	static double EvaluatePosition(const Position& position, int depth);
+private:
+	/// <summary>
+	/// Evaluate a position, depth 0
+	/// </summary>
+	/// <param name="position"></param>
+	/// <returns>Score (>0 for white advantage, <0 for black)</returns>
+	static double EvaluatePosition(const Position& position);
 
 	/// <summary>
-	/// return true if black king is in check
+	/// Returns value in points of a given piece
 	/// </summary>
-	static bool IsBlackInCheck(const Position& position);
+	/// <returns></returns>
+	static double GetPieceValue(Position::PieceType type);
+
+	static int CountDoubledPawn(const Position& position, bool isWhite);
 };

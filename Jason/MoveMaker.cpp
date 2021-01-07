@@ -35,28 +35,31 @@ std::optional<Position> MoveMaker::FindMove(Position& position)
 	if (allLegalMoves.empty())
 		return newPosition; //Stalemate
 
-	double bestScore = 0.0;
+	double bestScore = position.IsWhiteToPlay() ? std::numeric_limits<double>::lowest() : std::numeric_limits<double>::max();
 	Position::Move& bestMove = allLegalMoves.front();
 	for (const Position::Move& move : allLegalMoves)
 	{
-		double score = 0.0; //INSERT SCORE CALCULATION HERE
-		if (score > bestScore)
-		{
+		Position possiblePosition = position;
+		MoveMaker::UpdatePosition(possiblePosition, move);
+		possiblePosition.SetWhiteToPlay(!possiblePosition.IsWhiteToPlay());
+		double score = PositionEvaluation::EvaluatePosition(possiblePosition, 2);
+		if ((position.IsWhiteToPlay() && score > bestScore) || (!position.IsWhiteToPlay() && score < bestScore))
+		{ //position.IsWhiteToPlay => we want to get lowest score / !position.IsWhiteToPlay => we want to get highest score
 			bestScore = score;
 			bestMove = move;
 		}
 	}
 
 	//FOR NOW, RANDOM MOVE!!
-	const int rand = std::rand();
-	bestMove = allLegalMoves[rand % allLegalMoves.size()];
+	//const int rand = std::rand();
+	//bestMove = allLegalMoves[rand % allLegalMoves.size()];
 	//TO TEST CASTLING MOVES, FORCE TO CASTLE IF POSSIBLE
-	for (const Position::Move& move : allLegalMoves)
+	/*for (const Position::Move& move : allLegalMoves)
 	{
 		if (move.m_From.m_Type == Position::PieceType::King &&
 			abs(move.m_From.m_Position[0] - move.m_To.m_Position[0]) > 1)
 			bestMove = move;
-	}
+	}*/
 
 	newPosition = position;
 	UpdatePosition(*newPosition, bestMove);
@@ -101,13 +104,13 @@ bool MoveMaker::MakeMove(Position& position, Position::Move& move)
 	return true;
 }
 
-bool MoveMaker::CheckGameOver(Position& position)
+void MoveMaker::CheckGameOver(Position& position)
 {
 	//check for insufficient material
 	if (position.IsInsufficientMaterial())
 	{
 		position.SetGameStatus(Position::GameStatus::StaleMate);
-		return true;
+		return;
 	}
 
 	//Check all legal moves
@@ -126,10 +129,9 @@ bool MoveMaker::CheckGameOver(Position& position)
 			position.SetGameStatus(Position::GameStatus::CheckMate);
 		else
 			position.SetGameStatus(Position::GameStatus::StaleMate);
-		return true;
 	}
 
-	return false;
+	return;
 }
 
 void MoveMaker::UpdatePosition(Position& position, const Position::Move& move)

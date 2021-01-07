@@ -381,6 +381,46 @@ bool MoveSearcher::IsMoveIllegal(const Position& position, const Position::Piece
 	return isIllegal;
 }
 
+std::vector<Position> MoveSearcher::GetAllPossiblePositions(const Position& position)
+{
+	std::vector<Position> positions;
+
+	const std::vector<Position::Piece>& piecesToPlay = position.IsWhiteToPlay() ? position.GetWhitePieces() : position.GetBlackPieces();
+	for (const Position::Piece& piece : piecesToPlay)
+	{
+		std::vector<Position::Move> moves = GetLegalMoves(position, piece, position.IsWhiteToPlay());
+		for (const Position::Move& move : moves)
+		{
+			Position newPosition = position;
+			MoveMaker::UpdatePosition(newPosition, move);
+			newPosition.SetWhiteToPlay(!newPosition.IsWhiteToPlay());
+			positions.emplace_back(newPosition);
+		}
+	}
+
+	return positions;
+}
+
+std::vector<Position> MoveSearcher::GetAllPossiblePositions(const Position& position, int depth)
+{
+	std::vector<Position> deeperPositions;
+	std::vector<Position> possiblePositions = GetAllPossiblePositions(position);
+	if (depth > 1)
+	{
+		for (const Position& possiblePosition : possiblePositions)
+		{
+			std::vector<Position> positions = GetAllPossiblePositions(possiblePosition, depth - 1);
+			deeperPositions.insert(deeperPositions.end(), positions.begin(), positions.end());
+		}
+	}
+	else
+	{
+		deeperPositions = std::move(possiblePositions);
+	}
+
+	return deeperPositions;
+}
+
 bool MoveSearcher::IsKingInCheck(const Position& position, bool isWhitePiece)
 {
 	bool isKingInCheck = false;
