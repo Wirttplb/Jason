@@ -13,6 +13,7 @@ double PositionEvaluation::EvaluatePosition(const Position& position, int depth)
 	//we want to check if a possible move from white has a high score (like mate!)
 	//the returned value should be that high score
 	//THERE MIGHT BE A BUG FOR EVEN NUMBER DEPTH
+	//BUG: doesnt prevent mate in 1 anymore...
 	int count = 0;
 	std::vector<Position> possiblePositions = MoveSearcher::GetAllPossiblePositions(position, depth);
 	for (const Position& possiblePosition : possiblePositions)

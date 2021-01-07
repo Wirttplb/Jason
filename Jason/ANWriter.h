@@ -17,7 +17,7 @@ public:
 		const std::vector<Position::Move>& moves = position.GetMoves();
 		for (const Position::Move& move : moves)
 		{
-			myfile << MoveMaker::TranslateToAlgebraic(move) << " ";
+			myfile << NotationParser::TranslateToAlgebraic(move) << " ";
 		}
 
 		myfile.close();

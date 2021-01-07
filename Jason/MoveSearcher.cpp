@@ -311,12 +311,6 @@ bool MoveSearcher::IsMoveBlocked(const Position::Piece& blockingPiece, const Pos
 		}
 		if (piece.m_Type == Position::PieceType::Rook)
 			break;
-		else //continue for queen
-		{
-			//fallthrough ONLY if aligned on same diagonal
-			//if (abs(piece.m_Position[0] - square[0]) != abs(piece.m_Position[1] - square[1]))
-			//	break;
-		}
 	}
 	[[fallthrough]];
 	case Position::PieceType::Bishop:

@@ -2,57 +2,11 @@
 #include <conio.h>
 #include "Position.h"
 #include "MoveMaker.h"
+#include "NotationParser.h"
 #include <assert.h>
 #include <ctime>
 #include "ANWriter.h"
-
-static void EraseLastLine()
-{
-    printf("\033[A"); //move cursor up to last written line
-    printf("\33[2K"); //erase line
-    std::cout << "\r"; //carriage return
-}
-
-static void MoveCursorUp()
-{
-    printf("\033[A");
-}
-
-static void PrintLastMove(const Position& position)
-{
-    const std::vector<Position::Move>& moves = position.GetMoves();
-    if (moves.empty())
-    {
-        assert(position.GetMoves().empty());
-        return;
-    }
-
-    if (!position.IsWhiteToPlay())
-    {
-        const std::string whiteMoveString = MoveMaker::TranslateToAlgebraic(moves.back());
-        std::cout << (moves.size() + 1) / 2 << ". " + whiteMoveString;
-        if (position.GetGameStatus() == Position::GameStatus::CheckMate)
-            std::cout << "#";
-        std::cout << "\n";
-    }
-    else
-    {
-        if (moves.size() < 2)
-        {
-            assert(false);
-            return;
-        }
-
-        EraseLastLine();
-        const std::string whiteMoveString = MoveMaker::TranslateToAlgebraic(*(moves.end() - 2));
-        const std::string blackMoveString = MoveMaker::TranslateToAlgebraic(*(moves.end() - 1));
-        std::cout << (moves.size() + 1) / 2 << ". " + whiteMoveString;
-        std::cout << ", " + blackMoveString;
-        if (position.GetGameStatus() == Position::GameStatus::CheckMate)
-            std::cout << "#";
-        std::cout << "\n";
-    }
-}
+#include "CommandLineUtility.h"
 
 int main()
 {
@@ -84,19 +38,11 @@ int main()
     //Initiate position
     Position position; //starting position
     bool isGameOver = false;
-    srand(2);
+    size_t turnCount = 0;
 
     while (!isGameOver)//&& turnCount < 200)
     {
-        size_t turnCount = (position.GetMoves().size() + 1) / 2;
-        int b = 5;
-        if (turnCount == 152)
-        {
-            int a = 1;
-            a;
-            b += a;
-            //ahah;
-        }
+        //turnCount = (position.GetMoves().size() + 1) / 2;
 
         ANWriter::Write(position);
 
@@ -115,7 +61,7 @@ int main()
             {
                 std::string inputMove;
                 std::cin >> inputMove;
-                move = MoveMaker::TranslateFromAlgebraic(position, inputMove);
+                move = NotationParser::TranslateFromAlgebraic(position, inputMove);
                 if (move.has_value())
                 {
                     moveIsLegal = MoveMaker::MakeMove(position, *move);

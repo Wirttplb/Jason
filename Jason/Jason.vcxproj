@@ -145,12 +145,15 @@
     <ClCompile Include="Jason.cpp" />
     <ClCompile Include="MoveMaker.cpp" />
     <ClCompile Include="MoveSearcher.cpp" />
+    <ClCompile Include="NotationParser.cpp" />
     <ClCompile Include="Position.cpp" />
     <ClCompile Include="PositionEvaluation.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CommandLineUtility.h" />
     <ClInclude Include="MoveMaker.h" />
     <ClInclude Include="MoveSearcher.h" />
+    <ClInclude Include="NotationParser.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="PositionEvaluation.h" />
     <ClInclude Include="ANWriter.h" />

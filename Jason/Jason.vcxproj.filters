@@ -30,6 +30,9 @@
     <ClCompile Include="PositionEvaluation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NotationParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MoveSearcher.h">
@@ -45,6 +48,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="ANWriter.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NotationParser.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandLineUtility.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
