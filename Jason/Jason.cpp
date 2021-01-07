@@ -88,7 +88,7 @@ int main()
 
     while (!isGameOver)//&& turnCount < 200)
     {
-        int turnCount = (position.GetMoves().size() + 1) / 2;
+        size_t turnCount = (position.GetMoves().size() + 1) / 2;
         int b = 5;
         if (turnCount == 152)
         {
