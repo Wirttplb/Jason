@@ -15,15 +15,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Jason.cpp">
+    <ClCompile Include="JasonTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TacticsTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NotationParserTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ANWriter.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="TacticsTests.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="CommandLineUtility.h">
+    <ClInclude Include="NotationParserTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

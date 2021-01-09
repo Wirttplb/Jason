@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "MoveSearcher.h"
 #include "MoveMaker.h"
 #include <assert.h>
@@ -397,6 +398,9 @@ std::vector<Position> MoveSearcher::GetAllPossiblePositions(const Position& posi
 
 std::vector<Position> MoveSearcher::GetAllPossiblePositions(const Position& position, int depth)
 {
+	if (depth == 0)
+		return { position };
+
 	std::vector<Position> deeperPositions;
 	std::vector<Position> possiblePositions = GetAllPossiblePositions(position);
 	if (depth > 1)
@@ -410,6 +414,32 @@ std::vector<Position> MoveSearcher::GetAllPossiblePositions(const Position& posi
 	else
 	{
 		deeperPositions = std::move(possiblePositions);
+	}
+
+	return deeperPositions;
+}
+
+static constexpr int maxDepth = 3;
+
+std::vector<Position> MoveSearcher::GetAllLinesPositions(const Position& position, int depth)
+{
+	std::vector<Position> deeperPositions;
+	std::vector<Position> possiblePositions = GetAllPossiblePositions(position);
+
+	for (const Position& possiblePosition : possiblePositions)
+	{
+		//Go deeper only after capture (this is a test)
+		const size_t piecesCount = position.GetBlackPieces().size() + position.GetWhitePieces().size();
+		const size_t piecesCount2 = possiblePosition.GetBlackPieces().size() + possiblePosition.GetWhitePieces().size();
+		if ((piecesCount != piecesCount2) && depth < maxDepth)
+		{
+			std::vector<Position> positions = GetAllLinesPositions(possiblePosition, depth - 1);
+			deeperPositions.insert(deeperPositions.end(), positions.begin(), positions.end());
+		}
+		else
+		{
+			deeperPositions.push_back(possiblePosition);
+		}
 	}
 
 	return deeperPositions;

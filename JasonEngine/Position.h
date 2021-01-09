@@ -2,6 +2,7 @@
 #include <array>
 #include <vector>
 #include <optional>
+#include <string>
 
 /// <summary>
 /// Description of a move
@@ -11,7 +12,20 @@
 class Position
 {
 public:
+	/// <summary>
+	/// Default constructor (starting position)
+	/// </summary>
 	Position();
+
+	/// <summary>
+	/// Constructor from FEN notation
+	/// </summary>
+	Position(const std::string& fen);
+
+	/// <summary>
+	/// Init to empty board
+	/// </summary>
+	void InitEmptyBoard();
 
 	enum class PieceType
 	{
@@ -60,6 +74,7 @@ public:
 	public:
 		Piece() {};
 		Piece(PieceType type, int x, int y) : m_Type(type), m_Position({ x,y }) {};
+		Piece(PieceType type, const std::array<int, 2> square) : m_Type(type), m_Position(square) {};
 		std::array<int, 2> m_Position = { 0, 0 }; //values should range from 0 to 7
 		PieceType m_Type = PieceType::Pawn;
 
@@ -79,6 +94,11 @@ public:
 		bool operator==(const Move& move) const
 		{
 			return (m_From == move.m_From && m_To == move.m_To); //dont check for capture
+		}
+
+		bool IsCastling() const
+		{
+			return ((m_From.m_Type == Position::PieceType::King) && abs(m_From.m_Position[0] - m_To.m_Position[0]) > 1);
 		}
 	};
 

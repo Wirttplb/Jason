@@ -24,9 +24,14 @@ public:
 	static std::vector<Position> GetAllPossiblePositions(const Position& position);
 
 	/// <summary>
-	/// Compute all possible legal positions from one position, up to given depth (high memory/cpu usage!)
+	/// Compute all possible legal positions from one position, up to given depth (0 = only input position) (high memory/cpu usage!)
 	/// </summary>
 	static std::vector<Position> GetAllPossiblePositions(const Position& position, int depth);
+
+	/// <summary>
+	/// Compute positions from one position, reducing search domain to capture/tactical moves
+	/// </summary>
+	static std::vector<Position> GetAllLinesPositions(const Position& position, int depth);
 
 	static bool IsKingInCheck(const Position& position, bool isWhiteKing);
 

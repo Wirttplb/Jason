@@ -1,4 +1,6 @@
+#include "pch.h"
 #include "Position.h"
+#include "NotationParser.h"
 
 Position::Position()
 {
@@ -38,17 +40,29 @@ Position::Position()
 
 	//m_WhitePieces.emplace_back(Piece(PieceType::King, 4, 0));
 	//m_WhitePieces.emplace_back(Piece(PieceType::Rook, 0, 0));
-	//m_WhitePieces.emplace_back(Piece(PieceType::Rook, 5, 0));
+	//m_WhitePieces.emplace_back(Piece(PieceType::Rook, 1, 6));
 
 	//m_BlackPieces.emplace_back(Piece(PieceType::King, 4, 7));
-	//m_BlackPieces.emplace_back(Piece(PieceType::Rook, 7, 7));
-	//m_BlackPieces.emplace_back(Piece(PieceType::Rook, 4, 6));
-	////m_BlackPieces.emplace_back(Piece(PieceType::Pawn, 5, 6));
 
-	//m_CanBlackCastleKingSide = true;
+	//m_CanBlackCastleKingSide = false;
 	//m_CanWhiteCastleKingSide = false;
 	//m_CanBlackCastleQueenSide = false;
-	//m_CanWhiteCastleQueenSide = true;
+	//m_CanWhiteCastleQueenSide = false;
+}
+
+Position::Position(const std::string& fen)
+{
+	NotationParser::TranslateFEN(fen, *this);
+}
+
+void Position::InitEmptyBoard()
+{
+	GetWhitePieces().clear();
+	GetBlackPieces().clear();
+	SetCanWhiteCastleKingSide(false);
+	SetCanWhiteCastleQueenSide(false);
+	SetCanBlackCastleKingSide(false);
+	SetCanBlackCastleQueenSide(false);
 }
 
 bool Position::IsInsufficientMaterial() const

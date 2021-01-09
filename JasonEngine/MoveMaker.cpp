@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "MoveMaker.h"
 #include "MoveSearcher.h"
 #include "PositionEvaluation.h"
@@ -37,18 +38,32 @@ std::optional<Position> MoveMaker::FindMove(Position& position)
 
 	double bestScore = position.IsWhiteToPlay() ? std::numeric_limits<double>::lowest() : std::numeric_limits<double>::max();
 	Position::Move& bestMove = allLegalMoves.front();
+	double bestCastlingMoveScore = bestScore;
+	std::optional<Position::Move> castlingMove;
+	
 	for (const Position::Move& move : allLegalMoves)
 	{
 		Position possiblePosition = position;
 		MoveMaker::UpdatePosition(possiblePosition, move);
 		possiblePosition.SetWhiteToPlay(!possiblePosition.IsWhiteToPlay());
-		double score = PositionEvaluation::EvaluatePosition(possiblePosition, 2);
+		double score = PositionEvaluation::EvaluatePosition(possiblePosition, 3);
+		
 		if ((position.IsWhiteToPlay() && score > bestScore) || (!position.IsWhiteToPlay() && score < bestScore))
 		{ //position.IsWhiteToPlay => we want to get lowest score / !position.IsWhiteToPlay => we want to get highest score
 			bestScore = score;
 			bestMove = move;
 		}
+
+		if (move.IsCastling() && ((position.IsWhiteToPlay() && score > bestCastlingMoveScore) || (!position.IsWhiteToPlay() && score < bestCastlingMoveScore)))
+		{ //position.IsWhiteToPlay => we want to get lowest score / !position.IsWhiteToPlay => we want to get highest score
+			bestCastlingMoveScore = score;
+			castlingMove = move;
+		}
 	}
+
+	//Promote castling
+	if (castlingMove && abs(bestCastlingMoveScore - bestScore) < 0.9)
+		bestMove = *castlingMove;
 
 	//RANDOM MOVE
 	//const int rand = std::rand();
