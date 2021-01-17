@@ -2,6 +2,22 @@
 #include "MoveSearcher.h"
 #include "MoveMaker.h"
 #include <assert.h>
+#include <iterator>
+
+std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position)
+{
+	std::vector<Move> allLegalMoves;
+
+	const std::vector<Piece>& piecesToMove = position.IsWhiteToPlay() ? position.GetWhitePieces() : position.GetBlackPieces();
+	for (const Piece& piece : piecesToMove)
+	{
+		//Get Legal moves
+		std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, piece, position.IsWhiteToPlay());
+		allLegalMoves.insert(allLegalMoves.end(), moves.begin(), moves.end());
+	}
+
+	return allLegalMoves;
+}
 
 std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position, const Piece& piece, bool isWhitePiece)
 {
@@ -418,6 +434,29 @@ std::vector<Position> MoveSearcher::GetAllPossiblePositions(const Position& posi
 	return deeperPositions;
 }
 
+std::unordered_set<Position> MoveSearcher::GetAllUniquePositions(const Position& position, int depth)
+{
+	if (depth == 0)
+		return { position };
+
+	std::unordered_set<Position> deeperPositions;
+	std::vector<Position> possiblePositions = GetAllPossiblePositions(position);
+	if (depth > 1)
+	{
+		for (const Position& possiblePosition : possiblePositions)
+		{
+			std::unordered_set<Position> positions = GetAllUniquePositions(possiblePosition, depth - 1);
+			deeperPositions.insert(positions.begin(), positions.end());
+		}
+	}
+	else
+	{
+		std::copy(possiblePositions.begin(), possiblePositions.end(), std::inserter(deeperPositions, deeperPositions.end()));
+	}
+
+	return deeperPositions;
+}
+
 static constexpr int maxDepth = 3;
 
 std::vector<Position> MoveSearcher::GetAllLinesPositions(const Position& position, int depth)
@@ -518,4 +557,16 @@ bool MoveSearcher::IsKingInCheck(const Position& position, bool isWhitePiece)
 	}
 
 	return isKingInCheck;
+}
+
+std::optional<Move> MoveSearcher::GetRandomMove(const Position& position)
+{
+	std::optional<Move> move;
+	std::vector<Move> allLegalMoves = MoveSearcher::GetLegalMoves(position);
+	if (allLegalMoves.empty())
+		return move;
+
+	const int rand = std::rand();
+	move = allLegalMoves[rand % allLegalMoves.size()];
+	return move;
 }

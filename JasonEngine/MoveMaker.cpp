@@ -22,15 +22,7 @@ bool MoveMaker::MakeMove(Position& position)
 std::optional<Position> MoveMaker::FindMove(Position& position)
 {
 	std::optional<Position> newPosition;
-	std::vector<Move> allLegalMoves;
-
-	const std::vector<Piece>& piecesToMove = position.IsWhiteToPlay() ? position.GetWhitePieces() : position.GetBlackPieces();
-	for (const Piece& piece : piecesToMove)
-	{
-		//Get Legal moves
-		std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, piece, position.IsWhiteToPlay());
-		allLegalMoves.insert(allLegalMoves.end(), moves.begin(), moves.end());
-	}
+	std::vector<Move> allLegalMoves = MoveSearcher::GetLegalMoves(position);
 
 	if (allLegalMoves.empty())
 		return newPosition; //Stalemate

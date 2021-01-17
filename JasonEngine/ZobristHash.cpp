@@ -106,17 +106,6 @@ uint64_t ZobristHash::Init()
 	return hash;
 }
 
-//int ZobristHash::GetHash(const Position& position)
-//{
-//	for (int i = 0; i < 64; i++)
-//	{
-//		for (int j = 0; j < 64; j++)
-//		{
-//			Table[i][j] = std::rand();
-//		}
-//	}
-//}
-
 static int SquareToIdx(const std::array<int, 2>& square)
 {
 	//{0, 0} is a1, {7, 7} h8

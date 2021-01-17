@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 class Piece;
+class Position;
 
 /// <summary>
 /// Utility class for initializing, handling and updating a Zobrist hash of a chess position

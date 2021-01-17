@@ -89,6 +89,17 @@ public:
 	std::vector<Move>& GetMoves() { return m_Moves; };
 
 	uint64_t GetZobristHash() const { return m_ZobristHash; };
+	void SetZobristHash(uint64_t hash) { m_ZobristHash = hash; };
+
+	/// <summary>
+	/// Recompute zobrist hash from scratch
+	/// </summary>
+	uint64_t ComputeZobristHash() const;
+
+	bool operator==(const Position& position) const
+	{
+		return (m_ZobristHash == position.GetZobristHash());
+	}
 
 private:
 
@@ -105,5 +116,14 @@ private:
 
 	std::vector<Move> m_Moves; //list of moves made to reach the position
 
-	uint64_t m_ZobristHash;
+	uint64_t m_ZobristHash = 0;
+};
+
+template<>
+struct std::hash<Position>
+{
+	uint64_t operator()(const Position& position) const
+	{
+		return position.GetZobristHash();
+	}
 };

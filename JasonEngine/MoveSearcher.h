@@ -1,6 +1,7 @@
 #pragma once
 #include "Position.h"
 #include "MoveMaker.h"
+#include <unordered_set>
 
 class MoveSearcher
 {
@@ -14,6 +15,8 @@ public:
 	/// <returns>list of squares</returns>
 	static std::vector<std::array<int, 2>> GetAccessibleSquares(const Position& position, const Piece& piece, bool isWhitePiece);
 
+	/// <returns>All legal moves for every piece for a given position, a move being the positions before and after of a piece (and type because of queening)</returns>
+	static std::vector<Move> GetLegalMoves(const Position& position);
 
 	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
 	static std::vector<Move> GetLegalMoves(const Position& position, const Piece& piece, bool isWhitePiece);
@@ -30,11 +33,22 @@ public:
 	static std::vector<Position> GetAllPossiblePositions(const Position& position, int depth);
 
 	/// <summary>
+	/// Compute all possible legal positions from one position, up to given depth (0 = only input position) (high memory/cpu usage!)
+	/// </summary>
+	/// <remark>Returned positions are not unique</remark>
+	static std::unordered_set<Position> GetAllUniquePositions(const Position& position, int depth);
+
+	/// <summary>
 	/// Compute positions from one position, reducing search domain to capture/tactical moves
 	/// </summary>
 	static std::vector<Position> GetAllLinesPositions(const Position& position, int depth);
 
 	static bool IsKingInCheck(const Position& position, bool isWhiteKing);
+
+	/// <summary>
+	/// Return a random legal move from a given position (null if stalemate or checkmate)
+	/// </summary>
+	static std::optional<Move> GetRandomMove(const Position& position);
 
 private:
 	/// <summary>

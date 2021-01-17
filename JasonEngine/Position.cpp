@@ -86,34 +86,34 @@ void Position::ResetEnPassantSquare()
 
 void Position::SetCanWhiteCastleKingSide(bool value)
 {
-	m_CanWhiteCastleKingSide = value;
-
-	if (!value)
+	if (m_CanWhiteCastleKingSide && !value)
 		m_ZobristHash ^= ZobristHash::GetWhiteKingSideCastleKey();
+
+	m_CanWhiteCastleKingSide = value;
 }
 
 void Position::SetCanBlackCastleKingSide(bool value)
 {
-	m_CanBlackCastleKingSide = value;
-
-	if (!value)
+	if (m_CanBlackCastleKingSide && !value)
 		m_ZobristHash ^= ZobristHash::GetBlackKingSideCastleKey();
+
+	m_CanBlackCastleKingSide = value;
 }
 
 void Position::SetCanWhiteCastleQueenSide(bool value)
 {
-	m_CanWhiteCastleQueenSide = value;
-
-	if (!value)
+	if (m_CanWhiteCastleQueenSide && !value)
 		m_ZobristHash ^= ZobristHash::GetWhiteQueenSideCastleKey();
+
+	m_CanWhiteCastleQueenSide = value;
 }
 
 void Position::SetCanBlackCastleQueenSide(bool value)
 {
-	m_CanBlackCastleQueenSide = value;
-
-	if (!value)
+	if (m_CanBlackCastleQueenSide && !value)
 		m_ZobristHash ^= ZobristHash::GetBlackQueenSideCastleKey();
+
+	m_CanBlackCastleQueenSide = value;
 }
 
 bool Position::IsInsufficientMaterial() const
@@ -195,6 +195,34 @@ const Piece* Position::GetPiece(PieceType type, bool isWhite) const
 std::vector<const Piece*> Position::GetPiecesToPlay(PieceType type) const
 {
 	return GetPieces(type, IsWhiteToPlay());
+}
+
+uint64_t Position::ComputeZobristHash() const
+{
+	uint64_t hash = 0;// ZobristHash::GetKey(whitePieces.front(), true); //init with first piece
+	for (const Piece& piece : GetWhitePieces())
+	{
+		hash ^= ZobristHash::GetKey(piece, true);
+	}
+	for (const Piece& piece : GetBlackPieces())
+	{
+		hash ^= ZobristHash::GetKey(piece, false);
+	}
+
+	if (m_EnPassantSquare.has_value())
+		hash ^= ZobristHash::GetEnPassantKey((*m_EnPassantSquare)[0]);
+	if (!m_CanWhiteCastleQueenSide)
+		hash ^= ZobristHash::GetWhiteQueenSideCastleKey();
+	if (!m_CanWhiteCastleKingSide)
+		hash ^= ZobristHash::GetWhiteKingSideCastleKey();
+	if (!m_CanBlackCastleQueenSide)
+		hash ^= ZobristHash::GetBlackQueenSideCastleKey();
+	if (!m_CanBlackCastleKingSide)
+		hash ^= ZobristHash::GetBlackKingSideCastleKey();
+	if (!m_IsWhiteToPlay)
+		hash ^= ZobristHash::GetWhiteToMoveKey();
+
+	return hash;
 }
 
 void Position::UpdatePosition(const Move& move)
@@ -319,3 +347,4 @@ void Position::UpdatePosition(const Move& move)
 
 	GetMoves().push_back(move2);
 }
+

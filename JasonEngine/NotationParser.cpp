@@ -163,6 +163,8 @@ void NotationParser::TranslateFEN(const std::string& fen, Position& position)
 	{
 		position.SetEnPassantSquare({ *enPassantFile , *enPassantRow });
 	}
+
+	position.SetZobristHash(position.ComputeZobristHash());
 }
 
 std::string NotationParser::TranslateToAlgebraic(PieceType type)
