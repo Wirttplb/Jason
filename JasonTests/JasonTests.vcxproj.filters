@@ -24,12 +24,21 @@
     <ClCompile Include="NotationParserTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MoveSearcherTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="TacticsTests.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="NotationParserTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TacticsTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MoveSearcherTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TestsUtility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

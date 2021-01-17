@@ -153,12 +153,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="BasicDefinitions.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="MoveMaker.h" />
     <ClInclude Include="MoveSearcher.h" />
     <ClInclude Include="NotationParser.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="PositionEvaluation.h" />
+    <ClInclude Include="ZobristHash.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MoveMaker.cpp" />
@@ -172,6 +174,7 @@
     </ClCompile>
     <ClCompile Include="Position.cpp" />
     <ClCompile Include="PositionEvaluation.cpp" />
+    <ClCompile Include="ZobristHash.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

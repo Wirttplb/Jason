@@ -2,6 +2,7 @@
 #include "PositionEvaluation.h"
 #include "MoveMaker.h"
 #include "MoveSearcher.h"
+#include <assert.h>
 
 double PositionEvaluation::EvaluatePosition(const Position& position, int depth)
 {
@@ -35,6 +36,12 @@ double PositionEvaluation::EvaluatePosition(const Position& position, int depth)
 	return bestScore;
 }
 
+static double SqDistanceBetweenPieces(const Piece& a, const Piece& b)
+{
+	return (a.m_Position[0] - b.m_Position[0]) * (a.m_Position[0] - b.m_Position[0]) + 
+		(a.m_Position[1] - b.m_Position[1]) * (a.m_Position[1] - b.m_Position[1]);
+}
+
 double PositionEvaluation::EvaluatePosition(const Position& position)
 {
 	Position positionCopy = position;
@@ -53,15 +60,15 @@ double PositionEvaluation::EvaluatePosition(const Position& position)
 
 	double score = 0.0;
 	//Check material
-	const std::vector<Position::Piece>& whitePieces = position.GetWhitePieces();
-	const std::vector<Position::Piece>& blackPieces = position.GetBlackPieces();
+	const std::vector<Piece>& whitePieces = position.GetWhitePieces();
+	const std::vector<Piece>& blackPieces = position.GetBlackPieces();
 	double whiteMaterial = 0.0;
 	double blackMaterial = 0.0;
-	for (const Position::Piece& piece : whitePieces)
+	for (const Piece& piece : whitePieces)
 	{
 		whiteMaterial += GetPieceValue(piece.m_Type);
 	}
-	for (const Position::Piece& piece : blackPieces)
+	for (const Piece& piece : blackPieces)
 	{
 		blackMaterial += GetPieceValue(piece.m_Type);
 	}
@@ -89,29 +96,56 @@ double PositionEvaluation::EvaluatePosition(const Position& position)
 
 	//Check space behind pawns
 	//Check king in check?
-	//Check concentration of pieces around enemy king for an attack?
+	//Check concentration of pieces around enemy king for an attack/mate?
+	const Piece* whiteKing = position.GetPiece(PieceType::King, true);
+	const Piece* blackKing = position.GetPiece(PieceType::King, false);
+	if (!whiteKing || !blackKing)
+	{
+		assert(false);
+		return score;
+	}
+
+	double squareDistanceToWhiteKing = 0.0;
+	double squareDistanceToBlackKing = 1.0;
+	for (const Piece& piece : whitePieces)
+	{
+		if (piece.m_Type != PieceType::King)
+		{
+			squareDistanceToBlackKing += SqDistanceBetweenPieces(piece, *blackKing);
+		}
+	}
+	for (const Piece& piece : blackPieces)
+	{
+		if (piece.m_Type != PieceType::King)
+		{
+			squareDistanceToWhiteKing += SqDistanceBetweenPieces(piece, *whiteKing);
+		}
+	}
+
+	score += squareDistanceToWhiteKing * 0.03;
+	score -= squareDistanceToBlackKing * 0.03;
 
 	return score;
 }
 
-double PositionEvaluation::GetPieceValue(Position::PieceType type)
+double PositionEvaluation::GetPieceValue(PieceType type)
 {
 	double value = 0.0;
 	switch (type)
 	{
-	case Position::PieceType::Queen:
+	case PieceType::Queen:
 		value = 9;
 		break;
-	case Position::PieceType::Rook:
+	case PieceType::Rook:
 		value = 5;
 		break;
-	case Position::PieceType::Bishop:
+	case PieceType::Bishop:
 		value = 3;
 		break;
-	case Position::PieceType::Knight:
+	case PieceType::Knight:
 		value = 3;
 		break;
-	case Position::PieceType::Pawn:
+	case PieceType::Pawn:
 		value = 1;
 		break;
 	default:
@@ -124,20 +158,20 @@ double PositionEvaluation::GetPieceValue(Position::PieceType type)
 int PositionEvaluation::CountDoubledPawn(const Position& position, bool isWhite)
 {
 	int count = 0;
-	const std::vector<Position::Piece>& pieces = isWhite ? position.GetWhitePieces() : position.GetBlackPieces();
+	const std::vector<Piece>& pieces = isWhite ? position.GetWhitePieces() : position.GetBlackPieces();
 	
 	std::set<int> checkedFiles;
-	for (const Position::Piece& piece : pieces)
+	for (const Piece& piece : pieces)
 	{
-		if (piece.m_Type == Position::PieceType::Pawn)
+		if (piece.m_Type == PieceType::Pawn)
 		{
 			if (checkedFiles.find(piece.m_Position[0]) != checkedFiles.end())
 				continue;
 
 			checkedFiles.insert(piece.m_Position[0]);
-			for (const Position::Piece& piece2 : pieces)
+			for (const Piece& piece2 : pieces)
 			{
-				if ((&piece != &piece2) && (piece2.m_Type == Position::PieceType::Pawn) && (piece.m_Position[0] == piece2.m_Position[0]))
+				if ((&piece != &piece2) && (piece2.m_Type == PieceType::Pawn) && (piece.m_Position[0] == piece2.m_Position[0]))
 					count++;
 			}
 		}
@@ -151,10 +185,10 @@ static int SquareToIdx(const std::array<int, 2>& square)
 	return square[0] + 8 * square[1];
 }
 
-std::set<int> PositionEvaluation::GetControlledSquares(const Position& position, const Position::Piece& piece, bool isWhite)
+std::set<int> PositionEvaluation::GetControlledSquares(const Position& position, const Piece& piece, bool isWhite)
 {
 	std::set<int> controlledSquares;
-	if (piece.m_Type == Position::PieceType()) //Pawn is special case
+	if (piece.m_Type == PieceType()) //Pawn is special case
 	{
 		const int direction = isWhite ? 1 : -1;
 		const int nextY = piece.m_Position[1] + 1 * direction;
@@ -169,8 +203,8 @@ std::set<int> PositionEvaluation::GetControlledSquares(const Position& position,
 	}
 	else
 	{
-		std::vector<Position::Move> moves = MoveSearcher::GetLegalMoves(position, piece, true);
-		for (const Position::Move& move : moves)
+		std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, piece, true);
+		for (const Move& move : moves)
 		{
 			controlledSquares.insert(SquareToIdx(move.m_To.m_Position));
 		}
@@ -184,14 +218,14 @@ std::set<int> PositionEvaluation::GetControlledSquares(const Position& position,
 	std::set<int> controlledSquares;
 	byPawn.clear();
 
-	const std::vector<Position::Piece>& pieces = isWhite ? position.GetWhitePieces() : position.GetBlackPieces();
-	for (const Position::Piece& piece : pieces)
+	const std::vector<Piece>& pieces = isWhite ? position.GetWhitePieces() : position.GetBlackPieces();
+	for (const Piece& piece : pieces)
 	{
 		const std::set<int> squares = GetControlledSquares(position, piece, isWhite);
 		for (int square : squares)
 		{
 			controlledSquares.insert(square); //set controlled by pawn flag
-			if (piece.m_Type == Position::PieceType::Pawn)
+			if (piece.m_Type == PieceType::Pawn)
 				byPawn.insert(square);
 		}
 	}

@@ -53,51 +53,51 @@ void NotationParser::TranslateFEN(const std::string& fen, Position& position)
 				const std::array<int, 2> square = { squareIdx % 8, 7 - squareIdx / 8 };
 				if (c == 'r')
 				{
-					position.GetBlackPieces().emplace_back(Position::Piece(Position::PieceType::Rook, square));
+					position.GetBlackPieces().emplace_back(Piece(PieceType::Rook, square));
 				}
 				else if (c == 'n')
 				{
-					position.GetBlackPieces().emplace_back(Position::Piece(Position::PieceType::Knight, square));
+					position.GetBlackPieces().emplace_back(Piece(PieceType::Knight, square));
 				}
 				else if (c == 'b')
 				{
-					position.GetBlackPieces().emplace_back(Position::Piece(Position::PieceType::Bishop, square));
+					position.GetBlackPieces().emplace_back(Piece(PieceType::Bishop, square));
 				}
 				else if (c == 'q')
 				{
-					position.GetBlackPieces().emplace_back(Position::Piece(Position::PieceType::Queen, square));
+					position.GetBlackPieces().emplace_back(Piece(PieceType::Queen, square));
 				}
 				else if (c == 'k')
 				{
-					position.GetBlackPieces().emplace_back(Position::Piece(Position::PieceType::King, square));
+					position.GetBlackPieces().emplace_back(Piece(PieceType::King, square));
 				}
 				else if (c == 'p')
 				{
-					position.GetBlackPieces().emplace_back(Position::Piece(Position::PieceType::Pawn, square));
+					position.GetBlackPieces().emplace_back(Piece(PieceType::Pawn, square));
 				}
 				else if (c == 'R')
 				{
-					position.GetWhitePieces().emplace_back(Position::Piece(Position::PieceType::Rook, square));
+					position.GetWhitePieces().emplace_back(Piece(PieceType::Rook, square));
 				}
 				else if (c == 'N')
 				{
-					position.GetWhitePieces().emplace_back(Position::Piece(Position::PieceType::Knight, square));
+					position.GetWhitePieces().emplace_back(Piece(PieceType::Knight, square));
 				}
 				else if (c == 'B')
 				{
-					position.GetWhitePieces().emplace_back(Position::Piece(Position::PieceType::Bishop, square));
+					position.GetWhitePieces().emplace_back(Piece(PieceType::Bishop, square));
 				}
 				else if (c == 'Q')
 				{
-					position.GetWhitePieces().emplace_back(Position::Piece(Position::PieceType::Queen, square));
+					position.GetWhitePieces().emplace_back(Piece(PieceType::Queen, square));
 				}
 				else if (c == 'K')
 				{
-					position.GetWhitePieces().emplace_back(Position::Piece(Position::PieceType::King, square));
+					position.GetWhitePieces().emplace_back(Piece(PieceType::King, square));
 				}
 				else if (c == 'P')
 				{
-					position.GetWhitePieces().emplace_back(Position::Piece(Position::PieceType::Pawn, square));
+					position.GetWhitePieces().emplace_back(Piece(PieceType::Pawn, square));
 				}
 
 				squareIdx++;
@@ -150,7 +150,7 @@ void NotationParser::TranslateFEN(const std::string& fen, Position& position)
 			}
 			else if (isdigit(c) && enPassantFile.has_value()) //en passant row 
 			{
-				enPassantRow = c - '0';
+				enPassantRow = (c - '0') + 1; //0 based
 			}
 			else if (isdigit(c))
 			{
@@ -165,27 +165,27 @@ void NotationParser::TranslateFEN(const std::string& fen, Position& position)
 	}
 }
 
-std::string NotationParser::TranslateToAlgebraic(Position::PieceType type)
+std::string NotationParser::TranslateToAlgebraic(PieceType type)
 {
 	std::string pieceString;
 	switch (type)
 	{
-	case Position::PieceType::Pawn:
+	case PieceType::Pawn:
 		pieceString = "P";
 		break;
-	case Position::PieceType::Rook:
+	case PieceType::Rook:
 		pieceString = "R";
 		break;
-	case Position::PieceType::Bishop:
+	case PieceType::Bishop:
 		pieceString = "B";
 		break;
-	case Position::PieceType::Knight:
+	case PieceType::Knight:
 		pieceString = "N";
 		break;
-	case Position::PieceType::Queen:
+	case PieceType::Queen:
 		pieceString = "Q";
 		break;
-	case Position::PieceType::King:
+	case PieceType::King:
 		pieceString = "K";
 		break;
 	default:
@@ -195,21 +195,21 @@ std::string NotationParser::TranslateToAlgebraic(Position::PieceType type)
 	return pieceString;
 }
 
-static Position::PieceType LetterToPieceType(char A)
+static PieceType LetterToPieceType(char A)
 {
-	Position::PieceType type = Position::PieceType::Pawn;
+	PieceType type = PieceType::Pawn;
 	if (A == 'Q')
-		type = Position::PieceType::Queen;
+		type = PieceType::Queen;
 	else if (A == 'R')
-		type = Position::PieceType::Rook;
+		type = PieceType::Rook;
 	else if (A == 'N')
-		type = Position::PieceType::Knight;
+		type = PieceType::Knight;
 	else if (A == 'B')
-		type = Position::PieceType::Bishop;
+		type = PieceType::Bishop;
 	else if (A == 'K')
-		type = Position::PieceType::King;
+		type = PieceType::King;
 	else
-		type = Position::PieceType::Pawn;
+		type = PieceType::Pawn;
 
 	return type;
 }
@@ -220,12 +220,12 @@ std::string NotationParser::TranslateToAlgebraic(const std::array<int, 2>& squar
 	return squareString;
 }
 
-std::string NotationParser::TranslateToAlgebraic(const Position::Move& move)
+std::string NotationParser::TranslateToAlgebraic(const Move& move)
 {
 	std::string moveString;
 
 	//Check for castling moves
-	if (move.m_From.m_Type == Position::PieceType::King &&
+	if (move.m_From.m_Type == PieceType::King &&
 		(abs(move.m_To.m_Position[0] - move.m_From.m_Position[0]) > 1))
 	{
 		if ((move.m_To.m_Position[0] - move.m_From.m_Position[0]) > 0) //kingside
@@ -236,7 +236,7 @@ std::string NotationParser::TranslateToAlgebraic(const Position::Move& move)
 	else
 	{
 		//We use Disambiguation for every move (much less complicated)
-		moveString = (move.m_From.m_Type == Position::PieceType::Pawn) ? "" : TranslateToAlgebraic(move.m_From.m_Type);
+		moveString = (move.m_From.m_Type == PieceType::Pawn) ? "" : TranslateToAlgebraic(move.m_From.m_Type);
 		moveString += TranslateToAlgebraic(move.m_From.m_Position);
 		if (move.m_IsCapture)
 			moveString += "x";
@@ -250,48 +250,48 @@ std::string NotationParser::TranslateToAlgebraic(const Position::Move& move)
 	return moveString;
 }
 
-std::optional<Position::Move> NotationParser::TranslateFromAlgebraic(const Position& position, const std::string& moveString)
+std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& position, const std::string& moveString)
 {
-	std::optional<Position::Move> move;
+	std::optional<Move> move;
 	if (moveString.size() < 2)
 		return move; //invalid length
 
-	std::vector<Position::Piece> piece;
+	std::vector<const Piece*> pieces;
 	//castling is easy to parse
 	const bool isKingSideCastle = moveString == "O-O";
 	const bool isQueenSideCastle = moveString == "O-O-O";
 	if (isKingSideCastle || isQueenSideCastle)
 	{
-		piece = position.GetPiecesToPlay(Position::PieceType::King);
-		if (piece.empty())
+		pieces = position.GetPiecesToPlay(PieceType::King);
+		if (pieces.empty())
 		{
 			assert(false); //no king?!
 			return move;
 		}
 
-		move = Position::Move();
-		move->m_From = piece.front();
+		move = Move();
+		move->m_From = *pieces.front();
 		move->m_To = move->m_From;
 		move->m_To.m_Position[0] += isKingSideCastle ? 2 : -2;
 		return move;
 	}
 
 	//first expected char is symbol
-	piece = position.GetPiecesToPlay(LetterToPieceType(moveString[0]));
-	if (piece.empty())
+	pieces = position.GetPiecesToPlay(LetterToPieceType(moveString[0]));
+	if (pieces.empty())
 		return move;
 
 	std::optional<int> fromRow;
 	std::optional<int> fromFile;
 	std::optional<int> toRow;
 	std::optional<int> toFile;
-	Position::PieceType toType = piece.front().m_Type;
+	PieceType toType = pieces.front()->m_Type;
 
 	switch (moveString.size())
 	{
 	case 2: //pawn move
 	{
-		if (piece.front().m_Type != Position::PieceType::Pawn)
+		if (pieces.front()->m_Type != PieceType::Pawn)
 			return move;
 
 		if (!isalpha(moveString[0]) || !isdigit(moveString[1]))
@@ -306,7 +306,7 @@ std::optional<Position::Move> NotationParser::TranslateFromAlgebraic(const Posit
 	{
 		if (moveString[1] == 'x') //pawn takes (abbreviated)
 		{
-			if (piece.front().m_Type == Position::PieceType::Pawn)
+			if (pieces.front()->m_Type == PieceType::Pawn)
 				return move;
 
 			if (!isalpha(moveString[0]) || !isalpha(moveString[2]))
@@ -315,7 +315,7 @@ std::optional<Position::Move> NotationParser::TranslateFromAlgebraic(const Posit
 			fromFile = LetterToNumber(moveString[0]);
 			toFile = LetterToNumber(moveString[2]);
 		}
-		else if (piece.front().m_Type == Position::PieceType::Pawn) //queening
+		else if (pieces.front()->m_Type == PieceType::Pawn) //queening
 		{
 			if (!isalpha(moveString[0]) || !isdigit(moveString[1]) || !isalpha(moveString[2]))
 				return move;
@@ -339,7 +339,7 @@ std::optional<Position::Move> NotationParser::TranslateFromAlgebraic(const Posit
 	}
 	case 4: //capture move or disambiguition or queening
 	{
-		if (piece.front().m_Type == Position::PieceType::Pawn) //pawn takes (not abbreviated) or queens a8=Q
+		if (pieces.front()->m_Type == PieceType::Pawn) //pawn takes (not abbreviated) or queens a8=Q
 		{
 			if (moveString[1] == 'x')
 			{
@@ -425,7 +425,7 @@ std::optional<Position::Move> NotationParser::TranslateFromAlgebraic(const Posit
 	}
 	case 6: //double disambiguition with capture or queening by capture (Nf1xg5 or bxa8=Q)
 	{
-		if (piece.front().m_Type != Position::PieceType::Pawn)
+		if (pieces.front()->m_Type != PieceType::Pawn)
 		{
 			if (!isalpha(moveString[0]) || !isalpha(moveString[1]) || !isdigit(moveString[2]) ||
 				moveString[3] != 'x' || !isalpha(moveString[4]) || !isdigit(moveString[5]))
@@ -467,13 +467,13 @@ std::optional<Position::Move> NotationParser::TranslateFromAlgebraic(const Posit
 	if (toFile.has_value() && (toFile < 0 || toFile > 7))
 		return move;
 	//get from square
-	if (piece.size() == 1)
+	if (pieces.size() == 1)
 	{
-		move = Position::Move();
-		move->m_From = piece.front();
-		move->m_To = piece.front();
+		move = Move();
+		move->m_From = *pieces.front();
+		move->m_To = *pieces.front();
 		if (!toFile.has_value())
-			return Position::Move(); //should not happen
+			return Move(); //should not happen
 		if (!toRow.has_value())
 		{
 			//pawn move
@@ -485,13 +485,13 @@ std::optional<Position::Move> NotationParser::TranslateFromAlgebraic(const Posit
 	else
 	{
 		//search correct piece
-		const Position::Piece* pieceToMove = nullptr;
+		const Piece* pieceToMove = nullptr;
 		int count = 0;
-		for (const Position::Piece& p : piece)
+		for (const Piece* p : pieces)
 		{
 			bool canReachSquare = false;
-			const std::vector<Position::Move> legalMoves = MoveSearcher::GetLegalMoves(position, p, position.IsWhiteToPlay());
-			for (const Position::Move& legalMove : legalMoves)
+			const std::vector<Move> legalMoves = MoveSearcher::GetLegalMoves(position, *p, position.IsWhiteToPlay());
+			for (const Move& legalMove : legalMoves)
 			{
 				const std::array<int, 2>& square = legalMove.m_To.m_Position;
 				if (square == std::array<int, 2>{*toFile, * toRow})
@@ -504,32 +504,32 @@ std::optional<Position::Move> NotationParser::TranslateFromAlgebraic(const Posit
 			if (!canReachSquare)
 				continue;
 
-			if (fromRow.has_value() && fromRow == p.m_Position[1])
+			if (fromRow.has_value() && fromRow == p->m_Position[1])
 			{
-				pieceToMove = &p;
+				pieceToMove = p;
 				count++;
 			}
-			else if (fromFile.has_value() && fromFile == p.m_Position[0])
+			else if (fromFile.has_value() && fromFile == p->m_Position[0])
 			{
-				pieceToMove = &p;
+				pieceToMove = p;
 				count++;
 			}
 			else if (!fromRow.has_value() && !fromFile.has_value())
 			{
-				pieceToMove = &p;
+				pieceToMove = p;
 				count++;
 			}
 		}
 
 		if (count != 1)
-			return Position::Move(); //invalid move
+			return Move(); //invalid move
 		assert(pieceToMove);
 
-		move = Position::Move();
+		move = Move();
 		move->m_From = *pieceToMove;
 		move->m_To = *pieceToMove;
 		if (!toFile.has_value() || !toRow.has_value())
-			return Position::Move();
+			return Move();
 		move->m_To.m_Position = { *toFile, *toRow };
 	}
 

@@ -54,7 +54,7 @@ int main()
         else
         {
             //ask user for move
-            std::optional<Position::Move> move;
+            std::optional<Move> move;
             bool moveIsLegal = false;
 
             while (!move.has_value() || !moveIsLegal)

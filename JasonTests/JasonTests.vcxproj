@@ -146,12 +146,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="JasonTests.cpp" />
+    <ClCompile Include="MoveSearcherTests.cpp" />
     <ClCompile Include="NotationParserTests.cpp" />
     <ClCompile Include="TacticsTests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MoveSearcherTests.h" />
     <ClInclude Include="NotationParserTests.h" />
     <ClInclude Include="TacticsTests.h" />
+    <ClInclude Include="TestsUtility.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\JasonEngine\JasonEngine.vcxproj">

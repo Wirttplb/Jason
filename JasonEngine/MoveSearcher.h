@@ -12,11 +12,11 @@ public:
 	/// <param name="isWhitePiece">true for a white piece</param>
 	/// <param name="enPassantSquare">square of enemy pawn that has just moved two squares</param>
 	/// <returns>list of squares</returns>
-	static std::vector<std::array<int, 2>> GetAccessibleSquares(const Position& position, const Position::Piece& piece, bool isWhitePiece);
+	static std::vector<std::array<int, 2>> GetAccessibleSquares(const Position& position, const Piece& piece, bool isWhitePiece);
 
 
 	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
-	static std::vector<Position::Move> GetLegalMoves(const Position& position, const Position::Piece& piece, bool isWhitePiece);
+	static std::vector<Move> GetLegalMoves(const Position& position, const Piece& piece, bool isWhitePiece);
 
 	/// <summary>
 	/// Compute all possible legal positions from one position
@@ -26,6 +26,7 @@ public:
 	/// <summary>
 	/// Compute all possible legal positions from one position, up to given depth (0 = only input position) (high memory/cpu usage!)
 	/// </summary>
+	/// <remark>Returned positions are not unique</remark>
 	static std::vector<Position> GetAllPossiblePositions(const Position& position, int depth);
 
 	/// <summary>
@@ -39,7 +40,7 @@ private:
 	/// <summary>
 	/// Returns true if move is blocked because of collision
 	/// </summary>
-	static bool IsMoveBlocked(const Position::Piece& blockingPiece, const Position::Piece& piece, const std::array<int, 2>& square);
+	static bool IsMoveBlocked(const Piece& blockingPiece, const Piece& piece, const std::array<int, 2>& square);
 	
 	/// <summary>
 	/// Returns true if move is illegal because of check
@@ -48,5 +49,5 @@ private:
 	/// <param name=="isWhitePiece">true if piece to move is white</param>
 	/// <param name=="square">target square</param>
 	/// </summary>
-	static bool IsMoveIllegal(const Position& position, const Position::Piece& piece, bool isWhitePiece, const std::array<int, 2>& square);
+	static bool IsMoveIllegal(const Position& position, const Piece& piece, bool isWhitePiece, const std::array<int, 2>& square);
 };

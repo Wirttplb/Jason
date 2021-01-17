@@ -16,13 +16,13 @@ public:
 	/// Make a move given a position
 	/// </summary>
 	/// <returns>true if move was applied, false if illegal or game is already over</returns>
-	static bool MakeMove(Position& position, Position::Move& move);
+	static bool MakeMove(Position& position, Move& move);
 
 	static void CheckGameOver(Position& position);
 
 	/// <returns>Update position with given move (NO check for legal move!)</returns>
 	/// <remark>white to play flag not updated, only pieces positions</remark>
-	static void UpdatePosition(Position& position, const Position::Move& move);
+	static void UpdatePosition(Position& position, const Move& move);
 
 private:
 

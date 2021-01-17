@@ -33,6 +33,12 @@
     <ClInclude Include="PositionEvaluation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BasicDefinitions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ZobristHash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -51,6 +57,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PositionEvaluation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ZobristHash.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

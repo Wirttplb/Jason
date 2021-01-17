@@ -10,12 +10,12 @@ public:
 	/// </summary>
 	/// <param name=="move">moved piece and its new position</param>
 	/// <returns>algebraic notation</returns>
-	static std::string TranslateToAlgebraic(const Position::Move& move);
+	static std::string TranslateToAlgebraic(const Move& move);
 
 	/// <summary>
 	/// Translate from algebraic notation (if valid move!), does not support all abbreviated notations
 	/// </summary>
-	static std::optional<Position::Move> TranslateFromAlgebraic(const Position& position, const std::string& moveString);
+	static std::optional<Move> TranslateFromAlgebraic(const Position& position, const std::string& moveString);
 
 	/// <summary>
 	/// Generate position from fen notation string
@@ -24,6 +24,6 @@ public:
 
 private:
 
-	static std::string TranslateToAlgebraic(Position::PieceType type);
+	static std::string TranslateToAlgebraic(PieceType type);
 	static std::string TranslateToAlgebraic(const std::array<int, 2>& square);
 };
