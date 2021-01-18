@@ -13,7 +13,7 @@ public:
 	static uint64_t Init();
 
 	static uint64_t GetKey(const Piece& piece, bool isWhite);
-	static uint64_t GetWhiteToMoveKey();
+	static uint64_t GetBlackToMoveKey();
 	static uint64_t GetWhiteQueenSideCastleKey();
 	static uint64_t GetWhiteKingSideCastleKey();
 	static uint64_t GetBlackQueenSideCastleKey();

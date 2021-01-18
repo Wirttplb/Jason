@@ -101,6 +101,11 @@ public:
 		return (m_ZobristHash == position.GetZobristHash());
 	}
 
+	/// <summary>
+	/// Slow method, for debugging only (use zobrist instead)
+	/// </summary>
+	bool AreEqual(const Position& position) const;
+
 private:
 
 	std::vector<Piece> m_WhitePieces; //Position representation is piece-centric, this might change in the future

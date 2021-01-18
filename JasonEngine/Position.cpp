@@ -40,17 +40,6 @@ Position::Position()
 	m_BlackPieces.emplace_back(Piece(PieceType::Pawn, 7, 6));
 
 	m_ZobristHash = ZobristHash::Init();
-
-	//m_WhitePieces.emplace_back(Piece(PieceType::King, 4, 0));
-	//m_WhitePieces.emplace_back(Piece(PieceType::Rook, 0, 0));
-	//m_WhitePieces.emplace_back(Piece(PieceType::Rook, 1, 6));
-
-	//m_BlackPieces.emplace_back(Piece(PieceType::King, 4, 7));
-
-	//m_CanBlackCastleKingSide = false;
-	//m_CanWhiteCastleKingSide = false;
-	//m_CanBlackCastleQueenSide = false;
-	//m_CanWhiteCastleQueenSide = false;
 }
 
 Position::Position(const std::string& fen)
@@ -86,7 +75,7 @@ void Position::ResetEnPassantSquare()
 
 void Position::SetCanWhiteCastleKingSide(bool value)
 {
-	if (m_CanWhiteCastleKingSide && !value)
+	if (m_CanWhiteCastleKingSide != value)
 		m_ZobristHash ^= ZobristHash::GetWhiteKingSideCastleKey();
 
 	m_CanWhiteCastleKingSide = value;
@@ -94,7 +83,7 @@ void Position::SetCanWhiteCastleKingSide(bool value)
 
 void Position::SetCanBlackCastleKingSide(bool value)
 {
-	if (m_CanBlackCastleKingSide && !value)
+	if (m_CanBlackCastleKingSide != value)
 		m_ZobristHash ^= ZobristHash::GetBlackKingSideCastleKey();
 
 	m_CanBlackCastleKingSide = value;
@@ -102,7 +91,7 @@ void Position::SetCanBlackCastleKingSide(bool value)
 
 void Position::SetCanWhiteCastleQueenSide(bool value)
 {
-	if (m_CanWhiteCastleQueenSide && !value)
+	if (m_CanWhiteCastleQueenSide != value)
 		m_ZobristHash ^= ZobristHash::GetWhiteQueenSideCastleKey();
 
 	m_CanWhiteCastleQueenSide = value;
@@ -110,7 +99,7 @@ void Position::SetCanWhiteCastleQueenSide(bool value)
 
 void Position::SetCanBlackCastleQueenSide(bool value)
 {
-	if (m_CanBlackCastleQueenSide && !value)
+	if (m_CanBlackCastleQueenSide != value)
 		m_ZobristHash ^= ZobristHash::GetBlackQueenSideCastleKey();
 
 	m_CanBlackCastleQueenSide = value;
@@ -199,7 +188,7 @@ std::vector<const Piece*> Position::GetPiecesToPlay(PieceType type) const
 
 uint64_t Position::ComputeZobristHash() const
 {
-	uint64_t hash = 0;// ZobristHash::GetKey(whitePieces.front(), true); //init with first piece
+	uint64_t hash = 0;
 	for (const Piece& piece : GetWhitePieces())
 	{
 		hash ^= ZobristHash::GetKey(piece, true);
@@ -211,16 +200,16 @@ uint64_t Position::ComputeZobristHash() const
 
 	if (m_EnPassantSquare.has_value())
 		hash ^= ZobristHash::GetEnPassantKey((*m_EnPassantSquare)[0]);
-	if (!m_CanWhiteCastleQueenSide)
+	if (m_CanWhiteCastleQueenSide)
 		hash ^= ZobristHash::GetWhiteQueenSideCastleKey();
-	if (!m_CanWhiteCastleKingSide)
+	if (m_CanWhiteCastleKingSide)
 		hash ^= ZobristHash::GetWhiteKingSideCastleKey();
-	if (!m_CanBlackCastleQueenSide)
+	if (m_CanBlackCastleQueenSide)
 		hash ^= ZobristHash::GetBlackQueenSideCastleKey();
-	if (!m_CanBlackCastleKingSide)
+	if (m_CanBlackCastleKingSide)
 		hash ^= ZobristHash::GetBlackKingSideCastleKey();
 	if (!m_IsWhiteToPlay)
-		hash ^= ZobristHash::GetWhiteToMoveKey();
+		hash ^= ZobristHash::GetBlackToMoveKey();
 
 	return hash;
 }
@@ -353,8 +342,55 @@ void Position::UpdatePosition(const Move& move)
 	}
 
 	m_IsWhiteToPlay = !m_IsWhiteToPlay;
-	m_ZobristHash ^= ZobristHash::GetWhiteToMoveKey();
+	m_ZobristHash ^= ZobristHash::GetBlackToMoveKey();
 
 	GetMoves().push_back(move2);
 }
 
+bool Position::AreEqual(const Position& position) const
+{
+	bool areEqual = (m_IsWhiteToPlay == position.IsWhiteToPlay()) &&
+		(m_CanWhiteCastleKingSide == position.CanWhiteCastleKingSide()) &&
+		(m_CanBlackCastleKingSide == position.CanBlackCastleKingSide()) &&
+		(m_CanWhiteCastleQueenSide == position.CanWhiteCastleQueenSide()) &&
+		(m_CanBlackCastleQueenSide == position.CanBlackCastleQueenSide()) &&
+		(m_EnPassantSquare == position.GetEnPassantSquare()) &&
+		(m_WhitePieces.size() == position.GetWhitePieces().size()) &&
+		(m_BlackPieces.size() == position.GetBlackPieces().size());
+	if (!areEqual)
+		return areEqual;
+
+	for (const Piece& piece : m_WhitePieces)
+	{
+		bool isFound = false;
+		for (const Piece& piece2 : position.GetWhitePieces())
+		{
+			if (piece == piece2)
+			{
+				isFound = true;
+				break;
+			}
+		}
+
+		if (!isFound)
+			return false;
+	}
+
+	for (const Piece& piece : m_BlackPieces)
+	{
+		bool isFound = false;
+		for (const Piece& piece2 : position.GetBlackPieces())
+		{
+			if (piece == piece2)
+			{
+				isFound = true;
+				break;
+			}
+		}
+
+		if (!isFound)
+			return false;
+	}
+
+	return areEqual;
+}

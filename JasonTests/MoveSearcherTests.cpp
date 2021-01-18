@@ -4,6 +4,8 @@
 #include "TestsUtility.h"
 #include <unordered_set>
 
+#include "NotationParser.h"
+
 static const Position staleMateWhiteToPlay("8/8/8/8/8/kq6/8/K7 w - - 0 1");
 static const Position staleMateBlackToPlay("8/8/8/8/8/KQ6/8/k7 b - - 0 1");
 static const Position perftPosition2("r3k2r / p1ppqpb1 / bn2pnp1 / 3PN3 / 1p2P3 / 2N2Q1p / PPPBBPPP / R3K2R w KQkq -");
@@ -150,33 +152,18 @@ void MoveSearcherTests::Run()
 	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 3);
 	uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 3);
 	ASSERT(positions.size() == 8902);
-
-	int capture = 0;
-	int castles = 0;
-	int checks = 0;
-	int checkmates = 0;
-	for (const Position& p : positions)
-	{
-		if (p.GetMoves().back().IsCastling())
-			castles++;
-		if (MoveSearcher::IsKingInCheck(p, p.IsWhiteToPlay()))
-		{
-			checks++;
-			if (MoveSearcher::GetLegalMoves(p).empty())
-				checkmates++;
-		}
-	}
-
-	ASSERT(castles == 0);
-	ASSERT(checks == 12);
-	ASSERT(checkmates == 0);
-
-	ASSERT(uniquePositions.size() == 5362);
+	ASSERT(uniquePositions.size() == 7602); //5362 if we dont count en passant
 
 	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 4);
 	uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 4);
 	ASSERT(positions.size() == 197281);
-	ASSERT(uniquePositions.size() == 72084);
+	ASSERT(uniquePositions.size() == 101240); //72084 if we dont count en passant
+
+	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 4);
+	ASSERT(positions.size() == 197281);
+
+	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 5);
+	ASSERT(positions.size() == 4865609);
 
 	//Perft #2
 	positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 1);
@@ -192,8 +179,6 @@ void MoveSearcherTests::Run()
 	ASSERT(positions.size() == 4085603);
 
 	//Perft #3
-	Position positionA("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -");
-	positionA;
 	positions = MoveSearcher::GetAllPossiblePositions(perftPosition3, 1);
 	ASSERT(positions.size() == 14);
 
