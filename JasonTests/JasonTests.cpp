@@ -9,5 +9,5 @@ int main()
     NotationParserTests::Run();
     ZobristTests::Run();
     MoveSearcherTests::Run();
-   //TacticsTests::Run();
+    //TacticsTests::Run();
 }

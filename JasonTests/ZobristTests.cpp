@@ -40,4 +40,50 @@ void ZobristTests::Run()
 		ASSERT(newPosition.GetZobristHash() == newPosition.ComputeZobristHash());
 	}
 	ASSERT(count == 217 && MoveSearcher::IsKingInCheck(newPosition, false));
+
+	//random game #2
+	std::srand(1);
+	newPosition = startingPosition;
+	count = 0;
+	for (int i = 0; i < 400; i++)
+	{
+		std::optional<Move> move = MoveSearcher::GetRandomMove(newPosition);
+		if (!move.has_value())
+			break;
+
+		newPosition.UpdatePosition(*move);
+		count++;
+
+		ASSERT(newPosition.GetZobristHash() == newPosition.ComputeZobristHash());
+
+		if (newPosition.IsInsufficientMaterial())
+			break;
+	}
+	ASSERT(count == 244 && !MoveSearcher::IsKingInCheck(newPosition, false) && !MoveSearcher::IsKingInCheck(newPosition, true));
+
+	//random game #3
+	std::srand(2);
+	newPosition = startingPosition;
+	count = 0;
+	for (int i = 0; i < 1000; i++)
+	{
+		std::optional<Move> move = MoveSearcher::GetRandomMove(newPosition);
+		if (!move.has_value())
+			break;
+
+		newPosition.UpdatePosition(*move);
+		count++;
+
+		ASSERT(newPosition.GetZobristHash() == newPosition.ComputeZobristHash());
+
+		if (newPosition.IsInsufficientMaterial())
+			break;
+	}
+	ASSERT(count == 514 && !MoveSearcher::IsKingInCheck(newPosition, false) && !MoveSearcher::IsKingInCheck(newPosition, true));
+
+	//starting position depth 3
+	std::unordered_set<Position> uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 3);
+	//ASSERT(uniquePositions.size() == 5362);
+
+	//to do: test Undo move
 }

@@ -243,11 +243,19 @@ void Position::UpdatePosition(const Move& move)
 	m_ZobristHash ^= ZobristHash::GetKey(move.m_To, IsWhiteToPlay());
 
 	//we have to correct new position by removing a piece if taken!
+	const bool isCaptureEnPassant = //necessarily en passant capture if a new pawn takes the EP square
+		(m_EnPassantSquare.has_value() &&
+		(move.m_From.m_Type == PieceType::Pawn) &&
+		(move.m_To.m_Position == *m_EnPassantSquare));
+	std::array<int, 2> captureSquare = move.m_To.m_Position;
+	if (isCaptureEnPassant)
+		captureSquare[1] += IsWhiteToPlay() ? -1 : 1;
+
 	std::vector<Piece>& enemyPieces = IsWhiteToPlay() ? GetBlackPieces() : GetWhitePieces();
 	std::optional<size_t> indexPieceToRemove;
 	for (size_t i = 0; i < enemyPieces.size(); i++)
 	{
-		if (enemyPieces[i].m_Position == move.m_To.m_Position)
+		if (enemyPieces[i].m_Position == captureSquare)
 		{
 			indexPieceToRemove = i;
 			m_ZobristHash ^= ZobristHash::GetKey(enemyPieces[i], !IsWhiteToPlay());
@@ -255,9 +263,11 @@ void Position::UpdatePosition(const Move& move)
 		}
 	}
 
-
 	if (indexPieceToRemove.has_value())
+	{
+		assert((enemyPieces[*indexPieceToRemove].m_Type == PieceType::Pawn) || !isCaptureEnPassant);
 		enemyPieces.erase(enemyPieces.begin() + *indexPieceToRemove);
+	}
 
 	//set or reset en passant square
 	if ((move.m_From.m_Type == PieceType::Pawn) && (abs(move.m_From.m_Position[1] - move.m_To.m_Position[1]) == 2))
@@ -320,7 +330,7 @@ void Position::UpdatePosition(const Move& move)
 	//Rook moves
 	constexpr std::array<int, 2> bl = { 0,0 };
 	constexpr std::array<int, 2> br = { 7,0 };
-	constexpr std::array<int, 2> tl = { 7,0 };
+	constexpr std::array<int, 2> tl = { 0,7 };
 	constexpr std::array<int, 2> tr = { 7,7 };
 	if ((move2.m_From.m_Position == bl) || (move2.m_To.m_Position == bl)) //rook move or capture
 		SetCanWhiteCastleQueenSide(false);

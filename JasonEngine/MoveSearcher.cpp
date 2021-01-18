@@ -51,7 +51,9 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position, const Pi
 			if (IsMoveBlocked(enemyPiece, piece, square))
 			{
 				//Check if can take (not blocked by other enemy pieces)
+				//todo: Could optimize if pieces are adjacent
 				if ((enemyPiece.m_Position == square) &&
+					!((piece.m_Type == PieceType::King) && (abs(piece.m_Position[0] - square[0]) > 1)) && //castles can't take!
 					((piece.m_Type != PieceType::Pawn) || (piece.m_Position[0] != enemyPiece.m_Position[0]))) //pawn can only take sideways
 				{
 					for (const Piece& enemyPiece2 : enemyPieces)

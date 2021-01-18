@@ -112,7 +112,7 @@ private:
 	bool m_CanWhiteCastleQueenSide = true;
 	bool m_CanBlackCastleQueenSide = true;
 
-	std::optional<std::array<int, 2>> m_EnPassantSquare; //if last move is two step from pawn, the new square of the pawn that moved
+	std::optional<std::array<int, 2>> m_EnPassantSquare; //if last move is two step from pawn, the square behind the pawn that moved
 
 	std::vector<Move> m_Moves; //list of moves made to reach the position
 
