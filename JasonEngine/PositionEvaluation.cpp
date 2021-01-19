@@ -4,36 +4,102 @@
 #include "MoveSearcher.h"
 #include <assert.h>
 
-double PositionEvaluation::EvaluatePosition(const Position& position, int depth)
-{
-	double bestScore = 0.0;
-	//from one position, evaluate all possible positions by checking every legal move! (much computation)
+/// <summary>
+/// Absolute score for a mate
+/// </summary>
+static constexpr double Mate = 1000000;
 
-	//if position is WhiteToPlay, possiblePositions are BlackToPlay
-	//score given is signed
-	//we want to check if a possible move from white has a high score (like mate!)
-	//the returned value should be that high score
-	//THERE MIGHT BE A BUG FOR EVEN NUMBER DEPTH
-	//BUG: doesnt prevent mate in 1 anymore...
-	int count = 0;
-	const bool reduceCpu = true;
-	std::vector<Position> possiblePositions = MoveSearcher::GetAllLinesPositions(position, depth);
-	if (!possiblePositions.empty())
+double PositionEvaluation::EvaluateMove(const Position& position, const Move& move, int depth)
+{
+	Position newPosition = position;
+	newPosition.UpdatePosition(move);
+	constexpr double alpha = std::numeric_limits<double>::lowest();
+	constexpr double beta = std::numeric_limits<double>::max();
+	return AlphaBeta(newPosition, depth, alpha, beta, newPosition.IsWhiteToPlay());
+}
+
+double PositionEvaluation::AlphaBeta(const Position& position, int depth, double alpha, double beta, bool maximizeWhite)
+{
+	if (depth == 0)
+		return GetScore(position);
+
+	std::vector<Position> childPositions = MoveSearcher::GetAllPossiblePositions(position);
+	if (childPositions.empty())
+		return GetScore(position);
+
+	double value = 0.0;
+	if (maximizeWhite)
 	{
-		for (const Position& possiblePosition : possiblePositions)
+		value = std::numeric_limits<double>::lowest();
+		for (const Position& childPosition : childPositions)
 		{
-			double score = EvaluatePosition(possiblePosition); //score is signed
-			bestScore = position.IsWhiteToPlay() ? std::max(bestScore, score) : std::min(bestScore, score);
-			count++;
+			value = std::max(value, AlphaBeta(childPosition, depth - 1, alpha, beta, false));
+			alpha = std::max(alpha, value);
+			if (alpha >= beta)
+				break;//beta cutoff
 		}
+
+		return value;
 	}
 	else
 	{
-		//Stalemate or Mate, can't go deeper
-		bestScore = EvaluatePosition(position);
+		value = std::numeric_limits<double>::max();
+		for (const Position& childPosition : childPositions)
+		{
+			value = std::min(value, AlphaBeta(childPosition, depth - 1, alpha, beta, true));
+			beta = std::min(beta, value);
+			if (beta <= alpha)
+				break;//alpha cutoff
+		}
+
+		return value;
+	}
+}
+
+double PositionEvaluation::Minimax(const Position& position, int depth, bool maximizeWhite)
+{
+	if (depth == 0)
+		return GetScore(position);
+
+	std::vector<Position> childPositions = MoveSearcher::GetAllPossiblePositions(position);
+	if (childPositions.empty())
+		return GetScore(position);
+
+	double value = 0.0;
+	if (maximizeWhite)
+	{
+		value = std::numeric_limits<double>::lowest();
+		for (const Position& childPosition : childPositions)
+		{
+			value = std::max(value, Minimax(childPosition, depth - 1, false));
+		}
+
+		return value;
+	}
+	else
+	{
+		value = std::numeric_limits<double>::max();
+		for (const Position& childPosition : childPositions)
+		{
+			value = std::min(value, Minimax(childPosition, depth - 1, true));
+		}
+
+		return value;
+	}
+}
+
+double PositionEvaluation::GetScore(const Position& position)
+{
+	double score;
+	if (m_TranspositionTable.find(position) != m_TranspositionTable.end())
+		score = m_TranspositionTable.at(position);
+	else
+	{
+		score = EvaluatePosition(position);
+		m_TranspositionTable.insert(std::pair<Position, double>{position, score});
 	}
 
-	return bestScore;
+	return score;
 }
 
 static double SqDistanceBetweenPieces(const Piece& a, const Piece& b)
@@ -53,7 +119,12 @@ double PositionEvaluation::EvaluatePosition(const Position& position)
 	case Position::GameStatus::StaleMate:
 		return 0.0;
 	case Position::GameStatus::CheckMate:
-		return position.IsWhiteToPlay() ? std::numeric_limits<double>::lowest() : std::numeric_limits<double>::max();
+	{
+		double score = position.IsWhiteToPlay() ? -Mate : Mate;
+		//add correction so M1 > M2 etc
+		score += (position.IsWhiteToPlay() ? 1.0 : -1.0) * static_cast<int>(position.GetMoves().size());
+		return score;
+	}
 	default:
 		break;
 	}
@@ -124,6 +195,8 @@ double PositionEvaluation::EvaluatePosition(const Position& position)
 
 	score += squareDistanceToWhiteKing * 0.03;
 	score -= squareDistanceToBlackKing * 0.03;
+
+	assert(abs(score) < Mate);
 
 	return score;
 }

@@ -15,24 +15,6 @@ static const Position perftPosition4bis("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/
 static const Position perftPosition5("rnbq1k1r / pp1Pbppp / 2p5 / 8 / 2B5 / 8 / PPP1NnPP / RNBQK2R w KQ - 1 8");
 static const Position perftPosition6("r4rk1 / 1pp1qppp / p1np1n2 / 2b1p1B1 / 2B1P1b1 / P1NP1N2 / 1PP1QPPP / R4RK1 w - -0 10");
 
-//For debug
-//int capture = 0;
-//int castles = 0;
-//int checks = 0;
-//int checkmates = 0;
-//for (const Position& p : positions)
-//{
-//	if (p.GetMoves().back().IsCastling())
-//		castles++;
-//	if (MoveSearcher::IsKingInCheck(p, p.IsWhiteToPlay()))
-//	{
-//		checks++;
-//		if (MoveSearcher::GetLegalMoves(p).empty())
-//			checkmates++;
-//	}
-//}
-
-
 static void TestIllegalCastles()
 {
 	//legal castles
@@ -123,8 +105,6 @@ static void TestIllegalCastles()
 void MoveSearcherTests::Run()
 {
 	TestIllegalCastles();
-
-	//COMMENTED LINES ARE CURRENT FAILURES
 
 	//simple stalemate
 	std::vector<Position> positions = MoveSearcher::GetAllPossiblePositions(staleMateWhiteToPlay);

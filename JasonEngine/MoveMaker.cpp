@@ -5,10 +5,10 @@
 #include <string>
 #include <assert.h>
 
-bool MoveMaker::MakeMove(Position& position)
+bool MoveMaker::MakeMove(Position& position, int depth)
 {
 	bool moveFound = false;
-	std::optional<Position> newPosition = FindMove(position);
+	std::optional<Position> newPosition = FindMove(position, depth);
 
 	if (newPosition.has_value())
 	{
@@ -19,7 +19,7 @@ bool MoveMaker::MakeMove(Position& position)
 	return moveFound;
 }
 
-std::optional<Position> MoveMaker::FindMove(Position& position)
+std::optional<Position> MoveMaker::FindMove(Position& position, int depth)
 {
 	std::optional<Position> newPosition;
 	std::vector<Move> allLegalMoves = MoveSearcher::GetLegalMoves(position);
@@ -27,33 +27,37 @@ std::optional<Position> MoveMaker::FindMove(Position& position)
 	if (allLegalMoves.empty())
 		return newPosition; //Stalemate
 
+	//position score is signed, > 0 is good for white ; < 0 good for black
 	double bestScore = position.IsWhiteToPlay() ? std::numeric_limits<double>::lowest() : std::numeric_limits<double>::max();
 	Move& bestMove = allLegalMoves.front();
-	double bestCastlingMoveScore = bestScore;
-	std::optional<Move> castlingMove;
+	//to promote castles
+	//PositionEvaluation::Score bestCastlingMoveScore = bestScore;
+	//std::optional<Move> castlingMove;
 	
+	//Evaluate all legal moves based on new position score (~minimax rule)
 	for (const Move& move : allLegalMoves)
 	{
-		Position possiblePosition = position;
-		possiblePosition.UpdatePosition(move);
-		double score = PositionEvaluation::EvaluatePosition(possiblePosition, 2);
+		//if (move.m_To.m_Position != std::array<int,2>{1, 6})
+		//	continue;
+
+		const double score = m_PositionEvaluator.EvaluateMove(position, move, depth);
 		
 		if ((position.IsWhiteToPlay() && score > bestScore) || (!position.IsWhiteToPlay() && score < bestScore))
-		{ //position.IsWhiteToPlay => we want to get lowest score / !position.IsWhiteToPlay => we want to get highest score
+		{
 			bestScore = score;
 			bestMove = move;
 		}
 
-		if (move.IsCastling() && ((position.IsWhiteToPlay() && score > bestCastlingMoveScore) || (!position.IsWhiteToPlay() && score < bestCastlingMoveScore)))
-		{ //position.IsWhiteToPlay => we want to get lowest score / !position.IsWhiteToPlay => we want to get highest score
-			bestCastlingMoveScore = score;
-			castlingMove = move;
-		}
+		//if (move.IsCastling() && ((position.IsWhiteToPlay() && score > bestCastlingMoveScore) || (!position.IsWhiteToPlay() && score < bestCastlingMoveScore)))
+		//{
+		//	bestCastlingMoveScore = score;
+		//	castlingMove = move;
+		//}
 	}
 
 	//Promote castling
-	if (castlingMove && abs(bestCastlingMoveScore - bestScore) < 0.9)
-		bestMove = *castlingMove;
+	//if (castlingMove && abs(bestCastlingMoveScore - bestScore) < 0.9)
+	//	bestMove = *castlingMove;
 
 	//RANDOM MOVE
 	//const int rand = std::rand();

@@ -1,6 +1,9 @@
 #pragma once
 #include "Position.h"
+#include <unordered_map>
 #include <set>
+#include <variant>
+
 
 class PositionEvaluation
 {
@@ -8,14 +11,30 @@ public:
 	/// <summary>
 	/// Evaluate a position, with given depth
 	/// </summary>
-	/// <param name="position"></param>
 	/// <returns>Score (>0 for white advantage, <0 for black)</returns>
-	static double EvaluatePosition(const Position& position, int depth);
+	/// <remark>score will be "worst" for odd depth and "best" for even depth from player's point of view,
+	/// following maximin decision rule</remark>
+	double EvaluateMove(const Position& position, const Move& move, int depth);
 private:
+
 	/// <summary>
-	/// Evaluate a position, depth 0
+	/// Depth limited alpha-beta minimax algorithm
 	/// </summary>
-	/// <param name="position"></param>
+	double AlphaBeta(const Position& position, int depth, double alpha, double beta, bool maximizeWhite);
+
+	/// <summary>
+	/// Depth limited minimax algorithm
+	/// </summary>
+	double Minimax(const Position& position, int depth, bool maximizeWhite);
+
+	/// <summary>
+	/// Get evaluation score at depth 0, tactics won't be taken into account
+	/// </summary>
+	double GetScore(const Position& position);
+
+	/// <summary>
+	/// Evaluate a position at depth 0, tactics won't be taken into account
+	/// </summary>
 	/// <returns>Score (>0 for white advantage, <0 for black)</returns>
 	static double EvaluatePosition(const Position& position);
 
@@ -35,4 +54,6 @@ private:
 	static std::set<int> GetControlledSquares(const Position& position, bool isWhite, std::set<int>& byPawn);
 
 	static int CountCenterControlledByPawns(const std::set<int>& squares, bool isWhite);
+
+	std::unordered_map<Position, double> m_TranspositionTable; //simple transposition table, store scores of positions evaluated at depth 0 to
 };

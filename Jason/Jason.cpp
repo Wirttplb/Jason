@@ -37,8 +37,11 @@ int main()
 
     //Initiate position
     Position position; //starting position
+    MoveMaker moveMaker;
     bool isGameOver = false;
     size_t turnCount = 0;
+
+    int evaluationDepth = 3;
 
     while (!isGameOver)//&& turnCount < 200)
     {
@@ -48,7 +51,7 @@ int main()
 
         if ((isJasonWhite && position.IsWhiteToPlay()) || (isJasonBlack && !position.IsWhiteToPlay()))
         {
-            bool moveFound = MoveMaker::MakeMove(position);
+            bool moveFound = moveMaker.MakeMove(position, evaluationDepth);
             assert(moveFound);
         }
         else
@@ -64,7 +67,7 @@ int main()
                 move = NotationParser::TranslateFromAlgebraic(position, inputMove);
                 if (move.has_value())
                 {
-                    moveIsLegal = MoveMaker::MakeMove(position, *move);
+                    moveIsLegal = moveMaker.MakeMove(position, *move);
                 }
 
                 if (!moveIsLegal)
