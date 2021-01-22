@@ -240,7 +240,7 @@ std::string NotationParser::TranslateToAlgebraic(const Move& move)
 		//We use Disambiguation for every move (much less complicated)
 		moveString = (move.m_From.m_Type == PieceType::Pawn) ? "" : TranslateToAlgebraic(move.m_From.m_Type);
 		moveString += TranslateToAlgebraic(move.m_From.m_Position);
-		if (move.m_IsCapture)
+		if (move.IsCapture())
 			moveString += "x";
 		moveString += TranslateToAlgebraic(move.m_To.m_Position);
 

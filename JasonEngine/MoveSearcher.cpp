@@ -13,7 +13,9 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position)
 	{
 		//Get Legal moves
 		std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, piece, position.IsWhiteToPlay());
-		allLegalMoves.insert(allLegalMoves.end(), moves.begin(), moves.end());
+		allLegalMoves.insert(allLegalMoves.end(),
+			std::make_move_iterator(moves.begin()),
+			std::make_move_iterator(moves.end()));
 	}
 
 	return allLegalMoves;
@@ -95,16 +97,16 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position, const Pi
 			((isWhitePiece && (move.m_To.m_Position[1] == 7)) || (!isWhitePiece && (move.m_To.m_Position[1] == 0))))
 		{
 			move.m_To.m_Type = PieceType::Queen;
-			legalMoves.push_back(move);
+			legalMoves.emplace_back(move);
 			move.m_To.m_Type = PieceType::Rook;
-			legalMoves.push_back(move);
+			legalMoves.emplace_back(move);
 			move.m_To.m_Type = PieceType::Bishop;
-			legalMoves.push_back(move);
+			legalMoves.emplace_back(move);
 			move.m_To.m_Type = PieceType::Knight;
-			legalMoves.push_back(move);
+			legalMoves.emplace_back(move);
 		}
 		else
-			legalMoves.push_back(move);
+			legalMoves.emplace_back(move);
 	}
 
 	return legalMoves;
@@ -364,7 +366,7 @@ bool MoveSearcher::IsMoveIllegal(const Position& position, const Piece& piece, b
 	move.m_From = piece;
 	move.m_To.m_Type = piece.m_Type;
 	move.m_To.m_Position = square;
-	newPosition.UpdatePosition(move);
+	newPosition.Update(move);
 
 	bool isIllegal = IsKingInCheck(newPosition, isWhitePiece);
 
@@ -378,7 +380,7 @@ bool MoveSearcher::IsMoveIllegal(const Position& position, const Piece& piece, b
 			newPosition = position;
 			move.m_To.m_Position = square;
 			move.m_To.m_Position[0] -= 1;
-			newPosition.UpdatePosition(move);
+			newPosition.Update(move);
 			isIllegal = IsKingInCheck(newPosition, isWhitePiece);
 		}
 		else //queenside
@@ -386,7 +388,7 @@ bool MoveSearcher::IsMoveIllegal(const Position& position, const Piece& piece, b
 			newPosition = position;
 			move.m_To.m_Position = square;
 			move.m_To.m_Position[0] += 1;
-			newPosition.UpdatePosition(move);
+			newPosition.Update(move);
 			isIllegal = IsKingInCheck(newPosition, isWhitePiece);
 		}
 	}
@@ -401,12 +403,12 @@ std::vector<Position> MoveSearcher::GetAllPossiblePositions(const Position& posi
 	const std::vector<Piece>& piecesToPlay = position.IsWhiteToPlay() ? position.GetWhitePieces() : position.GetBlackPieces();
 	for (const Piece& piece : piecesToPlay)
 	{
-		std::vector<Move> moves = GetLegalMoves(position, piece, position.IsWhiteToPlay());
-		for (const Move& move : moves)
+		std::vector<Move> pieceMoves = GetLegalMoves(position, piece, position.IsWhiteToPlay());
+		for (Move& move : pieceMoves)
 		{
 			Position newPosition = position;
-			newPosition.UpdatePosition(move);
-			positions.emplace_back(newPosition);
+			newPosition.Update(move);
+			positions.emplace_back(std::move(newPosition));
 		}
 	}
 
@@ -461,29 +463,23 @@ std::unordered_set<Position> MoveSearcher::GetAllUniquePositions(const Position&
 
 static constexpr int maxDepth = 3;
 
-std::vector<Position> MoveSearcher::GetAllLinesPositions(const Position& position, int depth)
+std::vector<Move> MoveSearcher::GetAllLineMoves(const Position& position)
 {
-	std::vector<Position> deeperPositions;
-	std::vector<Position> possiblePositions = GetAllPossiblePositions(position);
-	//list of positions could be moved to the heap
+	std::vector<Move> linesMoves;
+	std::vector<Move> moves = GetLegalMoves(position);
+	const size_t piecesCount = position.GetBlackPieces().size() + position.GetWhitePieces().size();
 
-	for (const Position& possiblePosition : possiblePositions)
-	{
-		//Go deeper when we sense a tactic (after capture, pieces aligned, king undefended...)
-		const size_t piecesCount = position.GetBlackPieces().size() + position.GetWhitePieces().size();
-		const size_t piecesCount2 = possiblePosition.GetBlackPieces().size() + possiblePosition.GetWhitePieces().size();
-		if (depth < maxDepth)// && (piecesCount != piecesCount2))
-		{
-			std::vector<Position> positions = GetAllLinesPositions(possiblePosition, depth - 1);
-			deeperPositions.insert(deeperPositions.end(), positions.begin(), positions.end());
-		}
-		else
-		{
-			deeperPositions.push_back(possiblePosition);
-		}
-	}
+	//for (Move& move : moves)
+	//{
+	//	//Keep new position only when we want to check a tactic (after capture, forced move, pieces aligned, king undefended...)
+	//	//Make move and undo move to get piece count
+	//	
+	//	const size_t piecesCount2 = newPosition.GetBlackPieces().size() + newPosition.GetWhitePieces().size();
+	//	if (piecesCount != piecesCount2)
+	//		lines.emplace_back(std::move(newPosition));
+	//}
 
-	return deeperPositions;
+	return linesMoves;
 }
 
 bool MoveSearcher::IsKingInCheck(const Position& position, bool isWhitePiece)

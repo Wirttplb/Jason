@@ -214,7 +214,7 @@ uint64_t Position::ComputeZobristHash() const
 	return hash;
 }
 
-void Position::UpdatePosition(const Move& move)
+void Position::Update(Move& move)
 {
 	//update moving piece
 	std::vector<Piece>& friendlyPieces = IsWhiteToPlay() ? GetWhitePieces() : GetBlackPieces();
@@ -247,6 +247,7 @@ void Position::UpdatePosition(const Move& move)
 		if (enemyPieces[i].m_Position == captureSquare)
 		{
 			indexPieceToRemove = i;
+			move.m_Capture = enemyPieces[i];
 			m_ZobristHash ^= ZobristHash::GetKey(enemyPieces[i], !IsWhiteToPlay());
 			break;
 		}
@@ -259,7 +260,7 @@ void Position::UpdatePosition(const Move& move)
 	}
 
 	//set or reset en passant square
-	if ((move.m_From.m_Type == PieceType::Pawn) && (abs(move.m_From.m_Position[1] - move.m_To.m_Position[1]) == 2))
+	if (move.IsTwoStepsPawn())
 	{
 		SetEnPassantSquare({
 		move.m_From.m_Position[0],
@@ -268,16 +269,13 @@ void Position::UpdatePosition(const Move& move)
 	else
 		ResetEnPassantSquare();
 
-	Move move2 = move; //set capture flag
-	move2.m_IsCapture = indexPieceToRemove.has_value();
-
 	//Move rook if castle
-	if ((move2.m_From.m_Type == PieceType::King) && abs(move2.m_From.m_Position[0] - move2.m_To.m_Position[0]) > 1)
+	if (move.IsCastling())
 	{
-		if ((move2.m_To.m_Position[0] - move2.m_From.m_Position[0]) > 1) //kingside
+		if ((move.m_To.m_Position[0] - move.m_From.m_Position[0]) > 1) //kingside
 		{
 			//search the corresponding rook
-			std::array<int, 2> rookSquare = move2.m_To.m_Position;
+			std::array<int, 2> rookSquare = move.m_To.m_Position;
 			rookSquare[0] = 7;
 			for (Piece& friendlyPiece : friendlyPieces)
 			{
@@ -296,7 +294,7 @@ void Position::UpdatePosition(const Move& move)
 		}
 		else //queenside
 		{
-			std::array<int, 2> rookSquare = move2.m_To.m_Position;
+			std::array<int, 2> rookSquare = move.m_To.m_Position;
 			rookSquare[0] = 0;
 			for (Piece& friendlyPiece : friendlyPieces)
 			{
@@ -313,38 +311,146 @@ void Position::UpdatePosition(const Move& move)
 				}
 			}
 		}
+
+		if (IsWhiteToPlay())
+			m_HasWhiteCastled = true;
+		else
+			m_HasBlackCastled = true;
 	}
 
-	//Update castling flags
-	//Rook moves
-	constexpr std::array<int, 2> bl = { 0,0 };
-	constexpr std::array<int, 2> br = { 7,0 };
-	constexpr std::array<int, 2> tl = { 0,7 };
-	constexpr std::array<int, 2> tr = { 7,7 };
-	if ((move2.m_From.m_Position == bl) || (move2.m_To.m_Position == bl)) //rook move or capture
-		SetCanWhiteCastleQueenSide(false);
-	if ((move2.m_From.m_Position == br) || (move2.m_To.m_Position == br))
-		SetCanWhiteCastleKingSide(false);
-	if ((move2.m_From.m_Position == tl) || (move2.m_To.m_Position == tl))
-		SetCanBlackCastleQueenSide(false);
-	if ((move2.m_From.m_Position == tr) || (move2.m_To.m_Position == tr))
-		SetCanBlackCastleKingSide(false);
+	//Update castling rights
 	//King moves
-	if (IsWhiteToPlay() && (move2.m_From.m_Type == PieceType::King))
+	move.m_CanWhiteCastleKingSideBackup = m_CanWhiteCastleKingSide;
+	move.m_CanWhiteCastleQueenSideBackup = m_CanWhiteCastleQueenSide;
+	move.m_CanBlackCastleKingSideBackup = m_CanBlackCastleKingSide;
+	move.m_CanBlackCastleQueenSideBackup = m_CanBlackCastleQueenSide;
+	if (move.m_From.m_Type == PieceType::King)
 	{
-		SetCanWhiteCastleKingSide(false);
-		SetCanWhiteCastleQueenSide(false);
+		if (IsWhiteToPlay())
+		{
+			SetCanWhiteCastleKingSide(false);
+			SetCanWhiteCastleQueenSide(false);
+		}
+		else
+		{
+			SetCanBlackCastleKingSide(false);
+			SetCanBlackCastleQueenSide(false);
+		}
 	}
-	if (!IsWhiteToPlay() && (move2.m_From.m_Type == PieceType::King))
+	else
 	{
-		SetCanBlackCastleKingSide(false);
-		SetCanBlackCastleQueenSide(false);
+		//Rook moves
+		constexpr std::array<int, 2> bl = { 0,0 };
+		constexpr std::array<int, 2> br = { 7,0 };
+		constexpr std::array<int, 2> tl = { 0,7 };
+		constexpr std::array<int, 2> tr = { 7,7 };
+		if ((move.m_From.m_Position == bl) || (move.m_To.m_Position == bl)) //rook move or capture
+			SetCanWhiteCastleQueenSide(false);
+		if ((move.m_From.m_Position == br) || (move.m_To.m_Position == br))
+			SetCanWhiteCastleKingSide(false);
+		if ((move.m_From.m_Position == tl) || (move.m_To.m_Position == tl))
+			SetCanBlackCastleQueenSide(false);
+		if ((move.m_From.m_Position == tr) || (move.m_To.m_Position == tr))
+			SetCanBlackCastleKingSide(false);
 	}
 
 	m_IsWhiteToPlay = !m_IsWhiteToPlay;
 	m_ZobristHash ^= ZobristHash::GetBlackToMoveKey();
 
-	GetMoves().push_back(move2);
+	GetMoves().push_back(move);
+}
+
+void Position::Undo(const Move& move)
+{
+	//undo moved piece
+	std::vector<Piece>& friendlyPieces = !IsWhiteToPlay() ? GetWhitePieces() : GetBlackPieces();
+	for (Piece& friendlyPiece : friendlyPieces)
+	{
+		if (friendlyPiece.m_Position == move.m_To.m_Position)
+		{
+			friendlyPiece = move.m_From;
+			break;
+		}
+	}
+
+	m_ZobristHash ^= ZobristHash::GetKey(move.m_To, !IsWhiteToPlay());
+	m_ZobristHash ^= ZobristHash::GetKey(move.m_From, !IsWhiteToPlay());
+
+	//undo capture
+	std::vector<Piece>& enemyPieces = !IsWhiteToPlay() ? GetBlackPieces() : GetWhitePieces();
+	if (move.m_Capture.has_value())
+	{
+		enemyPieces.emplace_back(*move.m_Capture);
+		m_ZobristHash ^= ZobristHash::GetKey(*move.m_Capture, IsWhiteToPlay());
+	}
+
+	//undo en passant square
+	if (move.m_EnPassantBackup.has_value())
+		SetEnPassantSquare(*move.m_EnPassantBackup);
+	else
+		ResetEnPassantSquare();
+
+	//undo moved rook for castles
+	if (move.IsCastling())
+	{
+		if ((move.m_To.m_Position[0] - move.m_From.m_Position[0]) > 1) //kingside
+		{
+			//search the corresponding rook
+			std::array<int, 2> rookSquare = move.m_To.m_Position;
+			rookSquare[0] = 5;
+			for (Piece& friendlyPiece : friendlyPieces)
+			{
+				if (friendlyPiece.m_Position == rookSquare)
+				{
+					assert(friendlyPiece.m_Type == PieceType::Rook);
+					friendlyPiece.m_Position[0] += 2;
+
+					Piece rook(PieceType::Rook, rookSquare[0], rookSquare[1]);
+					m_ZobristHash ^= ZobristHash::GetKey(rook, !IsWhiteToPlay());
+					rook.m_Position[0] += 2;
+					m_ZobristHash ^= ZobristHash::GetKey(rook, !IsWhiteToPlay());
+					break;
+				}
+			}
+		}
+		else //queenside
+		{
+			std::array<int, 2> rookSquare = move.m_To.m_Position;
+			rookSquare[0] = 3;
+			for (Piece& friendlyPiece : friendlyPieces)
+			{
+				if (friendlyPiece.m_Position == rookSquare)
+				{
+					assert(friendlyPiece.m_Type == PieceType::Rook);
+					friendlyPiece.m_Position[0] -= 3;
+
+					Piece rook(PieceType::Rook, rookSquare[0], rookSquare[1]);
+					m_ZobristHash ^= ZobristHash::GetKey(rook, !IsWhiteToPlay());
+					rook.m_Position[0] -= 3;
+					m_ZobristHash ^= ZobristHash::GetKey(rook, !IsWhiteToPlay());
+					break;
+				}
+			}
+		}
+	}
+
+	//Undo castling flags
+	SetCanWhiteCastleKingSide(move.m_CanWhiteCastleKingSideBackup);
+	SetCanWhiteCastleQueenSide(move.m_CanWhiteCastleQueenSideBackup);
+	SetCanBlackCastleKingSide(move.m_CanBlackCastleKingSideBackup);
+	SetCanBlackCastleQueenSide(move.m_CanBlackCastleQueenSideBackup);
+	if (move.IsCastling())
+	{
+		if (!m_IsWhiteToPlay)
+			m_HasWhiteCastled = false;
+		else
+			m_HasBlackCastled = false;
+	}
+
+	GetMoves().pop_back();
+
+	m_IsWhiteToPlay = !m_IsWhiteToPlay;
+	m_ZobristHash ^= ZobristHash::GetBlackToMoveKey();
 }
 
 bool Position::AreEqual(const Position& position) const

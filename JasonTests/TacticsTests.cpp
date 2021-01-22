@@ -45,10 +45,10 @@ void TacticsTests::Run()
 	ASSERT(pinKnightFork.GetMoves()[2].m_To == Piece(PieceType::Knight, 5, 3));
 
 	//5 IS TOO DEEP!
-	/*RunPosition(removeKnightForkDefender, 4, 5);
-	ASSERT(removeKnightForkDefender.GetMoves()[0].m_To == Piece(PieceType::Queen, 1, 5));
-	ASSERT(removeKnightForkDefender.GetMoves()[1].m_To == Piece(PieceType::Bishop, 1, 5));
-	ASSERT(removeKnightForkDefender.GetMoves()[2].m_To == Piece(PieceType::Knight, 3, 5));*/
+	//RunPosition(removeKnightForkDefender, 4, 5);
+	//ASSERT(removeKnightForkDefender.GetMoves()[0].m_To == Piece(PieceType::Queen, 1, 5));
+	//ASSERT(removeKnightForkDefender.GetMoves()[1].m_To == Piece(PieceType::Bishop, 1, 5));
+	//ASSERT(removeKnightForkDefender.GetMoves()[2].m_To == Piece(PieceType::Knight, 3, 5));
 
 	Move move;
 	PositionEvaluation evaluator;

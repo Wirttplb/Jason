@@ -22,26 +22,24 @@ public:
 	static std::vector<Move> GetLegalMoves(const Position& position, const Piece& piece, bool isWhitePiece);
 
 	/// <summary>
-	/// Compute all possible legal positions from one position
+	/// Compute moves from one position, reducing search domain to captures/tactical moves
+	/// </summary>
+	static std::vector<Move> GetAllLineMoves(const Position& position);
+
+	/// <summary>
+	/// Compute all possible positions from one position (lots of copy, SLOW!)
 	/// </summary>
 	static std::vector<Position> GetAllPossiblePositions(const Position& position);
 
 	/// <summary>
-	/// Compute all possible legal positions from one position, up to given depth (0 = only input position) (high memory/cpu usage!)
+	/// Compute all possible positions from one position, up to given depth (lots of copy, SLOW!)
 	/// </summary>
-	/// <remark>Returned positions are not unique</remark>
 	static std::vector<Position> GetAllPossiblePositions(const Position& position, int depth);
 
 	/// <summary>
-	/// Compute all possible legal positions from one position, up to given depth (0 = only input position) (high memory/cpu usage!)
+	/// Compute all unique positions from one position, up to given depth (lots of copy, SLOW!)
 	/// </summary>
-	/// <remark>Returned positions are not unique</remark>
 	static std::unordered_set<Position> GetAllUniquePositions(const Position& position, int depth);
-
-	/// <summary>
-	/// Compute positions from one position, reducing search domain to capture/tactical moves
-	/// </summary>
-	static std::vector<Position> GetAllLinesPositions(const Position& position, int depth);
 
 	static bool IsKingInCheck(const Position& position, bool isWhiteKing);
 

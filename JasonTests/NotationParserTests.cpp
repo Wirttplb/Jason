@@ -43,11 +43,11 @@ void NotationParserTests::Run()
 	Move move;
 	move.m_From = Piece(PieceType::King, 6, 0);
 	move.m_To = Piece(PieceType::King, 7, 0);
-	positionA.UpdatePosition(move);
+	positionA.Update(move);
 	Position positionB = perftPosition4bis;
 	move.m_From = Piece(PieceType::King, 6, 7);
 	move.m_To = Piece(PieceType::King, 7, 7);
-	positionB.UpdatePosition(move);
+	positionB.Update(move);
 	ASSERT(!positionA.IsWhiteToPlay());
 	ASSERT(positionA.CanBlackCastleKingSide() && positionA.CanBlackCastleQueenSide());
 	ASSERT(!positionA.CanWhiteCastleKingSide() && !positionA.CanWhiteCastleQueenSide());

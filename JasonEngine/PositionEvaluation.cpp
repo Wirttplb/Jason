@@ -9,97 +9,115 @@
 /// </summary>
 static constexpr double Mate = 1000000;
 
-double PositionEvaluation::EvaluateMove(const Position& position, const Move& move, int depth)
+double PositionEvaluation::EvaluateMove(Position& position, Move& move, int depth)
 {
-	Position newPosition = position;
-	newPosition.UpdatePosition(move);
+	//m_InitialDepth = depth;
+	position.Update(move);
 	constexpr double alpha = std::numeric_limits<double>::lowest();
 	constexpr double beta = std::numeric_limits<double>::max();
-	return AlphaBeta(newPosition, depth, alpha, beta, newPosition.IsWhiteToPlay());
-}
-
-double PositionEvaluation::AlphaBeta(const Position& position, int depth, double alpha, double beta, bool maximizeWhite)
-{
-	if (depth == 0)
-		return GetScore(position);
-
-	std::vector<Position> childPositions = MoveSearcher::GetAllPossiblePositions(position);
-	if (childPositions.empty())
-		return GetScore(position);
-
-	double value = 0.0;
-	if (maximizeWhite)
-	{
-		value = std::numeric_limits<double>::lowest();
-		for (const Position& childPosition : childPositions)
-		{
-			value = std::max(value, AlphaBeta(childPosition, depth - 1, alpha, beta, false));
-			alpha = std::max(alpha, value);
-			if (alpha >= beta)
-				break;//beta cutoff
-		}
-
-		return value;
-	}
-	else
-	{
-		value = std::numeric_limits<double>::max();
-		for (const Position& childPosition : childPositions)
-		{
-			value = std::min(value, AlphaBeta(childPosition, depth - 1, alpha, beta, true));
-			beta = std::min(beta, value);
-			if (beta <= alpha)
-				break;//alpha cutoff
-		}
-
-		return value;
-	}
-}
-
-double PositionEvaluation::Minimax(const Position& position, int depth, bool maximizeWhite)
-{
-	if (depth == 0)
-		return GetScore(position);
-
-	std::vector<Position> childPositions = MoveSearcher::GetAllPossiblePositions(position);
-	if (childPositions.empty())
-		return GetScore(position);
-
-	double value = 0.0;
-	if (maximizeWhite)
-	{
-		value = std::numeric_limits<double>::lowest();
-		for (const Position& childPosition : childPositions)
-		{
-			value = std::max(value, Minimax(childPosition, depth - 1, false));
-		}
-
-		return value;
-	}
-	else
-	{
-		value = std::numeric_limits<double>::max();
-		for (const Position& childPosition : childPositions)
-		{
-			value = std::min(value, Minimax(childPosition, depth - 1, true));
-		}
-
-		return value;
-	}
-}
-
-double PositionEvaluation::GetScore(const Position& position)
-{
-	double score;
-	if (m_TranspositionTable.find(position) != m_TranspositionTable.end())
-		score = m_TranspositionTable.at(position);
-	else
-	{
-		score = EvaluatePosition(position);
-		m_TranspositionTable.insert(std::pair<Position, double>{position, score});
-	}
+	double score = AlphaBetaNegamax(position, depth, alpha, beta, position.IsWhiteToPlay());
+	position.Undo(move);
 
 	return score;
+}
+
+double PositionEvaluation::AlphaBetaNegamax(Position& position, int depth, double alpha, double beta, bool maximizeWhite)
+{
+	const double originalAlpha = alpha;
+
+	//Transposition table lookup
+	if ((m_TranspositionTable.find(position) != m_TranspositionTable.end()) && (m_TranspositionTable[position].m_Depth >= depth))
+	{
+		switch (m_TranspositionTable[position].m_Flag)
+		{
+		case TranspositionTableEntry::Flag::Exact:
+			return m_TranspositionTable[position].m_Score;
+		case TranspositionTableEntry::Flag::LowerBound:
+			alpha = std::max(alpha, m_TranspositionTable[position].m_Score);
+			break;
+		case TranspositionTableEntry::Flag::UpperBound:
+			beta = std::min(beta, m_TranspositionTable[position].m_Score);
+			break;
+		default:
+			assert(false);
+			break;
+		}
+
+		if (alpha >= beta)
+			return m_TranspositionTable[position].m_Score;
+	}
+
+	if (depth == 0)
+		return (maximizeWhite ? 1.0 : -1.0) * EvaluatePosition(position);
+
+	std::vector<Move> childMoves = MoveSearcher::GetLegalMoves(position);
+	if (childMoves.empty())
+		return (maximizeWhite ? 1.0 : -1.0) * EvaluatePosition(position);
+
+	double value = 0.0;
+	const size_t piecesCount = position.GetBlackPieces().size() + position.GetWhitePieces().size();
+	value = std::numeric_limits<double>::lowest();
+	for (Move& childMove : childMoves)
+	{
+		position.Update(childMove);
+		const size_t piecesCount2 = position.GetBlackPieces().size() + position.GetWhitePieces().size();
+		const int actualDepth = depth - 1;// (piecesCount == piecesCount2) ? depth - 1 : depth; //go deeper when we sense a tactic (capture...)
+		value = std::max(value, -AlphaBetaNegamax(position, actualDepth, -beta, -alpha, -maximizeWhite));
+		alpha = std::max(alpha, value);
+		position.Undo(childMove);
+
+		if (alpha >= beta)
+			break;//cutoff
+	}
+
+	//Transposition Table Store
+	m_TranspositionTable[position].m_Score == value;
+	if (value <= originalAlpha)
+		m_TranspositionTable[position].m_Flag = TranspositionTableEntry::Flag::UpperBound;
+	else if (value >= beta)
+		m_TranspositionTable[position].m_Flag = TranspositionTableEntry::Flag::LowerBound;
+	else
+		m_TranspositionTable[position].m_Flag = TranspositionTableEntry::Flag::Exact;
+
+	m_TranspositionTable[position].m_Depth = depth;
+
+	return value;
+}
+
+double PositionEvaluation::Minimax(Position& position, int depth, bool maximizeWhite)
+{
+	if (depth == 0)
+		return EvaluatePosition(position);
+
+	std::vector<Move> childMoves = MoveSearcher::GetLegalMoves(position);
+	if (childMoves.empty())
+		return EvaluatePosition(position);
+
+	double value = 0.0;
+	if (maximizeWhite)
+	{
+		value = std::numeric_limits<double>::lowest();
+		for (Move& childMove : childMoves)
+		{
+			position.Update(childMove);
+			value = std::max(value, Minimax(position, depth - 1, false));
+			position.Undo(childMove);
+		}
+
+		return value;
+	}
+	else
+	{
+		value = std::numeric_limits<double>::max();
+		for (Move& childMove : childMoves)
+		{
+			position.Update(childMove);
+			value = std::min(value, Minimax(position, depth - 1, true));
+			position.Undo(childMove);
+		}
+
+		return value;
+	}
 }
 
 static double SqDistanceBetweenPieces(const Piece& a, const Piece& b)
@@ -146,12 +164,26 @@ double PositionEvaluation::EvaluatePosition(const Position& position)
 
 	score = whiteMaterial - blackMaterial;
 
+	//check hanging pieces
+	//std::vector<const Piece*> hangingPieces = GetHangingPieces(position);
+	//for (const Piece* piece : hangingPieces)
+	//{
+	//	score += GetPieceValue(piece->m_Type) * (position.IsWhiteToPlay() ? 1.0 : -1.0);
+	//}
+
 	//Check double pawns
 	int whiteDoubledPawns = CountDoubledPawn(position, true);
 	int blackDoubledPawns = CountDoubledPawn(position, false);
 
 	score -= static_cast<double>(whiteDoubledPawns) * 0.33;
 	score += static_cast<double>(blackDoubledPawns) * 0.33;
+
+	//Castling bonus: castling improves score during opening, importance of castling decays during the game
+	double castleBonus = 1.0 * 0.025 * std::max(0.0, 40.0 - static_cast<double>(position.GetMoves().size()));
+	if (position.HasWhiteCastled())
+		score += castleBonus;
+	if (position.HasBlackCastled())
+		score -= castleBonus;
 
 	//Check number of controled squares
 	std::set<int> whiteControlledByPawns;
@@ -193,8 +225,8 @@ double PositionEvaluation::EvaluatePosition(const Position& position)
 		}
 	}
 
-	score += squareDistanceToWhiteKing * 0.03;
-	score -= squareDistanceToBlackKing * 0.03;
+	score += squareDistanceToWhiteKing * 0.003;
+	score -= squareDistanceToBlackKing * 0.003;
 
 	assert(abs(score) < Mate);
 
@@ -226,6 +258,54 @@ double PositionEvaluation::GetPieceValue(PieceType type)
 	}
 
 	return value;
+}
+
+bool PositionEvaluation::IsPieceDefended(const Position& position, const Piece& piece, bool isWhite)
+{
+	const std::vector<Piece>& friendlyPieces = isWhite ? position.GetWhitePieces() : position.GetBlackPieces();
+	for (const Piece& friendlyPiece : friendlyPieces)
+	{
+		if (&friendlyPiece == &piece)
+			continue;
+
+		std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, friendlyPiece, isWhite);
+		for (const Move& move : moves)
+		{
+			if (move.m_To.m_Position == piece.m_Position)
+				return true;
+		}
+	}
+
+	return false;
+}
+
+bool PositionEvaluation::IsPieceAttacked(const Position& position, const Piece& piece, bool isWhite)
+{
+	const std::vector<Piece>& enemyPieces = isWhite ? position.GetBlackPieces() : position.GetWhitePieces();
+	for (const Piece& enemyPiece : enemyPieces)
+	{
+		std::vector<Move> moves  = MoveSearcher::GetLegalMoves(position, enemyPiece, !isWhite);
+		for (const Move& move : moves)
+		{
+			if (move.m_To.m_Position == piece.m_Position)
+				return true;
+		}
+	}
+
+	return false;
+}
+
+std::vector<const Piece*> PositionEvaluation::GetHangingPieces(const Position& position)
+{
+	std::vector<const Piece*> hangingPieces;
+	const std::vector<Piece>& enemyPieces = position.IsWhiteToPlay() ? position.GetBlackPieces() : position.GetWhitePieces();
+	for (const Piece& piece : enemyPieces)
+	{
+		if (IsPieceAttacked(position, piece, !position.IsWhiteToPlay()) && !IsPieceDefended(position, piece, !position.IsWhiteToPlay()))
+			hangingPieces.push_back(&piece);
+	}
+
+	return hangingPieces;
 }
 
 int PositionEvaluation::CountDoubledPawn(const Position& position, bool isWhite)

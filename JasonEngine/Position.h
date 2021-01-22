@@ -29,7 +29,9 @@ public:
 	/// </summary>
 	void InitEmptyBoard();
 
-	void UpdatePosition(const Move& move);
+	/// <remark>move is updated too to take into account captures</remark>
+	void Update(Move& move);
+	void Undo(const Move& move);
 
 	enum class GameStatus
 	{
@@ -59,6 +61,9 @@ public:
 
 	bool CanBlackCastleQueenSide() const { return m_CanBlackCastleQueenSide; };
 	void SetCanBlackCastleQueenSide(bool value);
+
+	bool HasWhiteCastled() const { return m_HasWhiteCastled; };
+	bool HasBlackCastled() const { return m_HasBlackCastled; };
 
 	bool IsInsufficientMaterial() const;
 
@@ -116,6 +121,8 @@ private:
 	bool m_CanBlackCastleKingSide = true;
 	bool m_CanWhiteCastleQueenSide = true;
 	bool m_CanBlackCastleQueenSide = true;
+	bool m_HasWhiteCastled = false;
+	bool m_HasBlackCastled = false;
 
 	std::optional<std::array<int, 2>> m_EnPassantSquare; //if last move is two step from pawn, the square behind the pawn that moved
 

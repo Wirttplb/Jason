@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <optional>
 
 enum class PieceType
 {
@@ -27,12 +28,11 @@ public:
 	}
 };
 
+/// <summary>Description of a move, with all information needed to undo the move</summary>
 class Move
 {
 public:
-	Piece m_From;
-	Piece m_To;
-	bool m_IsCapture = false;
+	bool IsCapture() const { return m_Capture.has_value(); };
 
 	bool operator==(const Move& move) const
 	{
@@ -43,4 +43,19 @@ public:
 	{
 		return ((m_From.m_Type == PieceType::King) && abs(m_From.m_Position[0] - m_To.m_Position[0]) > 1);
 	}
+
+	bool IsTwoStepsPawn() const
+	{
+		return (m_From.m_Type == PieceType::Pawn) && (abs(m_From.m_Position[1] - m_To.m_Position[1]) == 2);
+	}
+
+	Piece m_From;
+	Piece m_To;
+	std::optional<Piece> m_Capture; //captured piece
+	std::optional<std::array<int, 2>> m_EnPassantBackup; //en passant square BEFORE move
+
+	bool m_CanWhiteCastleKingSideBackup = true; //backups flags for BEFORE move
+	bool m_CanBlackCastleKingSideBackup = true;
+	bool m_CanWhiteCastleQueenSideBackup = true;
+	bool m_CanBlackCastleQueenSideBackup = true;
 };

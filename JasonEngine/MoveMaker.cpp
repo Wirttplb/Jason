@@ -35,11 +35,8 @@ std::optional<Position> MoveMaker::FindMove(Position& position, int depth)
 	//std::optional<Move> castlingMove;
 	
 	//Evaluate all legal moves based on new position score (~minimax rule)
-	for (const Move& move : allLegalMoves)
+	for (Move& move : allLegalMoves)
 	{
-		//if (move.m_To.m_Position != std::array<int,2>{1, 6})
-		//	continue;
-
 		const double score = m_PositionEvaluator.EvaluateMove(position, move, depth);
 		
 		if ((position.IsWhiteToPlay() && score > bestScore) || (!position.IsWhiteToPlay() && score < bestScore))
@@ -64,7 +61,7 @@ std::optional<Position> MoveMaker::FindMove(Position& position, int depth)
 	//bestMove = allLegalMoves[rand % allLegalMoves.size()];
 
 	newPosition = position;
-	newPosition->UpdatePosition(bestMove);
+	newPosition->Update(bestMove);
 
 	//Check there is still a king!!
 	int n = 0;
@@ -101,7 +98,7 @@ bool MoveMaker::MakeMove(Position& position, Move& move)
 	if (!isLegal)
 		return false;
 
-	position.UpdatePosition(move);
+	position.Update(move);
 	return true;
 }
 
