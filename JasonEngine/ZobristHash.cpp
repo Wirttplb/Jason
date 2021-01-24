@@ -7,7 +7,7 @@
 
 //One number for each piece at each square
 //One number to indicate the side to move is black
-//Four numbers to indicate the castling rights, though usually 16 (2 ^ 4) are used for speed
+//Four numbers to indicate the castling rights
 //Eight numbers to indicate the file of a valid En passant square, if any
 
 constexpr int WhitePawn = 0;
@@ -60,42 +60,42 @@ static std::array<uint64_t, NumberOfKeys> GenerateRandomKeys()
 }
 
 //table size = 64 * 12 + 1 + 4 + 8 = 781: 64 squares + 1 color to move + 4 castling rights + 8 en passant file
-static const std::array<uint64_t, NumberOfKeys> Table = GenerateRandomKeys();
+const std::array<uint64_t, NumberOfKeys> Table = GenerateRandomKeys();
 
 uint64_t ZobristHash::Init()
 {
-	uint64_t hash = GetKey(Piece(PieceType::Rook, 0, 0), true)
-		^ GetKey(Piece(PieceType::Knight, 1, 0), true)
-		^ GetKey(Piece(PieceType::Bishop, 2, 0), true)
-		^ GetKey(Piece(PieceType::Queen, 3, 0), true)
-		^ GetKey(Piece(PieceType::King, 4, 0), true)
-		^ GetKey(Piece(PieceType::Bishop, 5, 0), true)
-		^ GetKey(Piece(PieceType::Knight, 6, 0), true)
-		^ GetKey(Piece(PieceType::Rook, 7, 0), true)
-		^ GetKey(Piece(PieceType::Pawn, 0, 1), true)
-		^ GetKey(Piece(PieceType::Pawn, 1, 1), true)
-		^ GetKey(Piece(PieceType::Pawn, 2, 1), true)
-		^ GetKey(Piece(PieceType::Pawn, 3, 1), true)
-		^ GetKey(Piece(PieceType::Pawn, 4, 1), true)
-		^ GetKey(Piece(PieceType::Pawn, 5, 1), true)
-		^ GetKey(Piece(PieceType::Pawn, 6, 1), true)
-		^ GetKey(Piece(PieceType::Pawn, 7, 1), true)
-		^ GetKey(Piece(PieceType::Rook, 0, 7), false)
-		^ GetKey(Piece(PieceType::Knight, 1, 7), false)
-		^ GetKey(Piece(PieceType::Bishop, 2, 7), false)
-		^ GetKey(Piece(PieceType::Queen, 3, 7), false)
-		^ GetKey(Piece(PieceType::King, 4, 7), false)
-		^ GetKey(Piece(PieceType::Bishop, 5, 7), false)
-		^ GetKey(Piece(PieceType::Knight, 6, 7), false)
-		^ GetKey(Piece(PieceType::Rook, 7, 7), false)
-		^ GetKey(Piece(PieceType::Pawn, 0, 6), false)
-		^ GetKey(Piece(PieceType::Pawn, 1, 6), false)
-		^ GetKey(Piece(PieceType::Pawn, 2, 6), false)
-		^ GetKey(Piece(PieceType::Pawn, 3, 6), false)
-		^ GetKey(Piece(PieceType::Pawn, 4, 6), false)
-		^ GetKey(Piece(PieceType::Pawn, 5, 6), false)
-		^ GetKey(Piece(PieceType::Pawn, 6, 6), false)
-		^ GetKey(Piece(PieceType::Pawn, 7, 6), false)
+	uint64_t hash = GetKey(Piece(PieceType::Rook, a1), true)
+		^ GetKey(Piece(PieceType::Knight, b1), true)
+		^ GetKey(Piece(PieceType::Bishop, c1), true)
+		^ GetKey(Piece(PieceType::Queen, d1), true)
+		^ GetKey(Piece(PieceType::King, e1), true)
+		^ GetKey(Piece(PieceType::Bishop, f1), true)
+		^ GetKey(Piece(PieceType::Knight, g1), true)
+		^ GetKey(Piece(PieceType::Rook, h1), true)
+		^ GetKey(Piece(PieceType::Pawn, a2), true)
+		^ GetKey(Piece(PieceType::Pawn, b2), true)
+		^ GetKey(Piece(PieceType::Pawn, c2), true)
+		^ GetKey(Piece(PieceType::Pawn, d2), true)
+		^ GetKey(Piece(PieceType::Pawn, e2), true)
+		^ GetKey(Piece(PieceType::Pawn, f2), true)
+		^ GetKey(Piece(PieceType::Pawn, g2), true)
+		^ GetKey(Piece(PieceType::Pawn, h2), true)
+		^ GetKey(Piece(PieceType::Rook, a8), false)
+		^ GetKey(Piece(PieceType::Knight, b8), false)
+		^ GetKey(Piece(PieceType::Bishop, c8), false)
+		^ GetKey(Piece(PieceType::Queen, d8), false)
+		^ GetKey(Piece(PieceType::King, e8), false)
+		^ GetKey(Piece(PieceType::Bishop, f8), false)
+		^ GetKey(Piece(PieceType::Knight, g8), false)
+		^ GetKey(Piece(PieceType::Rook, h8), false)
+		^ GetKey(Piece(PieceType::Pawn, a7), false)
+		^ GetKey(Piece(PieceType::Pawn, b7), false)
+		^ GetKey(Piece(PieceType::Pawn, c7), false)
+		^ GetKey(Piece(PieceType::Pawn, d7), false)
+		^ GetKey(Piece(PieceType::Pawn, e7), false)
+		^ GetKey(Piece(PieceType::Pawn, f7), false)
+		^ GetKey(Piece(PieceType::Pawn, g7), false)
+		^ GetKey(Piece(PieceType::Pawn, h7), false)
 		^ GetWhiteKingSideCastleKey()
 		^ GetWhiteQueenSideCastleKey()
 		^ GetBlackKingSideCastleKey()
@@ -104,34 +104,28 @@ uint64_t ZobristHash::Init()
 	return hash;
 }
 
-static int SquareToIdx(const std::array<int, 2>& square)
-{
-	//{0, 0} is a1 = 0, {7, 7} h8 = 63
-	return square[0] + 8 * square[1];
-}
-
 uint64_t ZobristHash::GetKey(const Piece& piece, bool isWhite)
 {
 	int idx = 0;
 	switch (piece.m_Type)
 	{
 	case PieceType::Pawn:
-		idx = SquareToIdx(piece.m_Position) * NumberOfPieceTypes + (isWhite ? WhitePawn : BlackPawn);
+		idx = piece.m_Square * NumberOfPieceTypes + (isWhite ? WhitePawn : BlackPawn);
 		break;
 	case PieceType::Knight:
-		idx = SquareToIdx(piece.m_Position) * NumberOfPieceTypes + (isWhite ? WhiteKnight : BlackKnight);
+		idx = piece.m_Square * NumberOfPieceTypes + (isWhite ? WhiteKnight : BlackKnight);
 		break;
 	case PieceType::Bishop:
-		idx = SquareToIdx(piece.m_Position) * NumberOfPieceTypes + (isWhite ? WhiteBishop : BlackBishop);
+		idx = piece.m_Square * NumberOfPieceTypes + (isWhite ? WhiteBishop : BlackBishop);
 		break;;
 	case PieceType::Rook:
-		idx = SquareToIdx(piece.m_Position) * NumberOfPieceTypes + (isWhite ? WhiteRook : BlackRook);
+		idx = piece.m_Square * NumberOfPieceTypes + (isWhite ? WhiteRook : BlackRook);
 		break;
 	case PieceType::Queen:
-		idx = SquareToIdx(piece.m_Position) * NumberOfPieceTypes + (isWhite ? WhiteQueen : BlackQueen);
+		idx = piece.m_Square * NumberOfPieceTypes + (isWhite ? WhiteQueen : BlackQueen);
 		break;
 	case PieceType::King:
-		idx = SquareToIdx(piece.m_Position) * NumberOfPieceTypes + (isWhite ? WhiteKing : BlackKing);
+		idx = piece.m_Square * NumberOfPieceTypes + (isWhite ? WhiteKing : BlackKing);
 		break;
 	default:
 		assert(false);
@@ -166,7 +160,7 @@ uint64_t ZobristHash::GetBlackKingSideCastleKey()
 	return Table[BlackKingSideCastleIdx];
 }
 
-uint64_t ZobristHash::GetEnPassantKey(int fileIdx)
+uint64_t ZobristHash::GetEnPassantKey(Square square)
 {
-	return Table[EnPassantAIdx + fileIdx];
+	return Table[EnPassantAIdx + square % 8];
 }

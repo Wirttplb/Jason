@@ -8,7 +8,7 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position)
 {
 	std::vector<Move> allLegalMoves;
 
-	const std::vector<Piece>& piecesToMove = position.IsWhiteToPlay() ? position.GetWhitePieces() : position.GetBlackPieces();
+	const std::vector<Piece>& piecesToMove = position.IsWhiteToPlay() ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
 	for (const Piece& piece : piecesToMove)
 	{
 		//Get Legal moves
@@ -32,10 +32,10 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position, const Pi
 		//check square is not blocked by piece
 		bool isBlocked = false;
 		//check friendly pieces
-		const std::vector<Piece>& friendlyPieces = isWhitePiece ? position.GetWhitePieces() : position.GetBlackPieces();	
+		const std::vector<Piece>& friendlyPieces = isWhitePiece ? position.GetWhitePiecesList() : position.GetBlackPiecesList();	
 		for (const Piece& friendlyPiece : friendlyPieces)
 		{
-			if ((piece.m_Position != friendlyPiece.m_Position) && //dont check itself! /!\ may not share same address
+			if ((piece.m_Square != friendlyPiece.m_Square) && //dont check itself! /!\ may not share same address
 				IsMoveBlocked(friendlyPiece, piece, square))
 			{
 				isBlocked = true;
@@ -47,21 +47,21 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position, const Pi
 			continue;
 
 		//check enemy pieces
-		const std::vector<Piece>& enemyPieces = isWhitePiece ? position.GetBlackPieces() : position.GetWhitePieces();
+		const std::vector<Piece>& enemyPieces = isWhitePiece ? position.GetBlackPiecesList() : position.GetWhitePiecesList();
 		for (const Piece& enemyPiece : enemyPieces)
 		{
 			if (IsMoveBlocked(enemyPiece, piece, square))
 			{
 				//Check if can take (not blocked by other enemy pieces)
 				//todo: Could optimize if pieces are adjacent
-				if ((enemyPiece.m_Position == square) &&
-					!((piece.m_Type == PieceType::King) && (abs(piece.m_Position[0] - square[0]) > 1)) && //castles can't take!
-					((piece.m_Type != PieceType::Pawn) || (piece.m_Position[0] != enemyPiece.m_Position[0]))) //pawn can only take sideways
+				if ((enemyPiece.Position() == square) &&
+					!((piece.m_Type == PieceType::King) && (abs(piece.Position()[0] - square[0]) > 1)) && //castles can't take!
+					((piece.m_Type != PieceType::Pawn) || (piece.Position()[0] != enemyPiece.Position()[0]))) //pawn can only take sideways
 				{
 					for (const Piece& enemyPiece2 : enemyPieces)
 					{
 						if ((&enemyPiece != &enemyPiece2) &&
-							IsMoveBlocked(enemyPiece2, piece, enemyPiece.m_Position))
+							IsMoveBlocked(enemyPiece2, piece, enemyPiece.Position()))
 						{
 							isBlocked = true;
 							break;
@@ -79,7 +79,11 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position, const Pi
 			continue;
 
 		//move is not blocked by collision, check if illegal move
-		if (IsMoveIllegal(position, piece, isWhitePiece, square))
+		Move move;
+		move.m_From = piece;
+		move.m_To = piece;
+		move.m_To.m_Square = static_cast<Square>(square[0] + 8 * square[1]);
+		if (IsMoveIllegal(position, move, isWhitePiece))
 			continue;
 
 		legalSquares.push_back(square);
@@ -91,10 +95,10 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position, const Pi
 		Move move;
 		move.m_From = piece;
 		move.m_To = piece;
-		move.m_To.m_Position = legalSquare;
+		move.m_To.m_Square = legalSquare[0] + 8* legalSquare[1];
 		//Add all possible queening moves if pawn
 		if ((piece.m_Type == PieceType::Pawn) &&
-			((isWhitePiece && (move.m_To.m_Position[1] == 7)) || (!isWhitePiece && (move.m_To.m_Position[1] == 0))))
+			((isWhitePiece && (move.m_To.Position()[1] == 7)) || (!isWhitePiece && (move.m_To.Position()[1] == 0))))
 		{
 			move.m_To.m_Type = PieceType::Queen;
 			legalMoves.emplace_back(move);
@@ -119,40 +123,41 @@ std::vector<std::array<int, 2>> MoveSearcher::GetAccessibleSquares(const Positio
 	{
 	case PieceType::Pawn://Pawn is a special case
 	{
-		if (isWhitePiece && (piece.m_Position[1] < 7) && (piece.m_Position[1] >= 1)) //cannot move from last row
+		if (isWhitePiece && (piece.Position()[1] < 7) && (piece.Position()[1] >= 1)) //cannot move from last row
 		{
-			accessibleSquares.push_back({ piece.m_Position[0], piece.m_Position[1] + 1 });
-			if (piece.m_Position[1] == 1) //two steps
-				accessibleSquares.push_back({ piece.m_Position[0], piece.m_Position[1] + 2 });
+			accessibleSquares.push_back({ piece.Position()[0], piece.Position()[1] + 1 });
+			if (piece.Position()[1] == 1) //two steps
+				accessibleSquares.push_back({ piece.Position()[0], piece.Position()[1] + 2 });
 		}
-		else if (!isWhitePiece && (piece.m_Position[1] <= 6) && (piece.m_Position[1] > 0))
+		else if (!isWhitePiece && (piece.Position()[1] <= 6) && (piece.Position()[1] > 0))
 		{
-			accessibleSquares.push_back({ piece.m_Position[0], piece.m_Position[1] - 1 });
-			if (piece.m_Position[1] == 6) //two steps
-				accessibleSquares.push_back({ piece.m_Position[0], piece.m_Position[1] - 2 });
+			accessibleSquares.push_back({ piece.Position()[0], piece.Position()[1] - 1 });
+			if (piece.Position()[1] == 6) //two steps
+				accessibleSquares.push_back({ piece.Position()[0], piece.Position()[1] - 2 });
 		}
 		//Add en-passant square
 		if (position.GetEnPassantSquare().has_value())
 		{
-			const std::array<int, 2>& square = *position.GetEnPassantSquare();
-			if (abs(square[0] - piece.m_Position[0]) == 1)
+			int enPassantSquare = *position.GetEnPassantSquare();
+			const std::array<int, 2>& square = { enPassantSquare % 8, enPassantSquare / 8 };
+			if (abs(square[0] - piece.Position()[0]) == 1)
 			{
-				const int dy = (square[1] - piece.m_Position[1]);
+				const int dy = (square[1] - piece.Position()[1]);
 				if ((isWhitePiece && dy == 1) || (!isWhitePiece && dy == -1))
 					accessibleSquares.push_back(square);
 			}
 		}
 		//Add other possible captures
 		size_t count = 0;
-		const std::vector<Piece>& enemyPieces = isWhitePiece ? position.GetBlackPieces() : position.GetWhitePieces();
+		const std::vector<Piece>& enemyPieces = isWhitePiece ? position.GetBlackPiecesList() : position.GetWhitePiecesList();
 		for (const Piece& enemyPiece : enemyPieces)
 		{
-			if (abs(enemyPiece.m_Position[0] - piece.m_Position[0]) == 1)
+			if (abs(enemyPiece.Position()[0] - piece.Position()[0]) == 1)
 			{
-				const int dy = (enemyPiece.m_Position[1] - piece.m_Position[1]);
+				const int dy = (enemyPiece.Position()[1] - piece.Position()[1]);
 				if (isWhitePiece && dy == 1 || !isWhitePiece && dy == -1)
 				{
-					accessibleSquares.push_back(enemyPiece.m_Position);
+					accessibleSquares.push_back(enemyPiece.Position());
 					count++;
 				}
 			}
@@ -164,26 +169,26 @@ std::vector<std::array<int, 2>> MoveSearcher::GetAccessibleSquares(const Positio
 		break;
 	}
 	case PieceType::King:
-		if (piece.m_Position[1] < 7)
+		if (piece.Position()[1] < 7)
 		{
-			accessibleSquares.push_back({ piece.m_Position[0], piece.m_Position[1] + 1 });
-			if (piece.m_Position[0] >= 1)
-				accessibleSquares.push_back({ piece.m_Position[0] - 1, piece.m_Position[1] + 1 });
-			if (piece.m_Position[0] <= 6)
-				accessibleSquares.push_back({ piece.m_Position[0] + 1, piece.m_Position[1] + 1 });
+			accessibleSquares.push_back({ piece.Position()[0], piece.Position()[1] + 1 });
+			if (piece.Position()[0] >= 1)
+				accessibleSquares.push_back({ piece.Position()[0] - 1, piece.Position()[1] + 1 });
+			if (piece.Position()[0] <= 6)
+				accessibleSquares.push_back({ piece.Position()[0] + 1, piece.Position()[1] + 1 });
 		}
-		if (piece.m_Position[1] > 0)
+		if (piece.Position()[1] > 0)
 		{
-			accessibleSquares.push_back({ piece.m_Position[0], piece.m_Position[1] - 1 });
-			if (piece.m_Position[0] >= 1)
-				accessibleSquares.push_back({ piece.m_Position[0] - 1, piece.m_Position[1] - 1 });
-			if (piece.m_Position[0] <= 6)
-				accessibleSquares.push_back({ piece.m_Position[0] + 1, piece.m_Position[1] - 1 });
+			accessibleSquares.push_back({ piece.Position()[0], piece.Position()[1] - 1 });
+			if (piece.Position()[0] >= 1)
+				accessibleSquares.push_back({ piece.Position()[0] - 1, piece.Position()[1] - 1 });
+			if (piece.Position()[0] <= 6)
+				accessibleSquares.push_back({ piece.Position()[0] + 1, piece.Position()[1] - 1 });
 		}
-		if (piece.m_Position[0] > 0)
-			accessibleSquares.push_back({ piece.m_Position[0] - 1, piece.m_Position[1] });
-		if (piece.m_Position[0] < 7)
-			accessibleSquares.push_back({ piece.m_Position[0] + 1, piece.m_Position[1] });
+		if (piece.Position()[0] > 0)
+			accessibleSquares.push_back({ piece.Position()[0] - 1, piece.Position()[1] });
+		if (piece.Position()[0] < 7)
+			accessibleSquares.push_back({ piece.Position()[0] + 1, piece.Position()[1] });
 
 		//Add castling moves, will be ignored if illegal
 		if (isWhitePiece && position.CanWhiteCastleKingSide())
@@ -197,33 +202,33 @@ std::vector<std::array<int, 2>> MoveSearcher::GetAccessibleSquares(const Positio
 
 		break;
 	case PieceType::Knight:
-		if (piece.m_Position[1] < 6)
+		if (piece.Position()[1] < 6)
 		{
-			if (piece.m_Position[0] >= 1)
-				accessibleSquares.push_back({ piece.m_Position[0] - 1, piece.m_Position[1] + 2 });
-			if (piece.m_Position[0] <= 6)
-				accessibleSquares.push_back({ piece.m_Position[0] + 1, piece.m_Position[1] + 2 });
+			if (piece.Position()[0] >= 1)
+				accessibleSquares.push_back({ piece.Position()[0] - 1, piece.Position()[1] + 2 });
+			if (piece.Position()[0] <= 6)
+				accessibleSquares.push_back({ piece.Position()[0] + 1, piece.Position()[1] + 2 });
 		}
-		if (piece.m_Position[1] > 1)
+		if (piece.Position()[1] > 1)
 		{
-			if (piece.m_Position[0] >= 1)
-				accessibleSquares.push_back({ piece.m_Position[0] - 1, piece.m_Position[1] - 2 });
-			if (piece.m_Position[0] <= 6)
-				accessibleSquares.push_back({ piece.m_Position[0] + 1, piece.m_Position[1] - 2 });
+			if (piece.Position()[0] >= 1)
+				accessibleSquares.push_back({ piece.Position()[0] - 1, piece.Position()[1] - 2 });
+			if (piece.Position()[0] <= 6)
+				accessibleSquares.push_back({ piece.Position()[0] + 1, piece.Position()[1] - 2 });
 		}
-		if (piece.m_Position[0] > 1)
+		if (piece.Position()[0] > 1)
 		{
-			if (piece.m_Position[1] >= 1)
-				accessibleSquares.push_back({ piece.m_Position[0] - 2, piece.m_Position[1] - 1 });
-			if (piece.m_Position[1] <= 6)
-				accessibleSquares.push_back({ piece.m_Position[0] - 2, piece.m_Position[1] + 1 });
+			if (piece.Position()[1] >= 1)
+				accessibleSquares.push_back({ piece.Position()[0] - 2, piece.Position()[1] - 1 });
+			if (piece.Position()[1] <= 6)
+				accessibleSquares.push_back({ piece.Position()[0] - 2, piece.Position()[1] + 1 });
 		}
-		if (piece.m_Position[0] < 6)
+		if (piece.Position()[0] < 6)
 		{
-			if (piece.m_Position[1] >= 1)
-				accessibleSquares.push_back({ piece.m_Position[0] + 2, piece.m_Position[1] - 1 });
-			if (piece.m_Position[1] <= 6)
-				accessibleSquares.push_back({ piece.m_Position[0] + 2, piece.m_Position[1] + 1 });
+			if (piece.Position()[1] >= 1)
+				accessibleSquares.push_back({ piece.Position()[0] + 2, piece.Position()[1] - 1 });
+			if (piece.Position()[1] <= 6)
+				accessibleSquares.push_back({ piece.Position()[0] + 2, piece.Position()[1] + 1 });
 		}
 		break;
 	case PieceType::Queen:
@@ -231,14 +236,14 @@ std::vector<std::array<int, 2>> MoveSearcher::GetAccessibleSquares(const Positio
 		//Along X
 		for (int x = 0; x <= 7; x++)
 		{
-			if (x != piece.m_Position[0])
-				accessibleSquares.push_back({ x, piece.m_Position[1] });
+			if (x != piece.Position()[0])
+				accessibleSquares.push_back({ x, piece.Position()[1] });
 		}
 		//Along Y
 		for (int y = 0; y <= 7; y++)
 		{
-			if (y != piece.m_Position[1])
-				accessibleSquares.push_back({ piece.m_Position[0], y });
+			if (y != piece.Position()[1])
+				accessibleSquares.push_back({ piece.Position()[0], y });
 		}
 		if (piece.m_Type == PieceType::Rook)
 			break; //continue for queen
@@ -250,15 +255,15 @@ std::vector<std::array<int, 2>> MoveSearcher::GetAccessibleSquares(const Positio
 		{
 			for (int d = 1; d <= 7; d++)
 			{
-				if (((u > 0) && (piece.m_Position[0] + d * u <= 7)) ||
-					((u < 0) && (piece.m_Position[0] + d * u >= 0)))
+				if (((u > 0) && (piece.Position()[0] + d * u <= 7)) ||
+					((u < 0) && (piece.Position()[0] + d * u >= 0)))
 				{
 					for (int v : directions)
 					{
-						if (((v > 0) && (piece.m_Position[1] + d * v <= 7)) ||
-							((v < 0) && (piece.m_Position[1] + d * v >= 0)))
+						if (((v > 0) && (piece.Position()[1] + d * v <= 7)) ||
+							((v < 0) && (piece.Position()[1] + d * v >= 0)))
 						{
-							accessibleSquares.push_back({ piece.m_Position[0] + d * u, piece.m_Position[1] + d * v });
+							accessibleSquares.push_back({ piece.Position()[0] + d * u, piece.Position()[1] + d * v });
 						}
 					}
 				}
@@ -283,29 +288,29 @@ bool MoveSearcher::IsMoveBlocked(const Piece& blockingPiece, const Piece& piece,
 	{
 	case PieceType::King:
 	{
-		if ((square[0] - piece.m_Position[0]) > 1) //kingside castle
+		if ((square[0] - piece.Position()[0]) > 1) //kingside castle
 		{
-			if (std::array<int, 2>{square[0] - 1, square[1]} == blockingPiece.m_Position) //check in between square
+			if (std::array<int, 2>{square[0] - 1, square[1]} == blockingPiece.Position()) //check in between square
 				isBlocking = true;
 		}
-		else if ((square[0] - piece.m_Position[0]) < -1) //queenside castle
+		else if ((square[0] - piece.Position()[0]) < -1) //queenside castle
 		{
-			if (std::array<int, 2>{square[0] - 1, square[1]} == blockingPiece.m_Position)
+			if (std::array<int, 2>{square[0] - 1, square[1]} == blockingPiece.Position())
 				isBlocking = true;
-			if (std::array<int, 2>{square[0] + 1, square[1]} == blockingPiece.m_Position)
+			if (std::array<int, 2>{square[0] + 1, square[1]} == blockingPiece.Position())
 				isBlocking = true;
 		}
 	}
 	[[fallthrough]];
 	case PieceType::Knight:
 	case PieceType::Pawn:
-		if (square == blockingPiece.m_Position)
+		if (square == blockingPiece.Position())
 			isBlocking = true;
-		if (piece.m_Type == PieceType::Pawn && abs(square[1] - piece.m_Position[1]) > 1) //double square move
+		if (piece.m_Type == PieceType::Pawn && abs(square[1] - piece.Position()[1]) > 1) //double square move
 		{
-			if ((square[1] - piece.m_Position[1]) > 0 && std::array<int, 2>{square[0], square[1] - 1} == blockingPiece.m_Position) //white pawn
+			if ((square[1] - piece.Position()[1]) > 0 && std::array<int, 2>{square[0], square[1] - 1} == blockingPiece.Position()) //white pawn
 				isBlocking = true;
-			if ((square[1] - piece.m_Position[1]) < 0 && std::array<int, 2>{square[0], square[1] + 1} == blockingPiece.m_Position) //black pawn
+			if ((square[1] - piece.Position()[1]) < 0 && std::array<int, 2>{square[0], square[1] + 1} == blockingPiece.Position()) //black pawn
 				isBlocking = true;
 		}
 		break;
@@ -319,11 +324,11 @@ bool MoveSearcher::IsMoveBlocked(const Piece& blockingPiece, const Piece& piece,
 			const size_t j = row * 1; //must be 1 for row (Y)
 
 			//j = const => we check row
-			if ((square[j] == blockingPiece.m_Position[j]) && (square[j] == piece.m_Position[j]))
+			if ((square[j] == blockingPiece.Position()[j]) && (square[j] == piece.Position()[j]))
 			{
-				const int min = std::min(piece.m_Position[i], square[i]);
-				const int max = std::max(piece.m_Position[i], square[i]);
-				if (min <= blockingPiece.m_Position[i] && blockingPiece.m_Position[i] <= max)
+				const int min = std::min(piece.Position()[i], square[i]);
+				const int max = std::max(piece.Position()[i], square[i]);
+				if (min <= blockingPiece.Position()[i] && blockingPiece.Position()[i] <= max)
 				{
 					isBlocking = true;
 					break;
@@ -337,14 +342,14 @@ bool MoveSearcher::IsMoveBlocked(const Piece& blockingPiece, const Piece& piece,
 	case PieceType::Bishop:
 	{
 		//check same diagonal
-		if ((abs(piece.m_Position[0] - blockingPiece.m_Position[0]) == abs(piece.m_Position[1] - blockingPiece.m_Position[1])) && //same diagonal
-			((abs(piece.m_Position[0] - square[0]) == abs(piece.m_Position[1] - square[1]))) &&
-			((abs(blockingPiece.m_Position[0] - square[0]) == abs(blockingPiece.m_Position[1] - square[1]))))
+		if ((abs(piece.Position()[0] - blockingPiece.Position()[0]) == abs(piece.Position()[1] - blockingPiece.Position()[1])) && //same diagonal
+			((abs(piece.Position()[0] - square[0]) == abs(piece.Position()[1] - square[1]))) &&
+			((abs(blockingPiece.Position()[0] - square[0]) == abs(blockingPiece.Position()[1] - square[1]))))
 		{
 			//check blocking piece in between (only have to check X or Y as they're already on same diagonal)
-			const int min = std::min(piece.m_Position[0], square[0]);
-			const int max = std::max(piece.m_Position[0], square[0]);
-			if (min <= blockingPiece.m_Position[0] && blockingPiece.m_Position[0] <= max)
+			const int min = std::min(piece.Position()[0], square[0]);
+			const int max = std::max(piece.Position()[0], square[0]);
+			if (min <= blockingPiece.Position()[0] && blockingPiece.Position()[0] <= max)
 				isBlocking = true;
 		}
 
@@ -357,38 +362,35 @@ bool MoveSearcher::IsMoveBlocked(const Piece& blockingPiece, const Piece& piece,
 	return isBlocking;
 }
 
-bool MoveSearcher::IsMoveIllegal(const Position& position, const Piece& piece, bool isWhitePiece, const std::array<int, 2>& square)
+bool MoveSearcher::IsMoveIllegal(const Position& position, const Move& move, bool isWhitePiece)
 {
+	//const std::array<int, 2>&
+
 	//we check new position with moved piece
 	Position newPosition = position;
 
-	Move move;
-	move.m_From = piece;
-	move.m_To.m_Type = piece.m_Type;
-	move.m_To.m_Position = square;
-	newPosition.Update(move);
+	Move moveCopy = move;
+	newPosition.Update(moveCopy);
 
 	bool isIllegal = IsKingInCheck(newPosition, isWhitePiece);
 
 	//Also check castling moves
-	if (!isIllegal && piece.m_Type == PieceType::King && (abs(piece.m_Position[0] - square[0]) > 1))
+	if (!isIllegal && move.IsCastling())
 	{
 		if (IsKingInCheck(position, isWhitePiece))
 			isIllegal = true;
-		else if ((square[0] - piece.m_Position[0]) > 0) //kingside castle, check in between square
+		else if (move.m_To.m_Square > move.m_From.m_Square) //kingside castle, check in between square
 		{
 			newPosition = position;
-			move.m_To.m_Position = square;
-			move.m_To.m_Position[0] -= 1;
-			newPosition.Update(move);
+			moveCopy.m_To.m_Square--;
+			newPosition.Update(moveCopy);
 			isIllegal = IsKingInCheck(newPosition, isWhitePiece);
 		}
 		else //queenside
 		{
 			newPosition = position;
-			move.m_To.m_Position = square;
-			move.m_To.m_Position[0] += 1;
-			newPosition.Update(move);
+			moveCopy.m_To.m_Square++;
+			newPosition.Update(moveCopy);
 			isIllegal = IsKingInCheck(newPosition, isWhitePiece);
 		}
 	}
@@ -400,7 +402,7 @@ std::vector<Position> MoveSearcher::GetAllPossiblePositions(const Position& posi
 {
 	std::vector<Position> positions;
 
-	const std::vector<Piece>& piecesToPlay = position.IsWhiteToPlay() ? position.GetWhitePieces() : position.GetBlackPieces();
+	const std::vector<Piece>& piecesToPlay = position.IsWhiteToPlay() ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
 	for (const Piece& piece : piecesToPlay)
 	{
 		std::vector<Move> pieceMoves = GetLegalMoves(position, piece, position.IsWhiteToPlay());
@@ -467,14 +469,14 @@ std::vector<Move> MoveSearcher::GetAllLineMoves(const Position& position)
 {
 	std::vector<Move> linesMoves;
 	std::vector<Move> moves = GetLegalMoves(position);
-	const size_t piecesCount = position.GetBlackPieces().size() + position.GetWhitePieces().size();
+	const size_t piecesCount = position.GetBlackPiecesList().size() + position.GetWhitePiecesList().size();
 
 	//for (Move& move : moves)
 	//{
 	//	//Keep new position only when we want to check a tactic (after capture, forced move, pieces aligned, king undefended...)
 	//	//Make move and undo move to get piece count
 	//	
-	//	const size_t piecesCount2 = newPosition.GetBlackPieces().size() + newPosition.GetWhitePieces().size();
+	//	const size_t piecesCount2 = newPosition.GetBlackPiecesList().size() + newPosition.GetWhitePiecesList().size();
 	//	if (piecesCount != piecesCount2)
 	//		lines.emplace_back(std::move(newPosition));
 	//}
@@ -485,8 +487,8 @@ std::vector<Move> MoveSearcher::GetAllLineMoves(const Position& position)
 bool MoveSearcher::IsKingInCheck(const Position& position, bool isWhitePiece)
 {
 	bool isKingInCheck = false;
-	const std::vector<Piece>& enemyPieces = isWhitePiece ? position.GetBlackPieces() : position.GetWhitePieces();
-	const std::vector<Piece>& friendlyPieces = isWhitePiece ? position.GetWhitePieces() : position.GetBlackPieces();
+	const std::vector<Piece>& enemyPieces = isWhitePiece ? position.GetBlackPiecesList() : position.GetWhitePiecesList();
+	const std::vector<Piece>& friendlyPieces = isWhitePiece ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
 	const Piece* king = nullptr;
 
 	for (const Piece& friendlyPiece : friendlyPieces)
@@ -511,10 +513,10 @@ bool MoveSearcher::IsKingInCheck(const Position& position, bool isWhitePiece)
 		for (const std::array<int, 2> & square : accessibleSquares)
 		{
 			//For pawns, ignore squares in front of them (can't give a check)
-			if ((enemyPiece.m_Type == PieceType::Pawn) && enemyPiece.m_Position[0] == square[0])
+			if ((enemyPiece.m_Type == PieceType::Pawn) && enemyPiece.Position()[0] == square[0])
 				continue;
 
-			if (square == king->m_Position)
+			if (square == king->Position())
 			{
 				canGetToKing = true;
 				break;
@@ -527,7 +529,7 @@ bool MoveSearcher::IsKingInCheck(const Position& position, bool isWhitePiece)
 		bool protectedByFriend = false;
 		for (const Piece& friendlyPiece : friendlyPieces)
 		{
-			if ((&friendlyPiece != king) && IsMoveBlocked(friendlyPiece, enemyPiece, king->m_Position))
+			if ((&friendlyPiece != king) && IsMoveBlocked(friendlyPiece, enemyPiece, king->Position()))
 			{
 				protectedByFriend = true;
 				break;
@@ -540,7 +542,7 @@ bool MoveSearcher::IsKingInCheck(const Position& position, bool isWhitePiece)
 		bool protectedByEnemy = false;
 		for (const Piece& enemyPiece2 : enemyPieces)
 		{
-			if ((&enemyPiece != &enemyPiece2) && IsMoveBlocked(enemyPiece2, enemyPiece, king->m_Position))
+			if ((&enemyPiece != &enemyPiece2) && IsMoveBlocked(enemyPiece2, enemyPiece, king->Position()))
 			{
 				protectedByEnemy = true;
 				break;

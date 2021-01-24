@@ -1,5 +1,6 @@
 #pragma once
 #include "BasicDefinitions.h"
+#include "Bitboard.h"
 #include "ZobristHash.h"
 #include <array>
 #include <vector>
@@ -46,8 +47,8 @@ public:
 	GameStatus GetGameStatus() const { return m_GameStatus; };
 	void SetGameStatus(GameStatus gameStatus) { m_GameStatus = gameStatus; };
 
-	const std::optional<std::array<int, 2>>& GetEnPassantSquare() const { return m_EnPassantSquare; };
-	void SetEnPassantSquare(std::array<int, 2> square);
+	const std::optional<int>& GetEnPassantSquare() const { return m_EnPassantSquare; };
+	void SetEnPassantSquare(Square square);
 	void ResetEnPassantSquare();
 
 	bool CanWhiteCastleKingSide() const { return m_CanWhiteCastleKingSide; };
@@ -67,13 +68,46 @@ public:
 
 	bool IsInsufficientMaterial() const;
 
-	const std::vector<Piece>& GetWhitePieces() const { return m_WhitePieces; };
-	const std::vector<Piece>& GetBlackPieces() const { return m_BlackPieces; };
+	const std::vector<Piece>& GetWhitePiecesList() const { return m_WhitePiecesList; };
+	const std::vector<Piece>& GetBlackPiecesList() const { return m_BlackPiecesList; };
 
-	std::vector<Piece>& GetWhitePieces() { return m_WhitePieces; };
-	std::vector<Piece>& GetBlackPieces() { return m_BlackPieces; };
+	std::vector<Piece>& GetWhitePiecesList() { return m_WhitePiecesList; };
+	std::vector<Piece>& GetBlackPiecesList() { return m_BlackPiecesList; };
 
-	bool IsSquareOccupiedByOpponent(const std::array<int, 2>& square) const;
+	const Bitboard& GetWhitePieces() const { return m_WhitePieces; };
+	Bitboard& GetWhitePieces() { return m_WhitePieces; };
+	const Bitboard& GetBlackPieces() const { return m_BlackPieces; };
+	Bitboard& GetBlackPieces() { return m_BlackPieces; };
+
+	Bitboard& GetWhitePawns() { return m_WhitePawns; };
+	const Bitboard& GetWhitePawns() const { return m_WhitePawns; };
+	Bitboard& GetBlackPawns() { return m_BlackPawns; };
+	const Bitboard& GetBlackPawns() const { return m_BlackPawns; };
+
+	Bitboard& GetWhiteKnights () { return m_WhiteKnights; };
+	const Bitboard& GetWhiteKnights() const { return m_WhiteKnights; };
+	Bitboard& GetBlackKnights() { return m_BlackKnights; };
+	const Bitboard& GetBlackKnights() const { return m_BlackKnights; };
+
+	Bitboard& GetWhiteBishops() { return m_WhiteBishops; };
+	const Bitboard& GetWhiteBishops() const { return m_WhiteBishops; };
+	Bitboard& GetBlackBishops() { return m_BlackBishops; };
+	const Bitboard& GetBlackBishops() const { return m_BlackBishops; };
+
+	Bitboard& GetWhiteRooks() { return m_WhiteRooks; };
+	const Bitboard& GetWhiteRooks() const { return m_WhiteRooks; };
+	Bitboard& GetBlackRooks() { return m_BlackRooks; };
+	const Bitboard& GetBlackRooks() const { return m_BlackRooks; };
+
+	Bitboard& GetWhiteQueens() { return m_WhiteQueens; };
+	const Bitboard& GetWhiteQueens() const { return m_WhiteQueens; };
+	Bitboard& GetBlackQueens() { return m_BlackQueens; };
+	const Bitboard& GetBlackQueens() const { return m_BlackQueens; };
+
+	Bitboard& GetWhiteKing() { return m_WhiteKing; };
+	const Bitboard& GetWhiteKing() const { return m_WhiteKing; };
+	Bitboard& GetBlackKing() { return m_BlackKing; };
+	const Bitboard& GetBlackKing() const { return m_BlackKing; };
 
 	/// <summary>
 	/// Returns pieces for given type and their position of side whose turn is to move (if there is one! Can have more than 1)
@@ -113,8 +147,28 @@ public:
 
 private:
 
-	std::vector<Piece> m_WhitePieces; //Position representation is piece-centric, this might change in the future
-	std::vector<Piece> m_BlackPieces;
+	void UpdatePiece(const Move& move);
+	void UpdateCaptureSquare(int squareIdx);
+
+	//REPLACING list of pieces with bitboards!!
+	Bitboard m_WhitePieces;
+	Bitboard m_WhitePawns;
+	Bitboard m_WhiteKnights;
+	Bitboard m_WhiteBishops;
+	Bitboard m_WhiteRooks;
+	Bitboard m_WhiteQueens;
+	Bitboard m_WhiteKing;
+
+	Bitboard m_BlackPieces;
+	Bitboard m_BlackPawns;
+	Bitboard m_BlackKnights;
+	Bitboard m_BlackBishops;
+	Bitboard m_BlackRooks;
+	Bitboard m_BlackQueens;
+	Bitboard m_BlackKing;
+
+	std::vector<Piece> m_WhitePiecesList; //Position representation is piece-centric, this might change in the future
+	std::vector<Piece> m_BlackPiecesList;
 	bool m_IsWhiteToPlay = true;
 	GameStatus m_GameStatus = GameStatus::Running;
 	bool m_CanWhiteCastleKingSide = true;
@@ -124,7 +178,7 @@ private:
 	bool m_HasWhiteCastled = false;
 	bool m_HasBlackCastled = false;
 
-	std::optional<std::array<int, 2>> m_EnPassantSquare; //if last move is two step from pawn, the square behind the pawn that moved
+	std::optional<Square> m_EnPassantSquare; //if last move is two step from pawn, the square behind the pawn that moved
 
 	std::vector<Move> m_Moves; //list of moves made to reach the position
 

@@ -6,10 +6,10 @@
 
 int main()
 {
-    //NotationParserTests::Run();
-    //ZobristTests::Run();
-    //MoveSearcherTests::Run();
-    TacticsTests::Run();
+    NotationParserTests::Run();
+    ZobristTests::Run();
+    MoveSearcherTests::Run();
+    //TacticsTests::Run();
 
     std::cout << "Tests have been run.\n";
 }

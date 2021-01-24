@@ -34,79 +34,97 @@ static int LetterToNumber(char a)
 
 	return number;
 }
+static int FENIdxToSquareIdx(int fenIdx)
+{
+	int file = fenIdx % 8;
+	int row = 7 - fenIdx / 8;
+	return (file + 8 * row);
+}
 
 void NotationParser::TranslateFEN(const std::string& fen, Position& position)
 {
 	position.InitEmptyBoard();
 
 	//e.g.: rnbqkbnr / pppppppp / 8 / 8 / 8 / 8 / PPPPPPPP / RNBQKBNR w KQkq - 0 1
-	int squareIdx = 0; //start from top left
+	int fenIdx = 0; //start from top left - down to bottom right
 	int dashCount = 0;
 	std::optional<int> enPassantRow;
 	std::optional<int> enPassantFile;
 	for (char c : fen)
 	{
-		if (squareIdx < 64)
+		if (fenIdx < 64)
 		{
 			if (isalpha(c))
 			{
-				const std::array<int, 2> square = { squareIdx % 8, 7 - squareIdx / 8 };
+				const int squareIdx = FENIdxToSquareIdx(fenIdx);
 				if (c == 'r')
 				{
-					position.GetBlackPieces().emplace_back(Piece(PieceType::Rook, square));
+					position.GetBlackRooks() |= Bitboard(squareIdx);
+					position.GetBlackPiecesList().emplace_back(Piece(PieceType::Rook, squareIdx));
 				}
 				else if (c == 'n')
 				{
-					position.GetBlackPieces().emplace_back(Piece(PieceType::Knight, square));
+					position.GetBlackKnights() |= Bitboard(squareIdx);
+					position.GetBlackPiecesList().emplace_back(Piece(PieceType::Knight, squareIdx));
 				}
 				else if (c == 'b')
 				{
-					position.GetBlackPieces().emplace_back(Piece(PieceType::Bishop, square));
+					position.GetBlackBishops() |= Bitboard(squareIdx);
+					position.GetBlackPiecesList().emplace_back(Piece(PieceType::Bishop, squareIdx));
 				}
 				else if (c == 'q')
 				{
-					position.GetBlackPieces().emplace_back(Piece(PieceType::Queen, square));
+					position.GetBlackQueens() |= Bitboard(squareIdx);
+					position.GetBlackPiecesList().emplace_back(Piece(PieceType::Queen, squareIdx));
 				}
 				else if (c == 'k')
 				{
-					position.GetBlackPieces().emplace_back(Piece(PieceType::King, square));
+					position.GetBlackKing() |= Bitboard(squareIdx);
+					position.GetBlackPiecesList().emplace_back(Piece(PieceType::King, squareIdx));
 				}
 				else if (c == 'p')
 				{
-					position.GetBlackPieces().emplace_back(Piece(PieceType::Pawn, square));
+					position.GetBlackPawns() |= Bitboard(squareIdx);
+					position.GetBlackPiecesList().emplace_back(Piece(PieceType::Pawn, squareIdx));
 				}
 				else if (c == 'R')
 				{
-					position.GetWhitePieces().emplace_back(Piece(PieceType::Rook, square));
+					position.GetWhiteRooks() |= Bitboard(squareIdx);
+					position.GetWhitePiecesList().emplace_back(Piece(PieceType::Rook, squareIdx));
 				}
 				else if (c == 'N')
 				{
-					position.GetWhitePieces().emplace_back(Piece(PieceType::Knight, square));
+					position.GetWhiteKnights() |= Bitboard(squareIdx);
+					position.GetWhitePiecesList().emplace_back(Piece(PieceType::Knight, squareIdx));
 				}
 				else if (c == 'B')
 				{
-					position.GetWhitePieces().emplace_back(Piece(PieceType::Bishop, square));
+					position.GetWhiteBishops() |= Bitboard(squareIdx);
+					position.GetWhitePiecesList().emplace_back(Piece(PieceType::Bishop, squareIdx));
 				}
 				else if (c == 'Q')
 				{
-					position.GetWhitePieces().emplace_back(Piece(PieceType::Queen, square));
+					position.GetWhiteQueens() |= Bitboard(squareIdx);
+					position.GetWhitePiecesList().emplace_back(Piece(PieceType::Queen, squareIdx));
 				}
 				else if (c == 'K')
 				{
-					position.GetWhitePieces().emplace_back(Piece(PieceType::King, square));
+					position.GetWhiteKing() |= Bitboard(squareIdx);
+					position.GetWhitePiecesList().emplace_back(Piece(PieceType::King, squareIdx));
 				}
 				else if (c == 'P')
 				{
-					position.GetWhitePieces().emplace_back(Piece(PieceType::Pawn, square));
+					position.GetWhitePawns() |= Bitboard(squareIdx);
+					position.GetWhitePiecesList().emplace_back(Piece(PieceType::Pawn, squareIdx));
 				}
 
-				squareIdx++;
+				fenIdx++;
 			}
 			else
 			{
 				if (isdigit(c))
 				{
-					squareIdx += c - '0';
+					fenIdx += c - '0';
 				}
 				else if (c == '//')
 				{
@@ -161,8 +179,13 @@ void NotationParser::TranslateFEN(const std::string& fen, Position& position)
 
 	if (enPassantFile.has_value() && enPassantRow.has_value())
 	{
-		position.SetEnPassantSquare({ *enPassantFile , *enPassantRow });
+		position.SetEnPassantSquare(static_cast<Square>(*enPassantFile + 8*(*enPassantRow)));
 	}
+
+	position.GetBlackPieces() = position.GetBlackPawns() & position.GetBlackKnights() & position.GetBlackBishops() &
+		position.GetBlackRooks() & position.GetBlackQueens() & position.GetBlackKing();
+	position.GetWhitePieces() = position.GetWhitePawns() & position.GetWhiteKnights() & position.GetWhiteBishops() &
+		position.GetWhiteRooks() & position.GetWhiteQueens() & position.GetWhiteKing();
 
 	position.SetZobristHash(position.ComputeZobristHash());
 }
@@ -216,9 +239,9 @@ static PieceType LetterToPieceType(char A)
 	return type;
 }
 
-std::string NotationParser::TranslateToAlgebraic(const std::array<int, 2>& square)
+std::string NotationParser::TranslateToAlgebraic(Square square)
 {
-	std::string squareString = NthLetter(square[0]) + std::to_string(square[1] + 1);
+	std::string squareString = NthLetter(square % 8) + std::to_string(square / 8 + 1);
 	return squareString;
 }
 
@@ -227,10 +250,9 @@ std::string NotationParser::TranslateToAlgebraic(const Move& move)
 	std::string moveString;
 
 	//Check for castling moves
-	if (move.m_From.m_Type == PieceType::King &&
-		(abs(move.m_To.m_Position[0] - move.m_From.m_Position[0]) > 1))
+	if (move.IsCastling())
 	{
-		if ((move.m_To.m_Position[0] - move.m_From.m_Position[0]) > 0) //kingside
+		if (move.m_To > move.m_From) //kingside
 			moveString = "O-O";
 		else //queenside
 			moveString = "O-O-O";
@@ -239,10 +261,10 @@ std::string NotationParser::TranslateToAlgebraic(const Move& move)
 	{
 		//We use Disambiguation for every move (much less complicated)
 		moveString = (move.m_From.m_Type == PieceType::Pawn) ? "" : TranslateToAlgebraic(move.m_From.m_Type);
-		moveString += TranslateToAlgebraic(move.m_From.m_Position);
+		moveString += TranslateToAlgebraic(static_cast<Square>(move.m_From.m_Square));
 		if (move.IsCapture())
 			moveString += "x";
-		moveString += TranslateToAlgebraic(move.m_To.m_Position);
+		moveString += TranslateToAlgebraic(static_cast<Square>(move.m_To.m_Square));
 
 		//queening
 		if (move.m_From.m_Type != move.m_To.m_Type)
@@ -264,17 +286,11 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 	const bool isQueenSideCastle = moveString == "O-O-O";
 	if (isKingSideCastle || isQueenSideCastle)
 	{
-		pieces = position.GetPiecesToPlay(PieceType::King);
-		if (pieces.empty())
-		{
-			assert(false); //no king?!
-			return move;
-		}
-
 		move = Move();
-		move->m_From = *pieces.front();
+		move->m_From.m_Type = PieceType::King;
+		move->m_From.m_Square = position.IsWhiteToPlay() ? e1 : e8;
 		move->m_To = move->m_From;
-		move->m_To.m_Position[0] += isKingSideCastle ? 2 : -2;
+		move->m_To.m_Square = position.IsWhiteToPlay() ? g1 : g8;
 		return move;
 	}
 
@@ -479,10 +495,10 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 		if (!toRow.has_value())
 		{
 			//pawn move
-			toRow = move->m_From.m_Position[1] + 1;
+			toRow = move->m_From.Position()[1] + 1;
 		}
 
-		move->m_To.m_Position = { *toFile, *toRow }; //no check for valid square, allow cheating!
+		move->m_To.m_Square = *toFile + 8 * (*toRow); //no check for valid square, allow cheating!
 	}
 	else
 	{
@@ -495,7 +511,7 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 			const std::vector<Move> legalMoves = MoveSearcher::GetLegalMoves(position, *p, position.IsWhiteToPlay());
 			for (const Move& legalMove : legalMoves)
 			{
-				const std::array<int, 2>& square = legalMove.m_To.m_Position;
+				const std::array<int, 2>& square = legalMove.m_To.Position();
 				if (square == std::array<int, 2>{*toFile, * toRow})
 				{
 					canReachSquare = true;
@@ -506,12 +522,12 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 			if (!canReachSquare)
 				continue;
 
-			if (fromRow.has_value() && fromRow == p->m_Position[1])
+			if (fromRow.has_value() && fromRow == p->Position()[1])
 			{
 				pieceToMove = p;
 				count++;
 			}
-			else if (fromFile.has_value() && fromFile == p->m_Position[0])
+			else if (fromFile.has_value() && fromFile == p->Position()[0])
 			{
 				pieceToMove = p;
 				count++;
@@ -532,7 +548,7 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 		move->m_To = *pieceToMove;
 		if (!toFile.has_value() || !toRow.has_value())
 			return Move();
-		move->m_To.m_Position = { *toFile, *toRow };
+		move->m_To.m_Square = *toFile + 8 * (*toRow);
 	}
 
 	if (move.has_value())

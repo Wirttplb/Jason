@@ -25,5 +25,5 @@ public:
 private:
 
 	static std::string TranslateToAlgebraic(PieceType type);
-	static std::string TranslateToAlgebraic(const std::array<int, 2>& square);
+	static std::string TranslateToAlgebraic(Square square);
 };

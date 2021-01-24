@@ -2,6 +2,21 @@
 #include <array>
 #include <optional>
 
+
+/// <summary> Simple enum for square indices </summary>
+/// <remark> x = s % 8, y = s / 8 ; +-1 to move along x, +-8 to move along y </remark>
+enum Square : int
+{
+	a1 = 0, b1, c1, d1, e1, f1, g1, h1,
+	a2, b2, c2, d2, e2, f2, g2, h2,
+	a3, b3, c3, d3, e3, f3, g3, h3,
+	a4, b4, c4, d4, e4, f4, g4, h4,
+	a5, b5, c5, d5, e5, f5, g5, h5,
+	a6, b6, c6, d6, e6, f6, g6, h6,
+	a7, b7, c7, d7, e7, f7, g7, h7,
+	a8, b8, c8, d8, e8, f8, g8, h8
+};
+
 enum class PieceType
 {
 	Pawn,
@@ -17,14 +32,24 @@ class Piece
 {
 public:
 	Piece() {};
-	Piece(PieceType type, int x, int y) : m_Type(type), m_Position({ x,y }) {};
-	Piece(PieceType type, const std::array<int, 2> square) : m_Type(type), m_Position(square) {};
-	std::array<int, 2> m_Position = { 0, 0 }; //values should range from 0 to 7
+	//Piece(PieceType type, Square square) : m_Type(type), m_Square(square) {};
+	Piece(PieceType type, int square) : m_Type(type), m_Square(square) {};
+	
+	//Piece(PieceType type, int x, int y) : m_Type(type), m_Position({ x,y }) {};
+	//Piece(PieceType type, const std::array<int, 2> square) : m_Type(type), m_Position(square) {};
+	//std::array<int, 2> m_Position = { 0, 0 }; //values should range from 0 to 7
+	
+	int m_Square = a1; //from 0 to 63 (a1 = 0, h1 = 7, h8 = 63)
 	PieceType m_Type = PieceType::Pawn;
+
+	/// <summary>Returns position square index</summary>
+	operator std::array<int, 2>() const { return { m_Square % 8, m_Square / 8 }; };
+	operator int() const { return m_Square; };
+	std::array<int, 2> Position() const { return { m_Square % 8, m_Square / 8 }; };
 
 	bool operator==(const Piece& piece) const
 	{
-		return (piece.m_Position == m_Position) && (piece.m_Type == m_Type);
+		return (piece.m_Square == m_Square) && (piece.m_Type == m_Type);
 	}
 };
 
@@ -41,18 +66,20 @@ public:
 
 	bool IsCastling() const
 	{
-		return ((m_From.m_Type == PieceType::King) && abs(m_From.m_Position[0] - m_To.m_Position[0]) > 1);
+		return (m_From.m_Type == PieceType::King) &&
+			(abs(m_From.m_Square - m_To.m_Square) == 2); //at least 2 lateral steps, same row
 	}
 
 	bool IsTwoStepsPawn() const
 	{
-		return (m_From.m_Type == PieceType::Pawn) && (abs(m_From.m_Position[1] - m_To.m_Position[1]) == 2);
+		return (m_From.m_Type == PieceType::Pawn) &&
+			(abs(m_From.m_Square - m_To.m_Square) == 16);
 	}
 
 	Piece m_From;
 	Piece m_To;
 	std::optional<Piece> m_Capture; //captured piece
-	std::optional<std::array<int, 2>> m_EnPassantBackup; //en passant square BEFORE move
+	std::optional<Square> m_EnPassantBackup; //en passant square BEFORE move
 
 	bool m_CanWhiteCastleKingSideBackup = true; //backups flags for BEFORE move
 	bool m_CanBlackCastleKingSideBackup = true;

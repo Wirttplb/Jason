@@ -10,17 +10,17 @@ void ZobristTests::Run()
 
 	Position newPosition = startingPosition;
 	Move move;
-	move.m_From = Piece(PieceType::Pawn, 4, 1); //e2
-	move.m_To = Piece(PieceType::Pawn, 4, 3); //e4
+	move.m_From = Piece(PieceType::Pawn, e2);
+	move.m_To = Piece(PieceType::Pawn, e4);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Pawn, 4, 6); //e7
-	move.m_To = Piece(PieceType::Pawn, 4, 4); //e5
+	move.m_From = Piece(PieceType::Pawn, e7);
+	move.m_To = Piece(PieceType::Pawn, e5);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Pawn, 3, 1); //d2
-	move.m_To = Piece(PieceType::Pawn, 3, 3); //d4
+	move.m_From = Piece(PieceType::Pawn, d2);
+	move.m_To = Piece(PieceType::Pawn, d4);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Pawn, 4, 4); //exd
-	move.m_To = Piece(PieceType::Pawn, 3, 3);
+	move.m_From = Piece(PieceType::Pawn, e5);
+	move.m_To = Piece(PieceType::Pawn, d4);
 	newPosition.Update(move);
 	ASSERT(newPosition.GetZobristHash() == newPosition.ComputeZobristHash());
 
@@ -113,26 +113,26 @@ void ZobristTests::Run()
 
 	//two paths reach same position = same hash
 	newPosition = startingPosition;
-	move.m_From = Piece(PieceType::Pawn, 4, 1); //e2
-	move.m_To = Piece(PieceType::Pawn, 4, 2); //e3
+	move.m_From = Piece(PieceType::Pawn, e2);
+	move.m_To = Piece(PieceType::Pawn, e3);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Pawn, 4, 6); //e7
-	move.m_To = Piece(PieceType::Pawn, 4, 4); //e5
+	move.m_From = Piece(PieceType::Pawn, e7);
+	move.m_To = Piece(PieceType::Pawn, e5);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Pawn, 3, 1); //d2
-	move.m_To = Piece(PieceType::Pawn, 3, 2); //d3
+	move.m_From = Piece(PieceType::Pawn, d2);
+	move.m_To = Piece(PieceType::Pawn, d3);
 	newPosition.Update(move);
 	uint64_t hash1 = newPosition.GetZobristHash();
 	ASSERT(hash1 == newPosition.ComputeZobristHash());
 	newPosition = startingPosition;
-	move.m_From = Piece(PieceType::Pawn, 3, 1); //d2
-	move.m_To = Piece(PieceType::Pawn, 3, 2); //d3
+	move.m_From = Piece(PieceType::Pawn, d2);
+	move.m_To = Piece(PieceType::Pawn, d3);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Pawn, 4, 6); //e7
-	move.m_To = Piece(PieceType::Pawn, 4, 4); //e5
+	move.m_From = Piece(PieceType::Pawn, e7);
+	move.m_To = Piece(PieceType::Pawn, e5);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Pawn, 4, 1); //e2
-	move.m_To = Piece(PieceType::Pawn, 4, 2); //e3
+	move.m_From = Piece(PieceType::Pawn, e2);
+	move.m_To = Piece(PieceType::Pawn, e3);
 	newPosition.Update(move);
 	uint64_t hash2 = newPosition.GetZobristHash();
 	ASSERT(hash2 == newPosition.ComputeZobristHash());
@@ -140,26 +140,26 @@ void ZobristTests::Run()
 
 	//two paths, same position BUT different en passant squares
 	newPosition = startingPosition;
-	move.m_From = Piece(PieceType::Pawn, 4, 1); //e4
-	move.m_To = Piece(PieceType::Pawn, 4, 3); //e4
+	move.m_From = Piece(PieceType::Pawn, e2);
+	move.m_To = Piece(PieceType::Pawn, e4);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Pawn, 4, 6); //e7
-	move.m_To = Piece(PieceType::Pawn, 4, 4); //e5
+	move.m_From = Piece(PieceType::Pawn, e7);
+	move.m_To = Piece(PieceType::Pawn, e5);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Pawn, 3, 1); //d2
-	move.m_To = Piece(PieceType::Pawn, 3, 3); //d4
+	move.m_From = Piece(PieceType::Pawn, d2);
+	move.m_To = Piece(PieceType::Pawn, d4);
 	newPosition.Update(move);
 	hash1 = newPosition.GetZobristHash();
 	ASSERT(hash1 == newPosition.ComputeZobristHash());
 	newPosition = startingPosition;
-	move.m_From = Piece(PieceType::Pawn, 3, 1); //d2
-	move.m_To = Piece(PieceType::Pawn, 3, 3); //d4
+	move.m_From = Piece(PieceType::Pawn, d2);
+	move.m_To = Piece(PieceType::Pawn, d4);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Pawn, 4, 6); //e7
-	move.m_To = Piece(PieceType::Pawn, 4, 4); //e5
+	move.m_From = Piece(PieceType::Pawn, e7);
+	move.m_To = Piece(PieceType::Pawn, e5);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Pawn, 4, 1); //e4
-	move.m_To = Piece(PieceType::Pawn, 4, 3); //e4
+	move.m_From = Piece(PieceType::Pawn, e2);
+	move.m_To = Piece(PieceType::Pawn, e4); 
 	newPosition.Update(move);
 	hash2 = newPosition.GetZobristHash();
 	ASSERT(hash2 == newPosition.ComputeZobristHash());
@@ -167,26 +167,26 @@ void ZobristTests::Run()
 
 	//two paths with capture, same position
 	newPosition = startingPosition;
-	move.m_From = Piece(PieceType::Knight, 6, 0);
-	move.m_To = Piece(PieceType::Knight, 7, 2); //Nh3
+	move.m_From = Piece(PieceType::Knight, g1);
+	move.m_To = Piece(PieceType::Knight, h3);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Pawn, 6, 6); //g7
-	move.m_To = Piece(PieceType::Pawn, 6, 4); //g5
+	move.m_From = Piece(PieceType::Pawn, g7);
+	move.m_To = Piece(PieceType::Pawn, g5);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Knight, 7, 2);
-	move.m_To = Piece(PieceType::Knight, 6, 4);
+	move.m_From = Piece(PieceType::Knight, h3);
+	move.m_To = Piece(PieceType::Knight, g5);
 	newPosition.Update(move);
 	hash1 = newPosition.GetZobristHash();
 	ASSERT(hash1 == newPosition.ComputeZobristHash());
 	newPosition = startingPosition;
-	move.m_From = Piece(PieceType::Knight, 6, 0);
-	move.m_To = Piece(PieceType::Knight, 5, 2); //Nf3
+	move.m_From = Piece(PieceType::Knight, g1);
+	move.m_To = Piece(PieceType::Knight, f3);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Pawn, 6, 6); //g7
-	move.m_To = Piece(PieceType::Pawn, 6, 4); //g5
+	move.m_From = Piece(PieceType::Pawn, g7);
+	move.m_To = Piece(PieceType::Pawn, g5);
 	newPosition.Update(move);
-	move.m_From = Piece(PieceType::Knight, 5, 2);
-	move.m_To = Piece(PieceType::Knight, 6, 4);
+	move.m_From = Piece(PieceType::Knight, f3);
+	move.m_To = Piece(PieceType::Knight, g5);
 	newPosition.Update(move);
 	hash2 = newPosition.GetZobristHash();
 	ASSERT(hash2 == newPosition.ComputeZobristHash());

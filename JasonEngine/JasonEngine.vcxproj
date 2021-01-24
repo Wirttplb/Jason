@@ -154,6 +154,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="BasicDefinitions.h" />
+    <ClInclude Include="Bitboard.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="MoveMaker.h" />
     <ClInclude Include="MoveSearcher.h" />
@@ -163,6 +164,7 @@
     <ClInclude Include="ZobristHash.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Bitboard.cpp" />
     <ClCompile Include="MoveMaker.cpp" />
     <ClCompile Include="MoveSearcher.cpp" />
     <ClCompile Include="NotationParser.cpp" />

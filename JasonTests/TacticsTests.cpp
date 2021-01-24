@@ -39,10 +39,10 @@ void TacticsTests::Run()
 	ASSERT(staircaseMate2.GetGameStatus() == Position::GameStatus::CheckMate);
 
 	RunPosition(pinKnightFork, 3, 2);
-	ASSERT(pinKnightFork.GetMoves()[0].m_From == Piece(PieceType::Knight, 6, 4));
-	ASSERT(pinKnightFork.GetMoves()[0].m_To == Piece(PieceType::Knight, 4, 5));
-	ASSERT(pinKnightFork.GetMoves()[2].m_From == Piece(PieceType::Knight, 4, 5));
-	ASSERT(pinKnightFork.GetMoves()[2].m_To == Piece(PieceType::Knight, 5, 3));
+	ASSERT(pinKnightFork.GetMoves()[0].m_From == Piece(PieceType::Knight, g5));
+	ASSERT(pinKnightFork.GetMoves()[0].m_To == Piece(PieceType::Knight, e6));
+	ASSERT(pinKnightFork.GetMoves()[2].m_From == Piece(PieceType::Knight, e6));
+	ASSERT(pinKnightFork.GetMoves()[2].m_To == Piece(PieceType::Knight, f4));
 
 	//5 IS TOO DEEP!
 	//RunPosition(removeKnightForkDefender, 4, 5);
@@ -52,14 +52,14 @@ void TacticsTests::Run()
 
 	Move move;
 	PositionEvaluation evaluator;
-	move.m_From = Piece(PieceType::Queen, 4, 2);
-	move.m_To = Piece(PieceType::Queen, 1, 5);
+	move.m_From = Piece(PieceType::Queen, e3);
+	move.m_To = Piece(PieceType::Queen, b6);
 	const double score = evaluator.EvaluateMove(removeKnightForkDefender, move, 4);
 	ASSERT(score > 0);
 
 	RunPosition(twoAttackOne, 1, 3);
-	ASSERT(twoAttackOne.GetMoves()[0].m_To.m_Position[0] == 2 && twoAttackOne.GetMoves()[0].m_To.m_Position[1] == 2);
+	ASSERT(twoAttackOne.GetMoves()[0].m_To.m_Square == c3);
 
 	RunPosition(queenSacrificeMate, 1, 3);
-	ASSERT(queenSacrificeMate.GetMoves()[0].m_To == Piece(PieceType::Queen, 6, 7));
+	ASSERT(queenSacrificeMate.GetMoves()[0].m_To == Piece(PieceType::Queen, g8));
 }

@@ -55,14 +55,14 @@ double PositionEvaluation::AlphaBetaNegamax(Position& position, int depth, doubl
 		return (maximizeWhite ? 1.0 : -1.0) * EvaluatePosition(position);
 
 	double value = 0.0;
-	const size_t piecesCount = position.GetBlackPieces().size() + position.GetWhitePieces().size();
+	const size_t piecesCount = position.GetBlackPiecesList().size() + position.GetWhitePiecesList().size();
 	value = std::numeric_limits<double>::lowest();
 	for (Move& childMove : childMoves)
 	{
 		position.Update(childMove);
-		const size_t piecesCount2 = position.GetBlackPieces().size() + position.GetWhitePieces().size();
-		const int actualDepth = depth - 1;// (piecesCount == piecesCount2) ? depth - 1 : depth; //go deeper when we sense a tactic (capture...)
-		value = std::max(value, -AlphaBetaNegamax(position, actualDepth, -beta, -alpha, -maximizeWhite));
+		const size_t piecesCount2 = position.GetBlackPiecesList().size() + position.GetWhitePiecesList().size();
+		const int actualDepth = depth - 1;// (piecesCount == piecesCount2) ? depth - 1 : depth; //go deeper when we sense a tactic (capture...) ~ Quiescent search
+		value = std::max(value, -AlphaBetaNegamax(position, actualDepth, -beta, -alpha, !maximizeWhite));
 		alpha = std::max(alpha, value);
 		position.Undo(childMove);
 
@@ -71,7 +71,7 @@ double PositionEvaluation::AlphaBetaNegamax(Position& position, int depth, doubl
 	}
 
 	//Transposition Table Store
-	m_TranspositionTable[position].m_Score == value;
+	m_TranspositionTable[position].m_Score = value;
 	if (value <= originalAlpha)
 		m_TranspositionTable[position].m_Flag = TranspositionTableEntry::Flag::UpperBound;
 	else if (value >= beta)
@@ -122,8 +122,11 @@ double PositionEvaluation::Minimax(Position& position, int depth, bool maximizeW
 
 static double SqDistanceBetweenPieces(const Piece& a, const Piece& b)
 {
-	return (a.m_Position[0] - b.m_Position[0]) * (a.m_Position[0] - b.m_Position[0]) + 
-		(a.m_Position[1] - b.m_Position[1]) * (a.m_Position[1] - b.m_Position[1]);
+	const int ax = a.m_Square % 8;
+	const int ay = a.m_Square / 8;
+	const int bx = a.m_Square % 8;
+	const int by = a.m_Square / 8;
+	return ((ax - bx)  * (ax - bx) + (ay - by) * (ay - by));
 }
 
 double PositionEvaluation::EvaluatePosition(const Position& position)
@@ -149,8 +152,8 @@ double PositionEvaluation::EvaluatePosition(const Position& position)
 
 	double score = 0.0;
 	//Check material
-	const std::vector<Piece>& whitePieces = position.GetWhitePieces();
-	const std::vector<Piece>& blackPieces = position.GetBlackPieces();
+	const std::vector<Piece>& whitePieces = position.GetWhitePiecesList();
+	const std::vector<Piece>& blackPieces = position.GetBlackPiecesList();
 	double whiteMaterial = 0.0;
 	double blackMaterial = 0.0;
 	for (const Piece& piece : whitePieces)
@@ -262,7 +265,7 @@ double PositionEvaluation::GetPieceValue(PieceType type)
 
 bool PositionEvaluation::IsPieceDefended(const Position& position, const Piece& piece, bool isWhite)
 {
-	const std::vector<Piece>& friendlyPieces = isWhite ? position.GetWhitePieces() : position.GetBlackPieces();
+	const std::vector<Piece>& friendlyPieces = isWhite ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
 	for (const Piece& friendlyPiece : friendlyPieces)
 	{
 		if (&friendlyPiece == &piece)
@@ -271,7 +274,7 @@ bool PositionEvaluation::IsPieceDefended(const Position& position, const Piece& 
 		std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, friendlyPiece, isWhite);
 		for (const Move& move : moves)
 		{
-			if (move.m_To.m_Position == piece.m_Position)
+			if (move.m_To.m_Square == piece.m_Square)
 				return true;
 		}
 	}
@@ -281,13 +284,13 @@ bool PositionEvaluation::IsPieceDefended(const Position& position, const Piece& 
 
 bool PositionEvaluation::IsPieceAttacked(const Position& position, const Piece& piece, bool isWhite)
 {
-	const std::vector<Piece>& enemyPieces = isWhite ? position.GetBlackPieces() : position.GetWhitePieces();
+	const std::vector<Piece>& enemyPieces = isWhite ? position.GetBlackPiecesList() : position.GetWhitePiecesList();
 	for (const Piece& enemyPiece : enemyPieces)
 	{
 		std::vector<Move> moves  = MoveSearcher::GetLegalMoves(position, enemyPiece, !isWhite);
 		for (const Move& move : moves)
 		{
-			if (move.m_To.m_Position == piece.m_Position)
+			if (move.m_To.m_Square == piece.m_Square)
 				return true;
 		}
 	}
@@ -298,7 +301,7 @@ bool PositionEvaluation::IsPieceAttacked(const Position& position, const Piece& 
 std::vector<const Piece*> PositionEvaluation::GetHangingPieces(const Position& position)
 {
 	std::vector<const Piece*> hangingPieces;
-	const std::vector<Piece>& enemyPieces = position.IsWhiteToPlay() ? position.GetBlackPieces() : position.GetWhitePieces();
+	const std::vector<Piece>& enemyPieces = position.IsWhiteToPlay() ? position.GetBlackPiecesList() : position.GetWhitePiecesList();
 	for (const Piece& piece : enemyPieces)
 	{
 		if (IsPieceAttacked(position, piece, !position.IsWhiteToPlay()) && !IsPieceDefended(position, piece, !position.IsWhiteToPlay()))
@@ -311,20 +314,20 @@ std::vector<const Piece*> PositionEvaluation::GetHangingPieces(const Position& p
 int PositionEvaluation::CountDoubledPawn(const Position& position, bool isWhite)
 {
 	int count = 0;
-	const std::vector<Piece>& pieces = isWhite ? position.GetWhitePieces() : position.GetBlackPieces();
+	const std::vector<Piece>& pieces = isWhite ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
 	
 	std::set<int> checkedFiles;
 	for (const Piece& piece : pieces)
 	{
 		if (piece.m_Type == PieceType::Pawn)
 		{
-			if (checkedFiles.find(piece.m_Position[0]) != checkedFiles.end())
+			if (checkedFiles.find(piece.m_Square % 8) != checkedFiles.end())
 				continue;
 
-			checkedFiles.insert(piece.m_Position[0]);
+			checkedFiles.insert(piece.m_Square % 8);
 			for (const Piece& piece2 : pieces)
 			{
-				if ((&piece != &piece2) && (piece2.m_Type == PieceType::Pawn) && (piece.m_Position[0] == piece2.m_Position[0]))
+				if ((&piece != &piece2) && (piece2.m_Type == PieceType::Pawn) && (piece.m_Square % 8 == piece2.m_Square % 8))
 					count++;
 			}
 		}
@@ -344,14 +347,14 @@ std::set<int> PositionEvaluation::GetControlledSquares(const Position& position,
 	if (piece.m_Type == PieceType()) //Pawn is special case
 	{
 		const int direction = isWhite ? 1 : -1;
-		const int nextY = piece.m_Position[1] + 1 * direction;
+		const int nextY = piece.m_Square / 8 + 1 * direction;
 		if (nextY > 0 && nextY < 7)
 		{
-			if ((piece.m_Position[0] > 0))
-				controlledSquares.insert( SquareToIdx({piece.m_Position[0] - 1, piece.m_Position[1] + 1 * direction }));
+			if ((piece.m_Square % 8 > 0))
+				controlledSquares.insert(piece.m_Square - 1 + 8 * direction );
 
-			if (piece.m_Position[0] < 7)
-				controlledSquares.insert( SquareToIdx({piece.m_Position[0] + 1, piece.m_Position[1] + 1 * direction }));
+			if (piece.m_Square % 8 < 7)
+				controlledSquares.insert(piece.m_Square + 1 + 8 * direction);
 		}
 	}
 	else
@@ -359,7 +362,7 @@ std::set<int> PositionEvaluation::GetControlledSquares(const Position& position,
 		std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, piece, true);
 		for (const Move& move : moves)
 		{
-			controlledSquares.insert(SquareToIdx(move.m_To.m_Position));
+			controlledSquares.insert(move.m_To.m_Square);
 		}
 	}
 
@@ -371,7 +374,7 @@ std::set<int> PositionEvaluation::GetControlledSquares(const Position& position,
 	std::set<int> controlledSquares;
 	byPawn.clear();
 
-	const std::vector<Piece>& pieces = isWhite ? position.GetWhitePieces() : position.GetBlackPieces();
+	const std::vector<Piece>& pieces = isWhite ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
 	for (const Piece& piece : pieces)
 	{
 		const std::set<int> squares = GetControlledSquares(position, piece, isWhite);

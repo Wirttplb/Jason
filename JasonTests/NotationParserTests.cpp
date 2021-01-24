@@ -10,43 +10,41 @@ static const Position perftPosition4bis("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/
 
 void NotationParserTests::Run()
 {
-	ASSERT(startingPosition.GetWhitePieces().size() == 16);
-	ASSERT(startingPosition.GetBlackPieces().size() == 16);
+	ASSERT(startingPosition.GetWhitePiecesList().size() == 16);
+	ASSERT(startingPosition.GetBlackPiecesList().size() == 16);
 	ASSERT(startingPosition.CanWhiteCastleKingSide());
 	ASSERT(startingPosition.CanBlackCastleKingSide());
 	ASSERT(startingPosition.CanWhiteCastleQueenSide());
 	ASSERT(startingPosition.CanBlackCastleQueenSide());
 	ASSERT(!startingPosition.GetEnPassantSquare().has_value());
 
-	ASSERT(startingPositionEnPassant.GetWhitePieces().size() == 16);
-	ASSERT(startingPositionEnPassant.GetBlackPieces().size() == 16);
+	ASSERT(startingPositionEnPassant.GetWhitePiecesList().size() == 16);
+	ASSERT(startingPositionEnPassant.GetBlackPiecesList().size() == 16);
 	ASSERT(startingPositionEnPassant.CanWhiteCastleKingSide());
 	ASSERT(startingPositionEnPassant.CanBlackCastleKingSide());
 	ASSERT(startingPositionEnPassant.CanWhiteCastleQueenSide());
 	ASSERT(startingPositionEnPassant.CanBlackCastleQueenSide());
 	ASSERT(startingPositionEnPassant.GetEnPassantSquare().has_value());
-	std::array<int, 2> square{4, 2};
-	ASSERT(*startingPositionEnPassant.GetEnPassantSquare() == square);
+	ASSERT(*startingPositionEnPassant.GetEnPassantSquare() == e3);
 
-	ASSERT(position1.GetWhitePieces().size() == 11);
-	ASSERT(position1.GetBlackPieces().size() == 12);
+	ASSERT(position1.GetWhitePiecesList().size() == 11);
+	ASSERT(position1.GetBlackPiecesList().size() == 12);
 	ASSERT(!position1.CanWhiteCastleKingSide());
 	ASSERT(!position1.CanBlackCastleKingSide());
 	ASSERT(!position1.CanWhiteCastleQueenSide());
 	ASSERT(!position1.CanBlackCastleQueenSide());
 	ASSERT(!position1.GetEnPassantSquare().has_value());
-	square = {0, 0};
-	ASSERT(position1.GetPiecesToPlay(PieceType::Queen).front()->m_Position == square);
+	ASSERT(position1.GetPiecesToPlay(PieceType::Queen).front()->m_Square == a1);
 
 	//had a bug with castling moves parsing
 	Position positionA = perftPosition4;
 	Move move;
-	move.m_From = Piece(PieceType::King, 6, 0);
-	move.m_To = Piece(PieceType::King, 7, 0);
+	move.m_From = Piece(PieceType::King, g1);
+	move.m_To = Piece(PieceType::King, h1);
 	positionA.Update(move);
 	Position positionB = perftPosition4bis;
-	move.m_From = Piece(PieceType::King, 6, 7);
-	move.m_To = Piece(PieceType::King, 7, 7);
+	move.m_From = Piece(PieceType::King, g8);
+	move.m_To = Piece(PieceType::King, h8);
 	positionB.Update(move);
 	ASSERT(!positionA.IsWhiteToPlay());
 	ASSERT(positionA.CanBlackCastleKingSide() && positionA.CanBlackCastleQueenSide());

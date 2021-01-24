@@ -57,9 +57,8 @@ private:
 	/// <summary>
 	/// Returns true if move is illegal because of check
 	/// <param name=="position">original position (before move)</param>
-	/// <param name=="piece">piece to move and its original position</param>
+	/// <param name=="move">move to check</param>
 	/// <param name=="isWhitePiece">true if piece to move is white</param>
-	/// <param name=="square">target square</param>
 	/// </summary>
-	static bool IsMoveIllegal(const Position& position, const Piece& piece, bool isWhitePiece, const std::array<int, 2>& square);
+	static bool IsMoveIllegal(const Position& position, const Move& move, bool isWhitePiece);
 };

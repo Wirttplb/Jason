@@ -65,12 +65,12 @@ std::optional<Position> MoveMaker::FindMove(Position& position, int depth)
 
 	//Check there is still a king!!
 	int n = 0;
-	for (const Piece& piece : newPosition->GetWhitePieces())
+	for (const Piece& piece : newPosition->GetWhitePiecesList())
 	{
 		if (piece.m_Type == PieceType::King)
 			n++;
 	}
-	for (const Piece& piece : newPosition->GetBlackPieces())
+	for (const Piece& piece : newPosition->GetBlackPiecesList())
 	{
 		if (piece.m_Type == PieceType::King)
 			n++;
@@ -113,7 +113,7 @@ void MoveMaker::CheckGameOver(Position& position)
 
 	//Check all legal moves
 	std::vector<Move> allLegalMoves;
-	const std::vector<Piece>& piecesToMove = position.IsWhiteToPlay() ? position.GetWhitePieces() : position.GetBlackPieces();
+	const std::vector<Piece>& piecesToMove = position.IsWhiteToPlay() ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
 	for (const Piece& piece : piecesToMove)
 	{
 		//Get Legal moves
