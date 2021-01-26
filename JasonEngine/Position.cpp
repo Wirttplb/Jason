@@ -6,20 +6,20 @@
 Position::Position()
 {
 	m_WhitePawns = _2;
-	m_WhiteKnights = _b1 & _g1;
-	m_WhiteBishops = _c1 & _f1;
-	m_WhiteRooks = _a1 & _h1;
+	m_WhiteKnights = _b1 | _g1;
+	m_WhiteBishops = _c1 | _f1;
+	m_WhiteRooks = _a1 | _h1;
 	m_WhiteQueens = _d1;
 	m_WhiteKing= _e1;
-	m_WhitePieces = m_WhitePawns & m_WhiteKnights & m_WhiteBishops & m_WhiteRooks & m_WhiteQueens & m_WhiteKing;
+	m_WhitePieces = m_WhitePawns | m_WhiteKnights | m_WhiteBishops | m_WhiteRooks | m_WhiteQueens | m_WhiteKing;
 
 	m_BlackPawns = _7;
-	m_BlackKnights = _b8 & _g8;
-	m_BlackBishops = _c8 & _f8;
-	m_BlackRooks = _a8 & _h8;
+	m_BlackKnights = _b8 | _g8;
+	m_BlackBishops = _c8 | _f8;
+	m_BlackRooks = _a8 | _h8;
 	m_BlackQueens = _d8;
 	m_BlackKing = _e8;
-	m_BlackPieces = m_BlackPawns & m_BlackKnights & m_BlackBishops & m_BlackRooks & m_BlackQueens & m_BlackKing;
+	m_BlackPieces = m_BlackPawns | m_BlackKnights | m_BlackBishops | m_BlackRooks | m_BlackQueens | m_BlackKing;
 
 	m_WhitePiecesList.emplace_back(Piece(PieceType::Rook, a1));
 	m_WhitePiecesList.emplace_back(Piece(PieceType::Knight, b1));
@@ -254,7 +254,7 @@ void Position::Update(Move& move)
 		}
 	}
 
-	UpdateCaptureSquare(captureSquare);
+	UpdateCapturedPiece(captureSquare);
 
 	if (indexPieceToRemove.has_value())
 	{
@@ -497,7 +497,7 @@ void Position::UpdatePiece(const Move& move)
 {
 	for (const Piece* piece : {&move.m_From, &move.m_To})
 	{
-		const Bitboard movedPiece(*piece);
+		const Bitboard movedPiece(piece->m_Square);
 
 		switch (piece->m_Type)
 		{
@@ -528,14 +528,21 @@ void Position::UpdatePiece(const Move& move)
 	}
 }
 
-void Position::UpdateCaptureSquare(int squareIdx)
+void Position::UpdateCapturedPiece(int squareIdx)
 {
 	const Bitboard capturedPiece(squareIdx);
-	(m_IsWhiteToPlay ?  m_BlackPawns : m_WhitePawns) ^= capturedPiece;
-	(m_IsWhiteToPlay ? m_BlackKnights : m_WhiteKnights) ^= capturedPiece;
-	(m_IsWhiteToPlay ? m_BlackBishops : m_WhiteBishops) ^= capturedPiece;
-	(m_IsWhiteToPlay ? m_BlackRooks : m_WhiteRooks) ^= capturedPiece;
-	(m_IsWhiteToPlay ? m_BlackQueens : m_WhiteQueens) ^= capturedPiece;
-	(m_IsWhiteToPlay ? m_BlackKing : m_WhiteKing) ^= capturedPiece;
-	(m_IsWhiteToPlay ? m_BlackPieces : m_WhitePieces) ^= capturedPiece;
+	Bitboard* bitboard = (m_IsWhiteToPlay ? &m_BlackPawns : &m_WhitePawns);
+	*bitboard ^= (*bitboard & capturedPiece);
+	bitboard = (m_IsWhiteToPlay ? &m_BlackKnights : &m_WhiteKnights);
+	*bitboard ^= (*bitboard & capturedPiece);
+	bitboard = (m_IsWhiteToPlay ? &m_BlackBishops : &m_WhiteBishops);
+	*bitboard ^= (*bitboard & capturedPiece);
+	bitboard = (m_IsWhiteToPlay ? &m_BlackRooks : &m_WhiteRooks);
+	*bitboard ^= (*bitboard & capturedPiece);
+	bitboard = (m_IsWhiteToPlay ? &m_BlackQueens : &m_WhiteQueens);
+	*bitboard ^= (*bitboard & capturedPiece);
+	bitboard = (m_IsWhiteToPlay ? &m_BlackKing : &m_WhiteKing);
+	*bitboard ^= (*bitboard & capturedPiece);
+	bitboard = (m_IsWhiteToPlay ? &m_BlackPieces : &m_WhitePieces);
+	*bitboard ^= (*bitboard & capturedPiece);
 }

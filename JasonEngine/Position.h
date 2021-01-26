@@ -47,7 +47,7 @@ public:
 	GameStatus GetGameStatus() const { return m_GameStatus; };
 	void SetGameStatus(GameStatus gameStatus) { m_GameStatus = gameStatus; };
 
-	const std::optional<int>& GetEnPassantSquare() const { return m_EnPassantSquare; };
+	const std::optional<Square>& GetEnPassantSquare() const { return m_EnPassantSquare; };
 	void SetEnPassantSquare(Square square);
 	void ResetEnPassantSquare();
 
@@ -148,7 +148,7 @@ public:
 private:
 
 	void UpdatePiece(const Move& move);
-	void UpdateCaptureSquare(int squareIdx);
+	void UpdateCapturedPiece(int squareIdx);
 
 	//REPLACING list of pieces with bitboards!!
 	Bitboard m_WhitePieces;

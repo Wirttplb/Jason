@@ -32,19 +32,12 @@ class Piece
 {
 public:
 	Piece() {};
-	//Piece(PieceType type, Square square) : m_Type(type), m_Square(square) {};
 	Piece(PieceType type, int square) : m_Type(type), m_Square(square) {};
 	
-	//Piece(PieceType type, int x, int y) : m_Type(type), m_Position({ x,y }) {};
-	//Piece(PieceType type, const std::array<int, 2> square) : m_Type(type), m_Position(square) {};
-	//std::array<int, 2> m_Position = { 0, 0 }; //values should range from 0 to 7
-	
-	int m_Square = a1; //from 0 to 63 (a1 = 0, h1 = 7, h8 = 63)
+	int m_Square = a1;
 	PieceType m_Type = PieceType::Pawn;
 
 	/// <summary>Returns position square index</summary>
-	operator std::array<int, 2>() const { return { m_Square % 8, m_Square / 8 }; };
-	operator int() const { return m_Square; };
 	std::array<int, 2> Position() const { return { m_Square % 8, m_Square / 8 }; };
 
 	bool operator==(const Piece& piece) const
@@ -57,6 +50,9 @@ public:
 class Move
 {
 public:
+	Move() {};
+	Move(PieceType type, int from, int to) : m_From(type, from), m_To(type, to) {};
+
 	bool IsCapture() const { return m_Capture.has_value(); };
 
 	bool operator==(const Move& move) const

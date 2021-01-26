@@ -4,6 +4,155 @@
 #include <assert.h>
 #include <iterator>
 
+/// <summary>
+/// Loop over set bits from right to left, callback is called with index of set bit
+/// </summary>
+static void LoopOverSetBits(const Bitboard& bitboard, void callback(int idx))
+{
+	uint64_t bitset = bitboard;
+	while (bitset != 0)
+	{
+		const uint64_t t = bitset & (~bitset + 1);
+		const int idx = __builtin_ctzll(bitset);
+		callback(idx);
+		bitset ^= t;
+	}
+}
+
+static PieceType _type = PieceType::Pawn;
+static int _from = 0;
+static std::vector<Move> _moves;
+static void MakeMove(int to);
+static std::vector<Move> GenerateMoveList(PieceType type, int from, const Bitboard& to)
+{
+	_type = type;
+	_from = from;
+	_moves.clear();
+	LoopOverSetBits(to, MakeMove);
+
+	return _moves;
+}
+
+static void MakeMove(int to)
+{
+	Move move(_type, _from, to);
+	
+	if (_type == PieceType::Pawn)
+	{
+		//Queening moves! COULD BE PLACED IN A TABLE
+		const int row = (to / 8); //could replace int to by bitboard to avoid division here...
+		if (row == 0 || row == 7)
+		{
+			move.m_To.m_Type = PieceType::Knight;
+			_moves.emplace_back(move);
+			move.m_To.m_Type = PieceType::Bishop;
+			_moves.emplace_back(move);
+			move.m_To.m_Type = PieceType::Rook;
+			_moves.emplace_back(move);
+			move.m_To.m_Type = PieceType::Queen;
+			_moves.emplace_back(move);
+		}
+		else
+			_moves.emplace_back(move);
+	}
+	else
+		_moves.emplace_back(move);
+}
+
+/// <summary> Converts list of squares to bitboard </summary>
+static Bitboard ConvertToBitboard(const std::vector<std::array<int, 2>>& squares)
+{
+	std::vector<Bitboard> squaresAsBitboards;
+	for (const std::array<int, 2> & square : squares)
+	{
+		squaresAsBitboards.emplace_back(Bitboard(square[0] + 8 * square[1]));
+	}
+
+	Bitboard squaresAsBitboard;
+	for (const Bitboard& b : squaresAsBitboards)
+	{
+		squaresAsBitboard |= b;
+	}
+
+	return squaresAsBitboard;
+}
+
+/// <summary>
+/// Generates simple move table (no castling, no pawn capture or en passant, no queening)
+/// </summary>
+/// <param name="isPawnDoubleStep">if false, only return single steps for pawn, if true, return double steps</param>
+static std::vector<Bitboard> GenerateMoves(PieceType type, bool isWhitePiece = true, bool isPawnDoubleStep = false)
+{
+	Position position; //ignored
+	position.InitEmptyBoard();
+	std::vector<Bitboard> moveTable(64);
+	for (int square = 0; square < 64; square++)
+	{
+		Piece piece(type, square);
+		Bitboard accessibleSquares = MoveSearcher::GetAccessibleBitboard(position, piece, isWhitePiece, isPawnDoubleStep);
+		if (accessibleSquares > 0)
+			moveTable[square] = accessibleSquares;
+	}
+
+	return moveTable;
+}
+
+/// <summary>
+/// Generates capture move table for pawns
+/// </summary>
+static std::vector<Bitboard> GeneratePawnCaptureMoves(bool isWhitePiece)
+{
+	Position position; //add enemy pieces on every square
+	position.InitEmptyBoard();
+	for (int square = 0; square < 64; square++)
+	{
+		position.GetBlackPiecesList().emplace_back(Piece(PieceType::Knight, square));
+	}
+
+	std::vector<Bitboard> moveTable(64);
+	for (int square = 0; square < 64; square++)
+	{
+		Piece piece(PieceType::Pawn, square);
+		std::vector<std::array<int, 2>> captureSquares = MoveSearcher::GetPawnCaptureSquares(position, piece, isWhitePiece);
+		Bitboard accessibleSquares = ConvertToBitboard(captureSquares);
+		if (accessibleSquares > 0)
+			moveTable[square] = accessibleSquares;
+	}
+
+	return moveTable;
+}
+
+static const std::vector<Bitboard> WhitePawnMoveTable = GenerateMoves(PieceType::Pawn, true);
+static const std::vector<Bitboard> BlackPawnMoveTable = GenerateMoves(PieceType::Pawn, false);
+static const std::vector<Bitboard> WhitePawnDoubleStepMoveTable = GenerateMoves(PieceType::Pawn, true, true);
+static const std::vector<Bitboard> BlackPawnDoubleStepMoveTable = GenerateMoves(PieceType::Pawn, false, true);
+static const std::vector<Bitboard> WhitePawnCaptureMoveTable = GeneratePawnCaptureMoves(true);
+static const std::vector<Bitboard> BlackPawnCaptureMoveTable = GeneratePawnCaptureMoves(false);
+static const std::vector<Bitboard> KingMoveTable = GenerateMoves(PieceType::King); //omits castles
+static const std::vector<Bitboard> QueenMoveTable = GenerateMoves(PieceType::Queen);
+static const std::vector<Bitboard> RookMoveTable = GenerateMoves(PieceType::Rook);
+static const std::vector<Bitboard> BishopMoveTable = GenerateMoves(PieceType::Bishop);
+static const std::vector<Bitboard> KnightMoveTable = GenerateMoves(PieceType::Knight);
+static const Move WhiteKingSideCastle(PieceType::King, e1, g1);
+static const Move WhiteQueenSideCastle(PieceType::King, e1, c1);
+static const Move BlackKingSideCastle(PieceType::King, e8, g8);
+static const Move BlackQueenSideCastle(PieceType::King, e8, c8);
+static const Bitboard WhiteKingCastleInBetweenSquares = _f1 | _g1;
+static const Bitboard WhiteQueenCastleInBetweenSquares = _b1 | _c1 | _d1;
+static const Bitboard BlackKingCastleInBetweenSquares = _f8 | _g8;
+static const Bitboard BlackQueenCastleInBetweenSquares = _b8 | _c8 | _d8;
+
+//template<>
+//struct std::hash<std::pair<Piece, Bitboard>>
+//{
+//	uint64_t operator()(const std::pair<Piece, Bitboard>& pair) const
+//	{
+//		return pair.second >> 4;// +pair.first;
+//	}
+//};
+
+//static const std::unordered_map<std::pair<Piece, Bitboard>, std::vector<Move>> MoveTable; //map {from, to} pair to list of moves
+
 std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position)
 {
 	std::vector<Move> allLegalMoves;
@@ -23,70 +172,86 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position)
 
 std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position, const Piece& piece, bool isWhitePiece)
 {
-	std::vector<std::array<int, 2>> accessibleSquares = GetAccessibleSquares(position, piece, isWhitePiece);
-	
 	//check and keep legal moves
 	std::vector<std::array<int, 2>> legalSquares;
-	for (const std::array<int, 2> & square : accessibleSquares)
+
+	std::vector<Move> movesFromBitboard = GetPseudoLegalMoves(position, piece.m_Type, piece.m_Square, isWhitePiece);
+	if (!movesFromBitboard.empty())
 	{
-		//check square is not blocked by piece
-		bool isBlocked = false;
-		//check friendly pieces
-		const std::vector<Piece>& friendlyPieces = isWhitePiece ? position.GetWhitePiecesList() : position.GetBlackPiecesList();	
-		for (const Piece& friendlyPiece : friendlyPieces)
+		for (const Move& move : movesFromBitboard)
 		{
-			if ((piece.m_Square != friendlyPiece.m_Square) && //dont check itself! /!\ may not share same address
-				IsMoveBlocked(friendlyPiece, piece, square))
-			{
-				isBlocked = true;
-				break;
-			}
+			if (IsMoveIllegal(position, move, isWhitePiece))
+				continue;
+
+			legalSquares.push_back({ move.m_To.m_Square % 8, move.m_To.m_Square / 8 });
 		}
+	}
+	else
+	{
+		std::vector<std::array<int, 2>> accessibleSquares = GetAccessibleSquares(position, piece, isWhitePiece);
 
-		if (isBlocked)
-			continue;
-
-		//check enemy pieces
-		const std::vector<Piece>& enemyPieces = isWhitePiece ? position.GetBlackPiecesList() : position.GetWhitePiecesList();
-		for (const Piece& enemyPiece : enemyPieces)
+	
+		for (const std::array<int, 2> & square : accessibleSquares)
 		{
-			if (IsMoveBlocked(enemyPiece, piece, square))
+			//check square is not blocked by piece
+			bool isBlocked = false;
+			//check friendly pieces
+			const std::vector<Piece>& friendlyPieces = isWhitePiece ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
+			for (const Piece& friendlyPiece : friendlyPieces)
 			{
-				//Check if can take (not blocked by other enemy pieces)
-				//todo: Could optimize if pieces are adjacent
-				if ((enemyPiece.Position() == square) &&
-					!((piece.m_Type == PieceType::King) && (abs(piece.Position()[0] - square[0]) > 1)) && //castles can't take!
-					((piece.m_Type != PieceType::Pawn) || (piece.Position()[0] != enemyPiece.Position()[0]))) //pawn can only take sideways
+				if ((piece.m_Square != friendlyPiece.m_Square) && //dont check itself! /!\ may not share same address
+					IsMoveBlocked(friendlyPiece, piece, square))
 				{
-					for (const Piece& enemyPiece2 : enemyPieces)
+					isBlocked = true;
+					break;
+				}
+			}
+
+			if (isBlocked)
+				continue;
+
+			//check enemy pieces
+			const std::vector<Piece>& enemyPieces = isWhitePiece ? position.GetBlackPiecesList() : position.GetWhitePiecesList();
+			for (const Piece& enemyPiece : enemyPieces)
+			{
+				if (IsMoveBlocked(enemyPiece, piece, square))
+				{
+					//Check if can take (not blocked by other enemy pieces)
+					//todo: Could optimize if pieces are adjacent
+					if ((enemyPiece.Position() == square) &&
+						!((piece.m_Type == PieceType::King) && (abs(piece.Position()[0] - square[0]) > 1)) && //castles can't take!
+						((piece.m_Type != PieceType::Pawn) || (piece.Position()[0] != enemyPiece.Position()[0]))) //pawn can only take sideways
 					{
-						if ((&enemyPiece != &enemyPiece2) &&
-							IsMoveBlocked(enemyPiece2, piece, enemyPiece.Position()))
+						for (const Piece& enemyPiece2 : enemyPieces)
 						{
-							isBlocked = true;
-							break;
+							if ((&enemyPiece != &enemyPiece2) &&
+								IsMoveBlocked(enemyPiece2, piece, enemyPiece.Position()))
+							{
+								isBlocked = true;
+								break;
+							}
 						}
 					}
+					else
+						isBlocked = true;
+
+					break;
 				}
-				else
-					isBlocked = true;
-
-				break;
 			}
+
+			if (isBlocked)
+				continue;
+
+			//move is not blocked by collision, check if illegal move
+			Move move;
+			move.m_From = piece;
+			move.m_To = piece;
+			move.m_To.m_Square = static_cast<Square>(square[0] + 8 * square[1]);
+			if (IsMoveIllegal(position, move, isWhitePiece))
+				continue;
+
+			legalSquares.push_back(square);
 		}
-
-		if (isBlocked)
-			continue;
-
-		//move is not blocked by collision, check if illegal move
-		Move move;
-		move.m_From = piece;
-		move.m_To = piece;
-		move.m_To.m_Square = static_cast<Square>(square[0] + 8 * square[1]);
-		if (IsMoveIllegal(position, move, isWhitePiece))
-			continue;
-
-		legalSquares.push_back(square);
 	}
 
 	std::vector<Move> legalMoves;
@@ -114,6 +279,86 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position, const Pi
 	}
 
 	return legalMoves;
+}
+
+std::vector<Move> MoveSearcher::GetPseudoLegalMoves(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece)
+{
+	//FOR FIRST IMPL, BITBOARD INPUT IS SINGLE SQUARE
+	std::vector<Move> pseudoLegalMoves; //collision checked but checks unchecked
+	const Bitboard& friendlyPieces = (isWhitePiece ? position.GetWhitePieces() : position.GetBlackPieces());
+	const Bitboard& enemyPieces = (isWhitePiece ? position.GetBlackPieces() : position.GetWhitePieces());
+	const Bitboard& allPieces = (friendlyPieces | enemyPieces);
+
+	switch (type)
+	{
+		case PieceType::King:
+		{
+			//bitboard has necessarily only 1 set bit
+			Bitboard toSquares = KingMoveTable[bitboard.GetSquare()] & ~friendlyPieces; //check collisions
+			pseudoLegalMoves = GenerateMoveList(type, bitboard.GetSquare(), toSquares);
+			//Add castling moves, will be ignored if illegal
+			if (isWhitePiece && position.CanWhiteCastleKingSide() &&
+				((WhiteKingCastleInBetweenSquares & allPieces).m_Value == 0)) //check collisions
+				pseudoLegalMoves.push_back(WhiteKingSideCastle);
+			if (isWhitePiece && position.CanWhiteCastleQueenSide() &&
+				((WhiteQueenCastleInBetweenSquares & allPieces).m_Value == 0))
+				pseudoLegalMoves.push_back(WhiteQueenSideCastle);
+			if (!isWhitePiece && position.CanBlackCastleKingSide() &&
+				((BlackKingCastleInBetweenSquares & allPieces).m_Value == 0))
+				pseudoLegalMoves.push_back(BlackKingSideCastle);
+			if (!isWhitePiece && position.CanBlackCastleQueenSide() &&
+				((BlackQueenCastleInBetweenSquares & allPieces).m_Value == 0))
+				pseudoLegalMoves.push_back(BlackQueenSideCastle);
+			break;
+		}
+		case PieceType::Knight:
+		{
+			Bitboard toSquares = KnightMoveTable[bitboard.GetSquare()] & ~friendlyPieces; //check collisions
+			pseudoLegalMoves = GenerateMoveList(type, bitboard.GetSquare(), toSquares);
+			//BELOW TO UNCOMMENT WHEN HANDLING MULTIPLE PIECES AT ONCE (bitboard != single square)
+
+			//loop over from squares
+			/*uint64_t bitset = bitboard;
+			while (bitset != 0)
+			{
+				const uint64_t t = bitset & (~bitset + 1);
+				const int idx = __builtin_ctzll(bitset);
+				Bitboard toSquares = KnightMoveTable.at(idx) ^ friendlyPieces;
+				std::vector<Move> moves = GenerateMoveList(type, idx, toSquares);
+				pseudoLegalMoves.insert(pseudoLegalMoves.end(), make_move_iterator(moves.begin()), make_move_iterator(moves.end()));
+				bitset ^= t;
+			}*/
+
+			break;
+		}
+		case PieceType::Pawn:
+		{
+			//STILL BUGS FOR PAWN MOVES
+			//Add single steps
+			const std::vector<Bitboard>& pawnMoveTable = isWhitePiece ? WhitePawnMoveTable : BlackPawnMoveTable;
+			Bitboard toSquare = pawnMoveTable[bitboard.GetSquare()] & ~(allPieces); //check collisions
+			pseudoLegalMoves = GenerateMoveList(type, bitboard.GetSquare(), toSquare);
+			//Add double steps
+			const std::vector<Bitboard>& pawnDoubleStepsMoveTable = isWhitePiece ? WhitePawnDoubleStepMoveTable : BlackPawnDoubleStepMoveTable;
+			toSquare = pawnDoubleStepsMoveTable[bitboard.GetSquare()] & ~(allPieces);
+			if (toSquare > 0)
+			{
+				Bitboard blockingPieces = (isWhitePiece ? _3 : _6) & allPieces; //check collisions on row 3 or 6
+				toSquare &= ~(isWhitePiece ? blockingPieces << 8 : blockingPieces >> 8);
+				std::vector<Move> doubleStepsMoves = GenerateMoveList(type, bitboard.GetSquare(), toSquare);
+				pseudoLegalMoves.insert(pseudoLegalMoves.end(), std::make_move_iterator(doubleStepsMoves.begin()), std::make_move_iterator(doubleStepsMoves.end()));
+			}
+
+			//Add captures and en passant
+			Bitboard enPassant = (position.GetEnPassantSquare().has_value() ? Bitboard(*position.GetEnPassantSquare()) : Bitboard());
+			Bitboard captureSquares = WhitePawnCaptureMoveTable[bitboard.GetSquare()] & (enemyPieces | enPassant);
+			std::vector<Move> captureMoves = GenerateMoveList(type, bitboard.GetSquare(), captureSquares);
+			pseudoLegalMoves.insert(pseudoLegalMoves.end(), std::make_move_iterator(captureMoves.begin()), std::make_move_iterator(captureMoves.end()));
+			break;
+		}
+	}
+
+	return pseudoLegalMoves;
 }
 
 std::vector<std::array<int, 2>> MoveSearcher::GetAccessibleSquares(const Position& position, const Piece& piece, bool isWhitePiece)
@@ -148,23 +393,8 @@ std::vector<std::array<int, 2>> MoveSearcher::GetAccessibleSquares(const Positio
 			}
 		}
 		//Add other possible captures
-		size_t count = 0;
-		const std::vector<Piece>& enemyPieces = isWhitePiece ? position.GetBlackPiecesList() : position.GetWhitePiecesList();
-		for (const Piece& enemyPiece : enemyPieces)
-		{
-			if (abs(enemyPiece.Position()[0] - piece.Position()[0]) == 1)
-			{
-				const int dy = (enemyPiece.Position()[1] - piece.Position()[1]);
-				if (isWhitePiece && dy == 1 || !isWhitePiece && dy == -1)
-				{
-					accessibleSquares.push_back(enemyPiece.Position());
-					count++;
-				}
-			}
-
-			if (count == 2)
-				break;
-		}
+		std::vector<std::array<int, 2>> captureSquares = GetPawnCaptureSquares(position, piece, isWhitePiece);
+		accessibleSquares.insert(accessibleSquares.end(), std::make_move_iterator(captureSquares.begin()), std::make_move_iterator(captureSquares.end()));
 
 		break;
 	}
@@ -278,6 +508,50 @@ std::vector<std::array<int, 2>> MoveSearcher::GetAccessibleSquares(const Positio
 	}
 
 	return accessibleSquares;
+}
+
+std::vector<std::array<int, 2>> MoveSearcher::GetPawnCaptureSquares(const Position& position, const Piece& piece, bool isWhitePiece)
+{
+	std::vector<std::array<int, 2>> captureSquares;
+
+	size_t count = 0;
+	const std::vector<Piece>& enemyPieces = isWhitePiece ? position.GetBlackPiecesList() : position.GetWhitePiecesList();
+	for (const Piece& enemyPiece : enemyPieces)
+	{
+		if (abs(enemyPiece.Position()[0] - piece.Position()[0]) == 1)
+		{
+			const int dy = (enemyPiece.Position()[1] - piece.Position()[1]);
+			if (isWhitePiece && dy == 1 || !isWhitePiece && dy == -1)
+			{
+				captureSquares.push_back(enemyPiece.Position());
+				count++;
+			}
+		}
+
+		if (count == 2)
+			break;
+	}
+
+	return captureSquares;
+}
+
+Bitboard MoveSearcher::GetAccessibleBitboard(const Position& position, const Piece& piece, bool isWhitePiece, bool isPawnDoubleStep)
+{
+	std::vector<std::array<int, 2>> accessibleSquares = GetAccessibleSquares(position, piece, isWhitePiece);
+	std::vector<std::array<int, 2>> pawnSquare;
+	if (piece.m_Type == PieceType::Pawn)
+	{
+		for (const std::array<int, 2>& square : accessibleSquares)
+		{
+			const int dy = abs(piece.m_Square / 8 - square[1]);
+			if ((isPawnDoubleStep && dy > 1) || (!isPawnDoubleStep && dy == 1))
+				pawnSquare.push_back(square);
+		}
+
+		accessibleSquares = pawnSquare;
+	}
+
+	return ConvertToBitboard(accessibleSquares);
 }
 
 bool MoveSearcher::IsMoveBlocked(const Piece& blockingPiece, const Piece& piece, const std::array<int, 2>& square)

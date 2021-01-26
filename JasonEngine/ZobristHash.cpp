@@ -60,7 +60,7 @@ static std::array<uint64_t, NumberOfKeys> GenerateRandomKeys()
 }
 
 //table size = 64 * 12 + 1 + 4 + 8 = 781: 64 squares + 1 color to move + 4 castling rights + 8 en passant file
-const std::array<uint64_t, NumberOfKeys> Table = GenerateRandomKeys();
+static const std::array<uint64_t, NumberOfKeys> Table = GenerateRandomKeys();
 
 uint64_t ZobristHash::Init()
 {

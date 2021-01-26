@@ -11,15 +11,23 @@ public:
 	/// </summary>
 	/// <param name="piece">piece to move</param>
 	/// <param name="isWhitePiece">true for a white piece</param>
-	/// <param name="enPassantSquare">square of enemy pawn that has just moved two squares</param>
 	/// <returns>list of squares</returns>
+	/// <remark>Very slow, only for table generation</remark>
 	static std::vector<std::array<int, 2>> GetAccessibleSquares(const Position& position, const Piece& piece, bool isWhitePiece);
+	static Bitboard GetAccessibleBitboard(const Position& position, const Piece& piece, bool isWhitePiece, bool isPawnDoubleStep);
+
+	/// <summary>Returns pawn capture squares (according to enemy pieces position)</summary>
+	/// <remark>public for testing</remark>
+	static std::vector<std::array<int, 2>> GetPawnCaptureSquares(const Position& position, const Piece& piece, bool isWhitePiece);
 
 	/// <returns>All legal moves for every piece for a given position, a move being the positions before and after of a piece (and type because of queening)</returns>
 	static std::vector<Move> GetLegalMoves(const Position& position);
 
 	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
 	static std::vector<Move> GetLegalMoves(const Position& position, const Piece& piece, bool isWhitePiece);
+
+	/// <returns>All legal moves for pieces of type whose position is described by bitboard</returns>
+	static std::vector<Move> GetPseudoLegalMoves(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece);
 
 	/// <summary>
 	/// Compute moves from one position, reducing search domain to captures/tactical moves

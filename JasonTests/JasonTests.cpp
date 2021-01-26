@@ -6,8 +6,8 @@
 
 int main()
 {
-    NotationParserTests::Run();
-    ZobristTests::Run();
+    //NotationParserTests::Run();
+    //ZobristTests::Run();
     MoveSearcherTests::Run();
     //TacticsTests::Run();
 

@@ -182,10 +182,10 @@ void NotationParser::TranslateFEN(const std::string& fen, Position& position)
 		position.SetEnPassantSquare(static_cast<Square>(*enPassantFile + 8*(*enPassantRow)));
 	}
 
-	position.GetBlackPieces() = position.GetBlackPawns() & position.GetBlackKnights() & position.GetBlackBishops() &
-		position.GetBlackRooks() & position.GetBlackQueens() & position.GetBlackKing();
-	position.GetWhitePieces() = position.GetWhitePawns() & position.GetWhiteKnights() & position.GetWhiteBishops() &
-		position.GetWhiteRooks() & position.GetWhiteQueens() & position.GetWhiteKing();
+	position.GetBlackPieces() = position.GetBlackPawns() | position.GetBlackKnights() | position.GetBlackBishops() |
+		position.GetBlackRooks() | position.GetBlackQueens() | position.GetBlackKing();
+	position.GetWhitePieces() = position.GetWhitePawns() | position.GetWhiteKnights() | position.GetWhiteBishops() |
+		position.GetWhiteRooks() | position.GetWhiteQueens() | position.GetWhiteKing();
 
 	position.SetZobristHash(position.ComputeZobristHash());
 }
@@ -252,7 +252,7 @@ std::string NotationParser::TranslateToAlgebraic(const Move& move)
 	//Check for castling moves
 	if (move.IsCastling())
 	{
-		if (move.m_To > move.m_From) //kingside
+		if (move.m_To.m_Square > move.m_From.m_Square) //kingside
 			moveString = "O-O";
 		else //queenside
 			moveString = "O-O-O";
