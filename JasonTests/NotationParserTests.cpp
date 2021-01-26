@@ -7,6 +7,7 @@ static const Position startingPositionEnPassant("rnbqkbnr / pppppppp / 8 / 8 / 4
 static const Position position1("r1b3k1 / p1b1Bppp / 5n2 / 2n1p1N1 / 2B5 / 3P4 / 2Q2PPP / qN2R1K1 b - -5 19");
 static const Position perftPosition4("r3k2r / Pppp1ppp / 1b3nbN / nP6 / BBP1P3 / q4N2 / Pp1P2PP / R2Q1RK1 w kq - 0 1");
 static const Position perftPosition4bis("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1");
+static const Position enPassant1("4k3/8/8/2pP4/8/8/8/4K3 w - c6 0 1");
 
 void NotationParserTests::Run()
 {
@@ -52,4 +53,6 @@ void NotationParserTests::Run()
 	ASSERT(positionB.IsWhiteToPlay());
 	ASSERT(positionB.CanWhiteCastleKingSide() && positionB.CanWhiteCastleQueenSide());
 	ASSERT(!positionB.CanBlackCastleKingSide() && !positionB.CanBlackCastleQueenSide());
+
+	ASSERT(enPassant1.GetEnPassantSquare() == c6);
 }

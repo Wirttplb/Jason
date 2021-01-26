@@ -166,9 +166,9 @@ void NotationParser::TranslateFEN(const std::string& fen, Position& position)
 			{
 				enPassantFile = LetterToNumber(c);
 			}
-			else if (isdigit(c) && enPassantFile.has_value()) //en passant row 
+			else if (isdigit(c) && enPassantFile.has_value() && !enPassantRow.has_value()) //en passant row 
 			{
-				enPassantRow = (c - '0') + 1; //0 based
+				enPassantRow = (c - '0') - 1; //0 based
 			}
 			else if (isdigit(c))
 			{

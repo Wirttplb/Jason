@@ -37,26 +37,28 @@ static void MakeMove(int to)
 {
 	Move move(_type, _from, to);
 	
-	if (_type == PieceType::Pawn)
-	{
-		//Queening moves! COULD BE PLACED IN A TABLE
-		const int row = (to / 8); //could replace int to by bitboard to avoid division here...
-		if (row == 0 || row == 7)
-		{
-			move.m_To.m_Type = PieceType::Knight;
-			_moves.emplace_back(move);
-			move.m_To.m_Type = PieceType::Bishop;
-			_moves.emplace_back(move);
-			move.m_To.m_Type = PieceType::Rook;
-			_moves.emplace_back(move);
-			move.m_To.m_Type = PieceType::Queen;
-			_moves.emplace_back(move);
-		}
-		else
-			_moves.emplace_back(move);
-	}
-	else
-		_moves.emplace_back(move);
+	//if (_type == PieceType::Pawn)
+	//{
+	//	//Queening moves! COULD BE PLACED IN A TABLE
+	//	const int row = (to / 8); //could replace int to by bitboard to avoid division here...
+	//	if (row == 0 || row == 7)
+	//	{
+	//		move.m_To.m_Type = PieceType::Queen;
+	//		_moves.emplace_back(move);
+	//		move.m_To.m_Type = PieceType::Rook;
+	//		_moves.emplace_back(move);
+	//		move.m_To.m_Type = PieceType::Bishop;
+	//		_moves.emplace_back(move);
+	//		move.m_To.m_Type = PieceType::Knight;
+	//		_moves.emplace_back(move);
+	//	}
+	//	else
+	//		_moves.emplace_back(move);
+	//}
+	//else
+	//	_moves.emplace_back(move);
+
+	_moves.emplace_back(move);
 }
 
 /// <summary> Converts list of squares to bitboard </summary>
@@ -104,9 +106,10 @@ static std::vector<Bitboard> GeneratePawnCaptureMoves(bool isWhitePiece)
 {
 	Position position; //add enemy pieces on every square
 	position.InitEmptyBoard();
+	std::vector<Piece>& enemyPieces = (isWhitePiece ? position.GetBlackPiecesList() : position.GetWhitePiecesList());
 	for (int square = 0; square < 64; square++)
 	{
-		position.GetBlackPiecesList().emplace_back(Piece(PieceType::Knight, square));
+		enemyPieces.emplace_back(Piece(PieceType::Knight, square));
 	}
 
 	std::vector<Bitboard> moveTable(64);
@@ -350,8 +353,9 @@ std::vector<Move> MoveSearcher::GetPseudoLegalMoves(const Position& position, Pi
 			}
 
 			//Add captures and en passant
+			const std::vector<Bitboard>& pawnCaptureMoveTable = isWhitePiece ? WhitePawnCaptureMoveTable : BlackPawnCaptureMoveTable;
 			Bitboard enPassant = (position.GetEnPassantSquare().has_value() ? Bitboard(*position.GetEnPassantSquare()) : Bitboard());
-			Bitboard captureSquares = WhitePawnCaptureMoveTable[bitboard.GetSquare()] & (enemyPieces | enPassant);
+			Bitboard captureSquares = pawnCaptureMoveTable[bitboard.GetSquare()] & (enemyPieces | enPassant);
 			std::vector<Move> captureMoves = GenerateMoveList(type, bitboard.GetSquare(), captureSquares);
 			pseudoLegalMoves.insert(pseudoLegalMoves.end(), std::make_move_iterator(captureMoves.begin()), std::make_move_iterator(captureMoves.end()));
 			break;

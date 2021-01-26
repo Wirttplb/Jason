@@ -52,6 +52,7 @@ class Move
 public:
 	Move() {};
 	Move(PieceType type, int from, int to) : m_From(type, from), m_To(type, to) {};
+	Move(PieceType fromType, PieceType toType, int from, int to) : m_From(fromType, from), m_To(toType, to) {};
 
 	bool IsCapture() const { return m_Capture.has_value(); };
 

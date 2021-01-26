@@ -102,9 +102,120 @@ static void TestIllegalCastles()
 	ASSERT(castles == 0);
 }
 
+static void TestPawnMoves()
+{
+	Position position("4k3/2p5/8/8/8/8/2P5/4K3 w - - 0 1");
+	Piece pawn(PieceType::Pawn, c2);
+	std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, pawn, true);
+	ASSERT(moves.size() == 2);
+	ASSERT(moves.front() == Move(PieceType::Pawn, c2, c3));
+	ASSERT(moves.back() == Move(PieceType::Pawn, c2, c4));
+
+	pawn = Piece(PieceType::Pawn, c7);
+	moves = MoveSearcher::GetLegalMoves(position, pawn, false);
+	ASSERT(moves.size() == 2);
+	ASSERT(moves.front() == Move(PieceType::Pawn, c7, c6));
+	ASSERT(moves.back() == Move(PieceType::Pawn, c7, c5));
+
+	position = Position("4k3 / 2p5 / 8 / 8 / 8 / 1n1n4 / 2P5 / 5K2 w - -0 1");
+	pawn = Piece(PieceType::Pawn, c2);
+	moves = MoveSearcher::GetLegalMoves(position, pawn, true);
+	ASSERT(moves.size() == 4);
+	ASSERT(moves[0] == Move(PieceType::Pawn, c2, c3));
+	ASSERT(moves[1] == Move(PieceType::Pawn, c2, c4));
+	ASSERT(moves[2] == Move(PieceType::Pawn, c2, b3));
+	ASSERT(moves[3] == Move(PieceType::Pawn, c2, d3));
+
+	position = Position("4k3 / 2p5 / 8 / 8 / 8 / 1n1n4 / 2P5 / 5K2 w - -0 1");
+	pawn = Piece(PieceType::Pawn, c2);
+	moves = MoveSearcher::GetLegalMoves(position, pawn, true);
+	ASSERT(moves.size() == 4);
+	ASSERT(moves[0] == Move(PieceType::Pawn, c2, c3));
+	ASSERT(moves[1] == Move(PieceType::Pawn, c2, c4));
+	ASSERT(moves[2] == Move(PieceType::Pawn, c2, b3));
+	ASSERT(moves[3] == Move(PieceType::Pawn, c2, d3));
+
+	position = Position("5k2/2p5/1N1N4/8/8/8/2P5/5K2 w - - 0 1");
+	pawn = Piece(PieceType::Pawn, c7);
+	moves = MoveSearcher::GetLegalMoves(position, pawn, false);
+	ASSERT(moves.size() == 4);
+	ASSERT(moves[0] == Move(PieceType::Pawn, c7, c6));
+	ASSERT(moves[1] == Move(PieceType::Pawn, c7, c5));
+	ASSERT(moves[2] == Move(PieceType::Pawn, c7, b6));
+	ASSERT(moves[3] == Move(PieceType::Pawn, c7, d6));
+
+	position = Position("5k2/2p5/1N1N4/8/8/8/2P5/5K2 w - - 0 1");
+	pawn = Piece(PieceType::Pawn, c7);
+	moves = MoveSearcher::GetLegalMoves(position, pawn, false);
+	ASSERT(moves.size() == 4);
+	ASSERT(moves[0] == Move(PieceType::Pawn, c7, c6));
+	ASSERT(moves[1] == Move(PieceType::Pawn, c7, c5));
+	ASSERT(moves[2] == Move(PieceType::Pawn, c7, b6));
+	ASSERT(moves[3] == Move(PieceType::Pawn, c7, d6));
+
+	position = Position("4k3/8/8/2pP4/8/8/8/4K3 w - c6 0 1");
+	pawn = Piece(PieceType::Pawn, d5);
+	moves = MoveSearcher::GetLegalMoves(position, pawn, true);
+	ASSERT(moves.size() == 2);
+	ASSERT(moves[0] == Move(PieceType::Pawn, d5, d6));
+	ASSERT(moves[1] == Move(PieceType::Pawn, d5, c6));
+
+	position = Position("4k3/8/8/3Pp3/8/8/8/4K3 w - e6 0 1");
+	pawn = Piece(PieceType::Pawn, d5);
+	moves = MoveSearcher::GetLegalMoves(position, pawn, true);
+	ASSERT(moves.size() == 2);
+	ASSERT(moves[0] == Move(PieceType::Pawn, d5, d6));
+	ASSERT(moves[1] == Move(PieceType::Pawn, d5, e6));
+
+	position = Position("4k3/8/8/8/2Pp4/8/8/4K3 b - c3 0 1");
+	pawn = Piece(PieceType::Pawn, d4);
+	moves = MoveSearcher::GetLegalMoves(position, pawn, false);
+	ASSERT(moves.size() == 2);
+	ASSERT(moves[0] == Move(PieceType::Pawn, d4, d3));
+	ASSERT(moves[1] == Move(PieceType::Pawn, d4, c3));
+
+	position = Position("4k3/8/8/8/3pP3/8/8/4K3 b - e3 0 1");
+	pawn = Piece(PieceType::Pawn, d4);
+	moves = MoveSearcher::GetLegalMoves(position, pawn, false);
+	ASSERT(moves.size() == 2);
+	ASSERT(moves[0] == Move(PieceType::Pawn, d4, d3));
+	ASSERT(moves[1] == Move(PieceType::Pawn, d4, e3));
+
+	position = Position("4k3/1P6/8/3p4/8/8/8/4K3 w - d6 0 1");
+	pawn = Piece(PieceType::Pawn, b7);
+	moves = MoveSearcher::GetLegalMoves(position, pawn, true);
+	ASSERT(moves.size() == 4);
+	ASSERT(moves[0] == Move(PieceType::Pawn, PieceType::Queen, b7, b8));
+	ASSERT(moves[1] == Move(PieceType::Pawn, PieceType::Rook, b7, b8));
+	ASSERT(moves[2] == Move(PieceType::Pawn, PieceType::Bishop, b7, b8));
+	ASSERT(moves[3] == Move(PieceType::Pawn, PieceType::Knight, b7, b8));
+
+	position = Position("nnn1k3/1P6/8/3p4/8/8/8/4K3 w - d6 0 1");
+	pawn = Piece(PieceType::Pawn, b7);
+	moves = MoveSearcher::GetLegalMoves(position, pawn, true);
+	ASSERT(moves.size() == 8);
+	ASSERT(moves[0] == Move(PieceType::Pawn, PieceType::Queen, b7, a8));
+	ASSERT(moves[1] == Move(PieceType::Pawn, PieceType::Rook, b7, a8));
+	ASSERT(moves[2] == Move(PieceType::Pawn, PieceType::Bishop, b7, a8));
+	ASSERT(moves[3] == Move(PieceType::Pawn, PieceType::Knight, b7, a8));
+	ASSERT(moves[4] == Move(PieceType::Pawn, PieceType::Queen, b7, c8));
+	ASSERT(moves[5] == Move(PieceType::Pawn, PieceType::Rook, b7, c8));
+	ASSERT(moves[6] == Move(PieceType::Pawn, PieceType::Bishop, b7, c8));
+	ASSERT(moves[7] == Move(PieceType::Pawn, PieceType::Knight, b7, c8));
+
+	position = Position("nnn1k3/1P6/8/3p4/8/8/1p6/N1N1K3 b - - 0 1");
+	pawn = Piece(PieceType::Pawn, b2);
+	moves = MoveSearcher::GetLegalMoves(position, pawn, false);
+	ASSERT(moves.size() == 12);
+	ASSERT(moves[0] == Move(PieceType::Pawn, PieceType::Queen, b2, b1));
+	ASSERT(moves[4] == Move(PieceType::Pawn, PieceType::Queen, b2, a1));
+	ASSERT(moves[8] == Move(PieceType::Pawn, PieceType::Queen, b2, c1));
+}
+
 void MoveSearcherTests::Run()
 {
 	TestIllegalCastles();
+	TestPawnMoves();
 
 	//simple stalemate
 	std::vector<Position> positions = MoveSearcher::GetAllPossiblePositions(staleMateWhiteToPlay);
