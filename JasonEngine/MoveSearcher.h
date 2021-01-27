@@ -26,6 +26,9 @@ public:
 	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
 	static std::vector<Move> GetLegalMoves(const Position& position, const Piece& piece, bool isWhitePiece);
 
+	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
+	static std::vector<Move> GetLegalMovesFromBitboards(const Position& position, const Piece& piece, bool isWhitePiece);
+
 	/// <returns>All legal moves for pieces of type whose position is described by bitboard</returns>
 	static std::vector<Move> GetPseudoLegalMoves(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece);
 

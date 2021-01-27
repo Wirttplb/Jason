@@ -9,6 +9,16 @@
 /// <summary>
 /// Bitboard representation, Little endian rank-file (LERF)
 /// </summary>
+/// 
+/// Compass Rose for square indices:
+/// noWe         north         noEa
+///           +7 + 8 + 9
+///             \  |  /
+///    west - 1 < -0 -> + 1    east
+///	            /  |  \
+///	         - 9 - 8 - 7
+///	soWe         south         soEa
+/// 
 class Bitboard
 {
 public:
@@ -28,11 +38,18 @@ public:
 	void operator^=(const Bitboard& bitboard);
 	Bitboard operator<<(int shift) const;
 	Bitboard operator>>(int shift) const;
+	Bitboard operator-(const Bitboard& bitboard) const;
 	operator uint64_t() const { return m_Value; };
 
 	bool operator==(const Bitboard& bitboard) const { return (m_Value == bitboard.m_Value); }; //for hash definition
 
+	Bitboard FlipVertically() const;
+	Bitboard FlipA1H8() const;
+	Bitboard Rotate90Clockwise() const;
+	Bitboard Rotate90AntiClockwise() const;
+
 	/// <returns>Square index ; only a single bit should be set, otherwise unknown result</returns>
+	/// <remark>Row index is square / 8 (or square >> 3) ; File index is square % 8 (or square & 7)<remark>
 	int GetSquare() const;
 
 	std::string ToString() const;
@@ -374,3 +391,51 @@ static const Bitboard c1h6
 	0, 0, 0, 1, 0, 0, 0, 0,
 	0, 0, 1, 0, 0, 0, 0, 0
 });
+
+static const std::array<Bitboard, 8> _rows = { _1, _2, _3, _4, _5, _6, _7, _8 };
+static const std::array<Bitboard, 8> _files = { _a, _b, _c, _d, _e, _f, _g, _h };
+
+static constexpr Bitboard GetRowsAbove(int r)
+{
+	Bitboard rows;
+	for (size_t i = r; i < 8; i++)
+	{
+		rows |= _rows[i];
+	}
+
+	return rows;
+}
+
+static constexpr Bitboard GetRowsUnder(int r)
+{
+	Bitboard rows;
+	for (size_t i = r; i >= 0; i--)
+	{
+		rows |= _rows[i];
+	}
+
+	return rows;
+}
+
+
+static constexpr Bitboard GetFilesOnLeft(int f)
+{
+	Bitboard files;
+	for (size_t i = f; i < 8; i++)
+	{
+		files |= _files[i];
+	}
+
+	return files;
+}
+
+static constexpr Bitboard GetFilesOnRight(int f)
+{
+	Bitboard files;
+	for (size_t i = f; i >= 0; i--)
+	{
+		files |= _files[i];
+	}
+
+	return files;
+}

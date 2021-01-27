@@ -15,6 +15,30 @@ static const Position perftPosition4bis("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/
 static const Position perftPosition5("rnbq1k1r / pp1Pbppp / 2p5 / 8 / 2B5 / 8 / PPP1NnPP / RNBQK2R w KQ - 1 8");
 static const Position perftPosition6("r4rk1 / 1pp1qppp / p1np1n2 / 2b1p1B1 / 2B1P1b1 / P1NP1N2 / 1PP1QPPP / R4RK1 w - -0 10");
 
+static void TestRookMoves()
+{
+	Position position("4k3/8/8/8/8/8/6K1/R7 w - - 0 1");
+	Piece rook(PieceType::Rook, a1);
+	std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, rook, true);
+	ASSERT(moves.size() == 14);
+
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, rook, true);
+	ASSERT(moves.size() == 14);
+
+	position = Position("4k3/8/8/N7/8/8/4K3/R2N4 w - - 0 1");
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, rook, true);
+	ASSERT(moves.size() == 5);
+
+	position = Position("4k3/8/8/n7/8/8/4K3/R2N4 w - - 0 1");
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, rook, true);
+	ASSERT(moves.size() == 6);
+
+	rook = Piece(PieceType::Rook, g5);
+	position = Position("4k1n1/8/8/N5Rn/8/8/4K3/8 w - - 0 1");
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, rook, true);
+	ASSERT(moves.size() == 13);
+}
+
 static void TestIllegalCastles()
 {
 	//legal castles
@@ -214,8 +238,9 @@ static void TestPawnMoves()
 
 void MoveSearcherTests::Run()
 {
-	TestIllegalCastles();
 	TestPawnMoves();
+	TestRookMoves();
+	TestIllegalCastles();
 
 	//simple stalemate
 	std::vector<Position> positions = MoveSearcher::GetAllPossiblePositions(staleMateWhiteToPlay);

@@ -89,6 +89,53 @@ Bitboard Bitboard::operator>>(int shift) const
 	return result;
 }
 
+Bitboard Bitboard::operator-(const Bitboard& bitboard) const
+{
+	Bitboard result = *this;
+	result.m_Value -= bitboard.m_Value;
+	return result;
+}
+
+Bitboard Bitboard::FlipVertically() const
+{
+	//https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating
+	Bitboard flippedBitboard;
+	flippedBitboard.m_Value = _byteswap_uint64(this->m_Value);
+	return flippedBitboard;
+}
+
+Bitboard Bitboard::FlipA1H8() const
+{
+	//https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating
+	Bitboard flippedBitboard = *this;
+	uint64_t t;
+	const uint64_t k1 = (0x5500550055005500);
+	const uint64_t k2 = (0x3333000033330000);
+	const uint64_t k4 = (0x0f0f0f0f00000000);
+	t = k4 & (flippedBitboard.m_Value ^ (flippedBitboard.m_Value << 28));
+	flippedBitboard.m_Value ^= t ^ (t >> 28);
+	t = k2 & (flippedBitboard.m_Value ^ (flippedBitboard.m_Value << 14));
+	flippedBitboard.m_Value ^= t ^ (t >> 14);
+	t = k1 & (flippedBitboard.m_Value ^ (flippedBitboard.m_Value << 7));
+	flippedBitboard.m_Value ^= t ^ (t >> 7);
+
+	return flippedBitboard;
+}
+
+Bitboard Bitboard::Rotate90Clockwise() const
+{
+	Bitboard rotatedBitboard = this->FlipA1H8();
+	rotatedBitboard = rotatedBitboard.FlipVertically();
+	return rotatedBitboard;
+}
+
+Bitboard Bitboard::Rotate90AntiClockwise() const
+{
+	Bitboard rotatedBitboard = this->FlipVertically();
+	rotatedBitboard = rotatedBitboard.FlipA1H8();
+	return rotatedBitboard;
+}
+
 int Bitboard::GetSquare() const
 {
 	return __builtin_ctzll(m_Value);

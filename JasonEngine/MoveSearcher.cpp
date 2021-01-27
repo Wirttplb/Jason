@@ -19,6 +19,18 @@ static void LoopOverSetBits(const Bitboard& bitboard, void callback(int idx))
 	}
 }
 
+static void LoopOverSetBits(const uint8_t& byte, void callback(int idx))
+{
+	uint8_t bitset = byte;
+	while (bitset != 0)
+	{
+		const uint8_t t = bitset & (~bitset + 1);
+		const int idx = __builtin_ctz(bitset);
+		callback(idx);
+		bitset ^= t;
+	}
+}
+
 static PieceType _type = PieceType::Pawn;
 static int _from = 0;
 static std::vector<Move> _moves;
@@ -125,6 +137,52 @@ static std::vector<Bitboard> GeneratePawnCaptureMoves(bool isWhitePiece)
 	return moveTable;
 }
 
+static Position _rookAttacksPosition("4k3/8/8/8/8/8/4K3/8 w - - 0 1");
+static void AddPiece(int squareIdx)
+{
+	_rookAttacksPosition.GetBlackPiecesList().emplace_back(Piece(PieceType::Knight, squareIdx));
+}
+
+static std::array<std::array<Bitboard, 256>, 8> GenerateRookAttacks()
+{
+	bool isWhiteToPlay = true;
+	std::array<std::array<Bitboard, 256>, 8> rookAttacksTable;
+	
+	for (int rookSquare = 0; rookSquare < 8; rookSquare++)
+	{
+		for (uint8_t i = 1; i < std::numeric_limits<uint8_t>::max(); i++)
+		{
+			_rookAttacksPosition.GetBlackPiecesList().clear();
+			LoopOverSetBits(i, AddPiece);
+			//Remove dummy piece on rook's square
+			for (size_t pieceIdx = 0; pieceIdx < _rookAttacksPosition.GetBlackPiecesList().size(); pieceIdx++)
+			{
+				if (_rookAttacksPosition.GetBlackPiecesList()[pieceIdx].m_Square == rookSquare)
+				{
+					_rookAttacksPosition.GetBlackPiecesList().erase(_rookAttacksPosition.GetBlackPiecesList().begin() + pieceIdx);
+					break;
+				}
+			}
+
+			std::vector<Move> moves = MoveSearcher::GetLegalMoves(_rookAttacksPosition, Piece(PieceType::Rook, rookSquare), isWhiteToPlay);
+			std::vector<std::array<int, 2>> attackSquares;
+			for (const Move& move : moves)
+			{
+				attackSquares.emplace_back(std::array<int, 2>{ move.m_To.m_Square % 8, move.m_To.m_Square / 8 });
+			}
+			
+			rookAttacksTable[rookSquare][i] = ConvertToBitboard(attackSquares) & _1; //attack squares on 1st row
+		}
+	}
+
+	return rookAttacksTable;
+}
+
+
+//AttackTable
+static const std::array<std::array<Bitboard, 256>, 8> RookAttackTable = GenerateRookAttacks(); //first idx is rook, 2nd is 1st row occupancy (including rook)
+
+//MoveTable = on empty board
 static const std::vector<Bitboard> WhitePawnMoveTable = GenerateMoves(PieceType::Pawn, true);
 static const std::vector<Bitboard> BlackPawnMoveTable = GenerateMoves(PieceType::Pawn, false);
 static const std::vector<Bitboard> WhitePawnDoubleStepMoveTable = GenerateMoves(PieceType::Pawn, true, true);
@@ -145,16 +203,46 @@ static const Bitboard WhiteQueenCastleInBetweenSquares = _b1 | _c1 | _d1;
 static const Bitboard BlackKingCastleInBetweenSquares = _f8 | _g8;
 static const Bitboard BlackQueenCastleInBetweenSquares = _b8 | _c8 | _d8;
 
-//template<>
-//struct std::hash<std::pair<Piece, Bitboard>>
-//{
-//	uint64_t operator()(const std::pair<Piece, Bitboard>& pair) const
-//	{
-//		return pair.second >> 4;// +pair.first;
-//	}
-//};
+/// <summary>
+/// Generates rook attacks from square index and occupancy
+/// </summary>
+static Bitboard GenerateRookAttacks(int fromSquare, const Bitboard& occupancy)
+{
+	Bitboard toSquares = RookMoveTable[fromSquare];
+	const int row = fromSquare >> 3; //or / 8
+	const int file = fromSquare & 7; //or % 8
+	//o^(o-2r) see https://www.chessprogramming.org/Subtracting_a_Rook_from_a_Blocking_Piece
+	//vertical attack squares:
+	/*uint64_t blockers = occupancy & _files[file];
+	uint64_t difference = blockers - 2 * Bitboard(fromSquare).m_Value;
+	uint64_t changed = difference ^ occupancy;
+	uint64_t northAttacks = changed & _files[file];
 
-//static const std::unordered_map<std::pair<Piece, Bitboard>, std::vector<Move>> MoveTable; //map {from, to} pair to list of moves
+	blockers = occupancy & _rows[row];
+	difference = blockers - 2 * Bitboard(fromSquare).m_Value;
+	changed = difference ^ occupancy;
+	uint64_t eastAttacks = changed & _rows[row];*/
+
+	//Get row attacks
+	Bitboard rowOccupancy = occupancy & _rows[row];
+	//shift to first row to get key
+	rowOccupancy = rowOccupancy >> (row) * 8;
+	Bitboard rowAttacks = RookAttackTable[file][rowOccupancy];
+	//unshift
+	rowAttacks = rowAttacks << (row) * 8;
+
+	//Get file attacks using rotated bitboards:
+	Bitboard fileOccupancy = occupancy & _files[file];
+	Bitboard rotatedFile = fileOccupancy.Rotate90Clockwise();
+	//shift to first row
+	rotatedFile = rotatedFile >> (7 - file) * 8;
+	Bitboard fileAttacks = RookAttackTable[row][rotatedFile];
+	//unshift and unrotate
+	fileAttacks = fileAttacks << (7 - file) * 8;
+	fileAttacks = fileAttacks.Rotate90AntiClockwise();
+
+	return rowAttacks | fileAttacks;
+}
 
 std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position)
 {
@@ -164,7 +252,10 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position)
 	for (const Piece& piece : piecesToMove)
 	{
 		//Get Legal moves
-		std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, piece, position.IsWhiteToPlay());
+		std::vector<Move> moves = GetLegalMovesFromBitboards(position, piece, position.IsWhiteToPlay());
+		if (moves.empty())
+			moves = GetLegalMoves(position, piece, position.IsWhiteToPlay());
+
 		allLegalMoves.insert(allLegalMoves.end(),
 			std::make_move_iterator(moves.begin()),
 			std::make_move_iterator(moves.end()));
@@ -177,84 +268,68 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position, const Pi
 {
 	//check and keep legal moves
 	std::vector<std::array<int, 2>> legalSquares;
-
-	std::vector<Move> movesFromBitboard = GetPseudoLegalMoves(position, piece.m_Type, piece.m_Square, isWhitePiece);
-	if (!movesFromBitboard.empty())
-	{
-		for (const Move& move : movesFromBitboard)
-		{
-			if (IsMoveIllegal(position, move, isWhitePiece))
-				continue;
-
-			legalSquares.push_back({ move.m_To.m_Square % 8, move.m_To.m_Square / 8 });
-		}
-	}
-	else
-	{
-		std::vector<std::array<int, 2>> accessibleSquares = GetAccessibleSquares(position, piece, isWhitePiece);
-
+	std::vector<std::array<int, 2>> accessibleSquares = GetAccessibleSquares(position, piece, isWhitePiece);
 	
-		for (const std::array<int, 2> & square : accessibleSquares)
+	for (const std::array<int, 2> & square : accessibleSquares)
+	{
+		//check square is not blocked by piece
+		bool isBlocked = false;
+		//check friendly pieces
+		const std::vector<Piece>& friendlyPieces = isWhitePiece ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
+		for (const Piece& friendlyPiece : friendlyPieces)
 		{
-			//check square is not blocked by piece
-			bool isBlocked = false;
-			//check friendly pieces
-			const std::vector<Piece>& friendlyPieces = isWhitePiece ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
-			for (const Piece& friendlyPiece : friendlyPieces)
+			if ((piece.m_Square != friendlyPiece.m_Square) && //dont check itself! /!\ may not share same address
+				IsMoveBlocked(friendlyPiece, piece, square))
 			{
-				if ((piece.m_Square != friendlyPiece.m_Square) && //dont check itself! /!\ may not share same address
-					IsMoveBlocked(friendlyPiece, piece, square))
-				{
-					isBlocked = true;
-					break;
-				}
+				isBlocked = true;
+				break;
 			}
+		}
 
-			if (isBlocked)
-				continue;
+		if (isBlocked)
+			continue;
 
-			//check enemy pieces
-			const std::vector<Piece>& enemyPieces = isWhitePiece ? position.GetBlackPiecesList() : position.GetWhitePiecesList();
-			for (const Piece& enemyPiece : enemyPieces)
+		//check enemy pieces
+		const std::vector<Piece>& enemyPieces = isWhitePiece ? position.GetBlackPiecesList() : position.GetWhitePiecesList();
+		for (const Piece& enemyPiece : enemyPieces)
+		{
+			if (IsMoveBlocked(enemyPiece, piece, square))
 			{
-				if (IsMoveBlocked(enemyPiece, piece, square))
+				//Check if can take (not blocked by other enemy pieces)
+				//todo: Could optimize if pieces are adjacent
+				if ((enemyPiece.Position() == square) &&
+					!((piece.m_Type == PieceType::King) && (abs(piece.Position()[0] - square[0]) > 1)) && //castles can't take!
+					((piece.m_Type != PieceType::Pawn) || (piece.Position()[0] != enemyPiece.Position()[0]))) //pawn can only take sideways
 				{
-					//Check if can take (not blocked by other enemy pieces)
-					//todo: Could optimize if pieces are adjacent
-					if ((enemyPiece.Position() == square) &&
-						!((piece.m_Type == PieceType::King) && (abs(piece.Position()[0] - square[0]) > 1)) && //castles can't take!
-						((piece.m_Type != PieceType::Pawn) || (piece.Position()[0] != enemyPiece.Position()[0]))) //pawn can only take sideways
+					for (const Piece& enemyPiece2 : enemyPieces)
 					{
-						for (const Piece& enemyPiece2 : enemyPieces)
+						if ((&enemyPiece != &enemyPiece2) &&
+							IsMoveBlocked(enemyPiece2, piece, enemyPiece.Position()))
 						{
-							if ((&enemyPiece != &enemyPiece2) &&
-								IsMoveBlocked(enemyPiece2, piece, enemyPiece.Position()))
-							{
-								isBlocked = true;
-								break;
-							}
+							isBlocked = true;
+							break;
 						}
 					}
-					else
-						isBlocked = true;
-
-					break;
 				}
+				else
+					isBlocked = true;
+
+				break;
 			}
-
-			if (isBlocked)
-				continue;
-
-			//move is not blocked by collision, check if illegal move
-			Move move;
-			move.m_From = piece;
-			move.m_To = piece;
-			move.m_To.m_Square = static_cast<Square>(square[0] + 8 * square[1]);
-			if (IsMoveIllegal(position, move, isWhitePiece))
-				continue;
-
-			legalSquares.push_back(square);
 		}
+
+		if (isBlocked)
+			continue;
+
+		//move is not blocked by collision, check if illegal move
+		Move move;
+		move.m_From = piece;
+		move.m_To = piece;
+		move.m_To.m_Square = static_cast<Square>(square[0] + 8 * square[1]);
+		if (IsMoveIllegal(position, move, isWhitePiece))
+			continue;
+
+		legalSquares.push_back(square);
 	}
 
 	std::vector<Move> legalMoves;
@@ -279,6 +354,38 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position, const Pi
 		}
 		else
 			legalMoves.emplace_back(move);
+	}
+
+	return legalMoves;
+}
+
+std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(const Position& position, const Piece& piece, bool isWhitePiece)
+{
+	std::vector<Move> legalMoves;
+	std::vector<Move> pseudoLegalMoves = GetPseudoLegalMoves(position, piece.m_Type, piece.m_Square, isWhitePiece);
+	
+	if (!pseudoLegalMoves.empty())
+	{
+		for (Move& move : pseudoLegalMoves)
+		{
+			if (IsMoveIllegal(position, move, isWhitePiece))
+				continue;
+
+			if ((piece.m_Type == PieceType::Pawn) &&
+				((isWhitePiece && (move.m_To.Position()[1] == 7)) || (!isWhitePiece && (move.m_To.Position()[1] == 0))))
+			{
+				move.m_To.m_Type = PieceType::Queen;
+				legalMoves.emplace_back(move);
+				move.m_To.m_Type = PieceType::Rook;
+				legalMoves.emplace_back(move);
+				move.m_To.m_Type = PieceType::Bishop;
+				legalMoves.emplace_back(move);
+				move.m_To.m_Type = PieceType::Knight;
+				legalMoves.emplace_back(move);
+			}
+			else
+				legalMoves.emplace_back(move);
+		}
 	}
 
 	return legalMoves;
@@ -336,7 +443,6 @@ std::vector<Move> MoveSearcher::GetPseudoLegalMoves(const Position& position, Pi
 		}
 		case PieceType::Pawn:
 		{
-			//STILL BUGS FOR PAWN MOVES
 			//Add single steps
 			const std::vector<Bitboard>& pawnMoveTable = isWhitePiece ? WhitePawnMoveTable : BlackPawnMoveTable;
 			Bitboard toSquare = pawnMoveTable[bitboard.GetSquare()] & ~(allPieces); //check collisions
@@ -358,6 +464,15 @@ std::vector<Move> MoveSearcher::GetPseudoLegalMoves(const Position& position, Pi
 			Bitboard captureSquares = pawnCaptureMoveTable[bitboard.GetSquare()] & (enemyPieces | enPassant);
 			std::vector<Move> captureMoves = GenerateMoveList(type, bitboard.GetSquare(), captureSquares);
 			pseudoLegalMoves.insert(pseudoLegalMoves.end(), std::make_move_iterator(captureMoves.begin()), std::make_move_iterator(captureMoves.end()));
+			break;
+		}
+		case PieceType::Rook:
+		{
+			Bitboard rookAttacks = GenerateRookAttacks(bitboard.GetSquare(), allPieces);
+			//mask with friendlyPieces to remove unwanted captures
+			rookAttacks = rookAttacks & (~friendlyPieces);
+			std::vector<Move> rookMoves = GenerateMoveList(type, bitboard.GetSquare(), rookAttacks);
+			pseudoLegalMoves.insert(pseudoLegalMoves.end(), std::make_move_iterator(rookMoves.begin()), std::make_move_iterator(rookMoves.end()));
 			break;
 		}
 	}
@@ -680,16 +795,24 @@ std::vector<Position> MoveSearcher::GetAllPossiblePositions(const Position& posi
 {
 	std::vector<Position> positions;
 
-	const std::vector<Piece>& piecesToPlay = position.IsWhiteToPlay() ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
-	for (const Piece& piece : piecesToPlay)
+	//const std::vector<Piece>& piecesToPlay = position.IsWhiteToPlay() ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
+	//for (const Piece& piece : piecesToPlay)
+	//{
+	//	std::vector<Move> pieceMoves = GetLegalMoves(position, piece, position.IsWhiteToPlay());
+	//	for (Move& move : pieceMoves)
+	//	{
+	//		Position newPosition = position;
+	//		newPosition.Update(move);
+	//		positions.emplace_back(std::move(newPosition));
+	//	}
+	//}
+
+	std::vector<Move> pieceMoves = GetLegalMoves(position);
+	for (Move& move : pieceMoves)
 	{
-		std::vector<Move> pieceMoves = GetLegalMoves(position, piece, position.IsWhiteToPlay());
-		for (Move& move : pieceMoves)
-		{
-			Position newPosition = position;
-			newPosition.Update(move);
-			positions.emplace_back(std::move(newPosition));
-		}
+		Position newPosition = position;
+		newPosition.Update(move);
+		positions.emplace_back(std::move(newPosition));
 	}
 
 	return positions;
