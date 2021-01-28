@@ -22,6 +22,7 @@ public:
 
 	/// <returns>All legal moves for every piece for a given position, a move being the positions before and after of a piece (and type because of queening)</returns>
 	static std::vector<Move> GetLegalMoves(const Position& position);
+	static std::vector<Move> GetLegalMovesFromBitboards(const Position& position);
 
 	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
 	static std::vector<Move> GetLegalMoves(const Position& position, const Piece& piece, bool isWhitePiece);
@@ -30,6 +31,7 @@ public:
 	static std::vector<Move> GetLegalMovesFromBitboards(const Position& position, const Piece& piece, bool isWhitePiece);
 
 	/// <returns>All legal moves for pieces of type whose position is described by bitboard</returns>
+	static Bitboard GetPseudoLegalBitboardMoves(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece);
 	static std::vector<Move> GetPseudoLegalMoves(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece);
 
 	/// <summary>
@@ -53,6 +55,7 @@ public:
 	static std::unordered_set<Position> GetAllUniquePositions(const Position& position, int depth);
 
 	static bool IsKingInCheck(const Position& position, bool isWhiteKing);
+	static bool IsKingInCheckFromBitboards(const Position& position, bool isWhiteKing);
 
 	/// <summary>
 	/// Return a random legal move from a given position (null if stalemate or checkmate)
@@ -72,4 +75,5 @@ private:
 	/// <param name=="isWhitePiece">true if piece to move is white</param>
 	/// </summary>
 	static bool IsMoveIllegal(const Position& position, const Move& move, bool isWhitePiece);
+	static bool IsMoveIllegalFromBitboards(const Position& position, const Move& move, bool isWhitePiece);
 };

@@ -145,6 +145,8 @@ public:
 	/// </summary>
 	bool AreEqual(const Position& position) const;
 
+	bool CheckBitboardsSanity() const;
+
 private:
 
 	void UpdatePiece(const Move& move);

@@ -43,10 +43,17 @@ public:
 
 	bool operator==(const Bitboard& bitboard) const { return (m_Value == bitboard.m_Value); }; //for hash definition
 
+	Bitboard RotateLeft(int s) const;
+	Bitboard RotateRight(int s) const;
 	Bitboard FlipVertically() const;
 	Bitboard FlipA1H8() const;
 	Bitboard Rotate90Clockwise() const;
 	Bitboard Rotate90AntiClockwise() const;
+	/// <remark> Main Diagonal is mapped to 1st rank </summary>
+	Bitboard PseudoRotate45Clockwise() const;
+	Bitboard PseudoRotate45AntiClockwise() const;
+	Bitboard UndoPseudoRotate45Clockwise() const;
+	Bitboard UndoPseudoRotate45AntiClockwise() const;
 
 	/// <returns>Square index ; only a single bit should be set, otherwise unknown result</returns>
 	/// <remark>Row index is square / 8 (or square >> 3) ; File index is square % 8 (or square & 7)<remark>
@@ -395,10 +402,11 @@ static const Bitboard c1h6
 static const std::array<Bitboard, 8> _rows = { _1, _2, _3, _4, _5, _6, _7, _8 };
 static const std::array<Bitboard, 8> _files = { _a, _b, _c, _d, _e, _f, _g, _h };
 
+///<remark>Includes the r row</summary>
 static constexpr Bitboard GetRowsAbove(int r)
 {
 	Bitboard rows;
-	for (size_t i = r; i < 8; i++)
+	for (int i = r; i < 8; i++)
 	{
 		rows |= _rows[i];
 	}
@@ -409,7 +417,7 @@ static constexpr Bitboard GetRowsAbove(int r)
 static constexpr Bitboard GetRowsUnder(int r)
 {
 	Bitboard rows;
-	for (size_t i = r; i >= 0; i--)
+	for (int i = r; i >= 0; i--)
 	{
 		rows |= _rows[i];
 	}
@@ -417,11 +425,11 @@ static constexpr Bitboard GetRowsUnder(int r)
 	return rows;
 }
 
-
-static constexpr Bitboard GetFilesOnLeft(int f)
+///<remark>Includes the f file</summary>
+static constexpr Bitboard GetFilesOnRight(int f)
 {
 	Bitboard files;
-	for (size_t i = f; i < 8; i++)
+	for (int i = f; i < 8; i++)
 	{
 		files |= _files[i];
 	}
@@ -429,10 +437,10 @@ static constexpr Bitboard GetFilesOnLeft(int f)
 	return files;
 }
 
-static constexpr Bitboard GetFilesOnRight(int f)
+static constexpr Bitboard GetFilesOnLeft(int f)
 {
 	Bitboard files;
-	for (size_t i = f; i >= 0; i--)
+	for (int i = f; i >= 0; i--)
 	{
 		files |= _files[i];
 	}

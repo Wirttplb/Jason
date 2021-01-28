@@ -273,6 +273,7 @@ void Position::Update(Move& move)
 	{
 		Move rookMove;
 		rookMove.m_From.m_Type = PieceType::Rook;
+		rookMove.m_To.m_Type = PieceType::Rook;
 
 		if (move.m_To.m_Square > move.m_From.m_Square) //kingside
 		{
@@ -491,6 +492,40 @@ bool Position::AreEqual(const Position& position) const
 	}
 
 	return areEqual;
+}
+
+bool Position::CheckBitboardsSanity() const
+{
+	Bitboard whitePieces2 = m_WhitePawns | m_WhiteKnights | m_WhiteBishops | m_WhiteRooks | m_WhiteQueens | m_WhiteKing;
+	Bitboard blackPieces2 = m_BlackPawns | m_BlackKnights | m_BlackBishops | m_BlackRooks | m_BlackQueens | m_BlackKing;
+	Bitboard allPieces2 = whitePieces2 | blackPieces2;
+	bool isOk = (whitePieces2 == m_WhitePieces);
+	isOk = isOk && (blackPieces2 == m_BlackPieces);
+	isOk = isOk && (allPieces2 == (m_WhitePieces | m_BlackPieces));
+
+	Bitboard whitePieces3;
+	for (const Piece& piece : GetWhitePiecesList())
+	{
+		whitePieces3 |= Bitboard(piece.m_Square);
+	}
+	Bitboard blackPieces3;
+	for (const Piece& piece : GetBlackPiecesList())
+	{
+		blackPieces3 |= Bitboard(piece.m_Square);
+	}
+
+	isOk |= ((whitePieces3 | blackPieces3) == (m_WhitePieces | m_BlackPieces));
+
+	//check overlap
+	isOk = isOk & ((allPieces2 & whitePieces2) == Bitboard());
+	isOk = isOk & ((m_WhitePawns & m_WhiteKnights) == Bitboard());
+	isOk = isOk & ((m_BlackPawns & m_BlackKnights) == Bitboard());
+	isOk = isOk & ((m_WhitePawns & m_WhiteBishops) == Bitboard());
+	isOk = isOk & ((m_BlackPawns & m_BlackBishops) == Bitboard());
+	isOk = isOk & ((m_WhitePawns & m_WhiteRooks) == Bitboard());
+	isOk = isOk & ((m_BlackPawns & m_BlackRooks) == Bitboard());
+
+	return isOk;
 }
 
 void Position::UpdatePiece(const Move& move)

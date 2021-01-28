@@ -2,7 +2,6 @@
 #include <array>
 #include <optional>
 
-
 /// <summary> Simple enum for square indices </summary>
 /// <remark> x = s % 8, y = s / 8 ; +-1 to move along x, +-8 to move along y </remark>
 enum Square : int
@@ -64,7 +63,7 @@ public:
 	bool IsCastling() const
 	{
 		return (m_From.m_Type == PieceType::King) &&
-			(abs(m_From.m_Square - m_To.m_Square) == 2); //at least 2 lateral steps, same row
+			(abs(m_From.m_Square - m_To.m_Square) == 2); //2 lateral steps, same row
 	}
 
 	bool IsTwoStepsPawn() const

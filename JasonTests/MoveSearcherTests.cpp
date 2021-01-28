@@ -37,6 +37,64 @@ static void TestRookMoves()
 	position = Position("4k1n1/8/8/N5Rn/8/8/4K3/8 w - - 0 1");
 	moves = MoveSearcher::GetLegalMovesFromBitboards(position, rook, true);
 	ASSERT(moves.size() == 13);
+
+	rook = Piece(PieceType::Rook, b1);
+	position = Position("8/8/8/8/8/8/8/nrNnnnnn b - - 0 1");
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, rook, false);
+	ASSERT(moves.size() == 8);
+}
+
+static void TestBishopMoves()
+{
+	Position position("4k3/8/8/8/8/8/4K3/B7 w - - 0 1");
+	Piece bishop(PieceType::Bishop, a1);
+	std::vector<Move> moves = MoveSearcher::GetLegalMovesFromBitboards(position, bishop, true);
+	ASSERT(moves.size() == 7);
+
+	position = Position("4k3/8/8/8/8/8/1B2K3/8 w - - 0 1");
+	bishop.m_Square = b2;
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, bishop, true);
+	ASSERT(moves.size() == 9);
+
+	position = Position("4k3/8/8/8/3n4/N7/1B3K2/8 w - - 0 1");
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, bishop, true);
+	ASSERT(moves.size() == 4);
+
+	position = Position("1n2k3/pp4pp/3B4/4N3/3n4/N5N1/5K2/8 w - - 0 1");
+	bishop.m_Square = d6;
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, bishop, true);
+	ASSERT(moves.size() == 6);
+
+	position = Position("1n1nk3/pp2n1pp/5nN1/6B1/8/N3N3/3nNK2/2n5 w - - 0 1");
+	bishop.m_Square = g5;
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, bishop, true);
+	ASSERT(moves.size() == 4);
+
+	position = Position("7B/8/8/8/8/8/8/8 w - - 0 1");
+	bishop.m_Square = h8;
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, bishop, true);
+	ASSERT(moves.size() == 7);
+
+	position = Position("B7/8/8/8/8/8/8/8 w - - 0 1");
+	bishop.m_Square = a8;
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, bishop, true);
+	ASSERT(moves.size() == 7);
+
+	position = Position("8/8/8/8/8/8/8/7B w - - 0 1");
+	bishop.m_Square = h1;
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, bishop, true);
+	ASSERT(moves.size() == 7);
+
+	position = Position("B7/7B/8/8/4B3/8/8/1B5B w - - 0 1");
+	bishop.m_Square = e4;
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, bishop, true);
+	ASSERT(moves.size() == 9);
+
+	//there was a bug on this position
+	position = Position("r3k2r/pbppqpb1/1nN1pnp1/3P4/1p2P3/5Q1p/PPPBBPPP/RN2K2R b KQq - 0 1");
+	bishop.m_Square = b7;
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, bishop, false);
+	ASSERT(moves.size() == 3);
 }
 
 static void TestIllegalCastles()
@@ -240,6 +298,7 @@ void MoveSearcherTests::Run()
 {
 	TestPawnMoves();
 	TestRookMoves();
+	TestBishopMoves();
 	TestIllegalCastles();
 
 	//simple stalemate
@@ -250,46 +309,46 @@ void MoveSearcherTests::Run()
 	positions = MoveSearcher::GetAllPossiblePositions(staleMateBlackToPlay);
 	ASSERT(positions.empty());
 
-	//starting position
-	Position startingPosition;
-	positions = MoveSearcher::GetAllPossiblePositions(startingPosition);
-	ASSERT(positions.size() == 20);
+	////starting position
+	//Position startingPosition;
+	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition);
+	//ASSERT(positions.size() == 20);
 
-	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 1);
-	uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 1);
-	ASSERT(positions.size() == 20);
-	ASSERT(uniquePositions.size() == 20);
+	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 1);
+	//uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 1);
+	//ASSERT(positions.size() == 20);
+	//ASSERT(uniquePositions.size() == 20);
 
-	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 2);
-	uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 2);
-	ASSERT(positions.size() == 20 * 20);
-	ASSERT(uniquePositions.size() == 20 * 20);
+	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 2);
+	//uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 2);
+	//ASSERT(positions.size() == 20 * 20);
+	//ASSERT(uniquePositions.size() == 20 * 20);
 
-	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 3);
-	uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 3);
-	ASSERT(positions.size() == 8902);
-	ASSERT(uniquePositions.size() == 7602); //5362 if we dont count en passant
+	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 3);
+	//uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 3);
+	//ASSERT(positions.size() == 8902);
+	//ASSERT(uniquePositions.size() == 7602); //5362 if we dont count en passant
 
-	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 4);
-	uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 4);
-	ASSERT(positions.size() == 197281);
-	ASSERT(uniquePositions.size() == 101240); //72084 if we dont count en passant
+	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 4);
+	//uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 4);
+	//ASSERT(positions.size() == 197281);
+	//ASSERT(uniquePositions.size() == 101240); //72084 if we dont count en passant
 
-	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 4);
-	ASSERT(positions.size() == 197281);
+	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 4);
+	//ASSERT(positions.size() == 197281);
 
-	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 5);
-	ASSERT(positions.size() == 4865609);
+	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 5);
+	//ASSERT(positions.size() == 4865609);
 
-	//Perft #2
-	positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 1);
-	ASSERT(positions.size() == 48);
+	////Perft #2
+	//positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 1);
+	//ASSERT(positions.size() == 48);
 
-	positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 2);
-	ASSERT(positions.size() == 2039);
+	//positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 2);
+	//ASSERT(positions.size() == 2039);
 
-	positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 3);
-	ASSERT(positions.size() == 97862);
+	//positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 3);
+	//ASSERT(positions.size() == 97862);
 
 	positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 4);
 	ASSERT(positions.size() == 4085603);
