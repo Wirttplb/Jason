@@ -280,7 +280,7 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 	if (moveString.size() < 2)
 		return move; //invalid length
 
-	std::vector<const Piece*> pieces;
+	std::vector<Piece> pieces;
 	//castling is easy to parse
 	const bool isKingSideCastle = moveString == "O-O";
 	const bool isQueenSideCastle = moveString == "O-O-O";
@@ -303,13 +303,13 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 	std::optional<int> fromFile;
 	std::optional<int> toRow;
 	std::optional<int> toFile;
-	PieceType toType = pieces.front()->m_Type;
+	PieceType toType = pieces.front().m_Type;
 
 	switch (moveString.size())
 	{
 	case 2: //pawn move
 	{
-		if (pieces.front()->m_Type != PieceType::Pawn)
+		if (pieces.front().m_Type != PieceType::Pawn)
 			return move;
 
 		if (!isalpha(moveString[0]) || !isdigit(moveString[1]))
@@ -324,7 +324,7 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 	{
 		if (moveString[1] == 'x') //pawn takes (abbreviated)
 		{
-			if (pieces.front()->m_Type == PieceType::Pawn)
+			if (pieces.front().m_Type == PieceType::Pawn)
 				return move;
 
 			if (!isalpha(moveString[0]) || !isalpha(moveString[2]))
@@ -333,7 +333,7 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 			fromFile = LetterToNumber(moveString[0]);
 			toFile = LetterToNumber(moveString[2]);
 		}
-		else if (pieces.front()->m_Type == PieceType::Pawn) //queening
+		else if (pieces.front().m_Type == PieceType::Pawn) //queening
 		{
 			if (!isalpha(moveString[0]) || !isdigit(moveString[1]) || !isalpha(moveString[2]))
 				return move;
@@ -357,7 +357,7 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 	}
 	case 4: //capture move or disambiguition or queening
 	{
-		if (pieces.front()->m_Type == PieceType::Pawn) //pawn takes (not abbreviated) or queens a8=Q
+		if (pieces.front().m_Type == PieceType::Pawn) //pawn takes (not abbreviated) or queens a8=Q
 		{
 			if (moveString[1] == 'x')
 			{
@@ -443,7 +443,7 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 	}
 	case 6: //double disambiguition with capture or queening by capture (Nf1xg5 or bxa8=Q)
 	{
-		if (pieces.front()->m_Type != PieceType::Pawn)
+		if (pieces.front().m_Type != PieceType::Pawn)
 		{
 			if (!isalpha(moveString[0]) || !isalpha(moveString[1]) || !isdigit(moveString[2]) ||
 				moveString[3] != 'x' || !isalpha(moveString[4]) || !isdigit(moveString[5]))
@@ -488,8 +488,8 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 	if (pieces.size() == 1)
 	{
 		move = Move();
-		move->m_From = *pieces.front();
-		move->m_To = *pieces.front();
+		move->m_From = pieces.front();
+		move->m_To = pieces.front();
 		if (!toFile.has_value())
 			return Move(); //should not happen
 		if (!toRow.has_value())
@@ -498,17 +498,17 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 			toRow = move->m_From.Position()[1] + 1;
 		}
 
-		move->m_To.m_Square = *toFile + 8 * (*toRow); //no check for valid square, allow cheating!
+		move->m_To.m_Square = Square(*toFile + 8 * (*toRow)); //no check for valid square, allow cheating!
 	}
 	else
 	{
 		//search correct piece
-		const Piece* pieceToMove = nullptr;
+		std::optional<Piece> pieceToMove;
 		int count = 0;
-		for (const Piece* p : pieces)
+		for (const Piece& p : pieces)
 		{
 			bool canReachSquare = false;
-			const std::vector<Move> legalMoves = MoveSearcher::GetLegalMoves(position, *p, position.IsWhiteToPlay());
+			const std::vector<Move> legalMoves = MoveSearcher::GetLegalMovesFromBitboards(position, p, position.IsWhiteToPlay());
 			for (const Move& legalMove : legalMoves)
 			{
 				const std::array<int, 2>& square = legalMove.m_To.Position();
@@ -522,12 +522,12 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 			if (!canReachSquare)
 				continue;
 
-			if (fromRow.has_value() && fromRow == p->Position()[1])
+			if (fromRow.has_value() && fromRow == p.Position()[1])
 			{
 				pieceToMove = p;
 				count++;
 			}
-			else if (fromFile.has_value() && fromFile == p->Position()[0])
+			else if (fromFile.has_value() && fromFile == p.Position()[0])
 			{
 				pieceToMove = p;
 				count++;
@@ -541,14 +541,14 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 
 		if (count != 1)
 			return Move(); //invalid move
-		assert(pieceToMove);
+		assert(pieceToMove.has_value());
 
 		move = Move();
 		move->m_From = *pieceToMove;
 		move->m_To = *pieceToMove;
 		if (!toFile.has_value() || !toRow.has_value())
 			return Move();
-		move->m_To.m_Square = *toFile + 8 * (*toRow);
+		move->m_To.m_Square = Square(*toFile + 8 * (*toRow));
 	}
 
 	if (move.has_value())

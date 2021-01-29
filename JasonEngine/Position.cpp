@@ -155,33 +155,83 @@ bool Position::IsInsufficientMaterial() const
 	return isStaleMate;
 }
 
-std::vector<const Piece*> Position::GetPieces(PieceType type, bool isWhite) const
+bool Position::IsInsufficientMaterialFromBitboards() const
 {
-	std::vector<const Piece*> pieces;
-	const std::vector<Piece>& friendlyPieces = isWhite ? GetWhitePiecesList() : GetBlackPiecesList();
-	for (const Piece& piece : friendlyPieces)
+	if (m_WhitePawns > 0 || m_BlackPawns > 0 ||
+		m_WhiteRooks > 0 || m_BlackRooks > 0 ||
+		m_WhiteQueens > 0 || m_BlackQueens > 0)
+		return false;
+
+	int minorPieceCount = (m_WhiteKnights | m_BlackKnights | m_WhiteBishops | m_BlackBishops).CountSetBits();
+	return (minorPieceCount < 2);
+}
+
+std::vector<Piece> Position::GetPieces(PieceType type, bool isWhite) const
+{
+	Bitboard bitboard;
+	switch (type)
 	{
-		if (piece.m_Type == type)
-		{
-			pieces.push_back(&piece);
-			if (piece.m_Type == PieceType::King)
-				break; //only 2 king
-		}
+	case PieceType::Pawn:
+		bitboard = (isWhite ? m_WhitePawns : m_BlackPawns);
+		break;
+	case PieceType::Knight:
+		bitboard = (isWhite ? m_WhiteKnights : m_BlackKnights);
+		break;
+	case PieceType::Bishop:
+		bitboard = (isWhite ? m_WhiteBishops : m_BlackBishops);
+		break;
+	case PieceType::Rook:
+		bitboard = (isWhite ? m_WhiteRooks : m_BlackRooks);
+		break;
+	case PieceType::Queen:
+		bitboard = (isWhite ? m_WhiteQueens: m_BlackQueens);
+		break;
+	case PieceType::King:
+		bitboard = (isWhite ? m_WhiteKing : m_BlackKing);
+		break;
+	default:
+		assert(false);
 	}
+
+	//loop on set bits, get pieces
+	std::vector<Piece> pieces;
+	uint64_t bitset = bitboard;
+	while (bitset != 0)
+	{
+		const uint64_t t = bitset & (~bitset + 1);
+		const int idx = static_cast<int>(_tzcnt_u64(bitset));
+		pieces.emplace_back(Piece(type, idx));
+		bitset ^= t;
+	}
+
+
+
+	//std::vector<const Piece*> pieces;
+	//const std::vector<Piece>& friendlyPieces = isWhite ? GetWhitePiecesList() : GetBlackPiecesList();
+	//for (const Piece& piece : friendlyPieces)
+	//{
+	//	if (piece.m_Type == type)
+	//	{
+	//		pieces.push_back(&piece);
+	//		if (piece.m_Type == PieceType::King)
+	//			break; //only 2 king
+	//	}
+	//}
 
 	return pieces;
 }
 
-const Piece* Position::GetPiece(PieceType type, bool isWhite) const
+std::optional<Piece> Position::GetPiece(PieceType type, bool isWhite) const
 {
-	std::vector<const Piece*> pieces = GetPieces(type, isWhite);
+	std::optional<Piece> piece;
+	std::vector<Piece> pieces = GetPieces(type, isWhite);
 	if (!pieces.empty())
-		return pieces.front();
-	else
-		return nullptr;
+		piece = pieces.front();
+	
+	return piece;
 }
 
-std::vector<const Piece*> Position::GetPiecesToPlay(PieceType type) const
+std::vector<Piece> Position::GetPiecesToPlay(PieceType type) const
 {
 	return GetPieces(type, IsWhiteToPlay());
 }
@@ -216,21 +266,24 @@ uint64_t Position::ComputeZobristHash() const
 
 void Position::Update(Move& move)
 {
-	//update moving piece
-	std::vector<Piece>& friendlyPieces = IsWhiteToPlay() ? GetWhitePiecesList() : GetBlackPiecesList();
-	for (Piece& friendlyPiece : friendlyPieces)
-	{
-		if (friendlyPiece.m_Square == move.m_From.m_Square)
-		{
-			friendlyPiece = move.m_To; //update type too for queening
-			break;
-		}
-	}
-
-	UpdatePiece(move);
+	//update moved piece
+	UpdatePiece(move, m_IsWhiteToPlay);
 	//update zobrist hash the same way
 	m_ZobristHash ^= ZobristHash::GetKey(move.m_From, IsWhiteToPlay());
 	m_ZobristHash ^= ZobristHash::GetKey(move.m_To, IsWhiteToPlay());
+
+	if (m_MaintainPiecesList)
+	{
+		std::vector<Piece>& friendlyPieces = IsWhiteToPlay() ? GetWhitePiecesList() : GetBlackPiecesList();
+		for (Piece& friendlyPiece : friendlyPieces)
+		{
+			if (friendlyPiece.m_Square == move.m_From.m_Square)
+			{
+				friendlyPiece = move.m_To; //update type too for queening
+				break;
+			}
+		}
+	}
 
 	//we have to correct new position by removing a piece if taken!
 	const bool isCaptureEnPassant = //necessarily en passant capture if a new pawn takes the EP square
@@ -241,36 +294,44 @@ void Position::Update(Move& move)
 	if (isCaptureEnPassant)
 		captureSquare += (IsWhiteToPlay() ? -1 : 1) * 8;
 
-	std::vector<Piece>& enemyPieces = IsWhiteToPlay() ? GetBlackPiecesList() : GetWhitePiecesList();
-	std::optional<size_t> indexPieceToRemove;
-	for (size_t i = 0; i < enemyPieces.size(); i++)
+	//Update captured piece
+	UpdateCapturedPiece(captureSquare, move.m_Capture);
+
+	if (m_MaintainPiecesList)
 	{
-		if (enemyPieces[i].m_Square == captureSquare)
+		std::vector<Piece>& enemyPieces = IsWhiteToPlay() ? GetBlackPiecesList() : GetWhitePiecesList();
+		std::optional<size_t> indexPieceToRemove;
+		for (size_t i = 0; i < enemyPieces.size(); i++)
 		{
-			indexPieceToRemove = i;
-			move.m_Capture = enemyPieces[i];
-			m_ZobristHash ^= ZobristHash::GetKey(enemyPieces[i], !IsWhiteToPlay());
-			break;
+			if (enemyPieces[i].m_Square == captureSquare)
+			{
+				indexPieceToRemove = i;
+				break;
+			}
+		}
+
+		if (indexPieceToRemove.has_value())
+		{
+			assert((enemyPieces[*indexPieceToRemove].m_Type == PieceType::Pawn) || !isCaptureEnPassant);
+			enemyPieces.erase(enemyPieces.begin() + *indexPieceToRemove);
 		}
 	}
 
-	UpdateCapturedPiece(captureSquare);
-
-	if (indexPieceToRemove.has_value())
-	{
-		assert((enemyPieces[*indexPieceToRemove].m_Type == PieceType::Pawn) || !isCaptureEnPassant);
-		enemyPieces.erase(enemyPieces.begin() + *indexPieceToRemove);
-	}
-
 	//set or reset en passant square
+	move.m_EnPassantBackup = m_EnPassantSquare; //backup en passant square
 	if (move.IsTwoStepsPawn())
 		SetEnPassantSquare(static_cast<Square>(move.m_From.m_Square + (IsWhiteToPlay() ? 8 : -8)));
 	else
 		ResetEnPassantSquare();
 
-	//Move rook if castle
+	//Move rook if castle, update flags
 	if (move.IsCastling())
 	{
+		if (IsWhiteToPlay())
+			m_HasWhiteCastled = true;
+		else
+			m_HasBlackCastled = true;
+
 		Move rookMove;
 		rookMove.m_From.m_Type = PieceType::Rook;
 		rookMove.m_To.m_Type = PieceType::Rook;
@@ -288,7 +349,7 @@ void Position::Update(Move& move)
 				rookMove.m_To.m_Square = f8;
 			}
 
-			UpdatePiece(rookMove);
+			UpdatePiece(rookMove, m_IsWhiteToPlay);
 		}
 		else //queenside
 		{
@@ -303,26 +364,25 @@ void Position::Update(Move& move)
 				rookMove.m_To.m_Square = d8;
 			}
 
-			UpdatePiece(rookMove);
+			UpdatePiece(rookMove, m_IsWhiteToPlay);
 		}
 
-		//search the corresponding rook
-		for (Piece& friendlyPiece : friendlyPieces)
+		if (m_MaintainPiecesList)
 		{
-			if (friendlyPiece == rookMove.m_From)
+			//search the corresponding rook
+			std::vector<Piece>& friendlyPieces = IsWhiteToPlay() ? GetWhitePiecesList() : GetBlackPiecesList();
+			for (Piece& friendlyPiece : friendlyPieces)
 			{
-				assert(friendlyPiece.m_Type == PieceType::Rook);
-				m_ZobristHash ^= ZobristHash::GetKey(friendlyPiece, IsWhiteToPlay());
-				friendlyPiece.m_Square = rookMove.m_To.m_Square;
-				m_ZobristHash ^= ZobristHash::GetKey(friendlyPiece, IsWhiteToPlay());
-				break;
+				if (friendlyPiece == rookMove.m_From)
+				{
+					assert(friendlyPiece.m_Type == PieceType::Rook);
+					m_ZobristHash ^= ZobristHash::GetKey(friendlyPiece, IsWhiteToPlay());
+					friendlyPiece.m_Square = rookMove.m_To.m_Square;
+					m_ZobristHash ^= ZobristHash::GetKey(friendlyPiece, IsWhiteToPlay());
+					break;
+				}
 			}
 		}
-
-		if (IsWhiteToPlay())
-			m_HasWhiteCastled = true;
-		else
-			m_HasBlackCastled = true;
 	}
 
 	//Update castling rights
@@ -365,29 +425,40 @@ void Position::Update(Move& move)
 
 void Position::Undo(const Move& move)
 {
-	//undo moved piece
-	std::vector<Piece>& friendlyPieces = !IsWhiteToPlay() ? GetWhitePiecesList() : GetBlackPiecesList();
-	for (Piece& friendlyPiece : friendlyPieces)
-	{
-		if (friendlyPiece.m_Square == move.m_To.m_Square)
-		{
-			friendlyPiece = move.m_From;
-			break;
-		}
-	}
-
+	//Undo moved piece
+	Move reversedMove = move;
+	std::swap(reversedMove.m_From, reversedMove.m_To);
+	UpdatePiece(reversedMove, !m_IsWhiteToPlay);
 	m_ZobristHash ^= ZobristHash::GetKey(move.m_To, !IsWhiteToPlay());
 	m_ZobristHash ^= ZobristHash::GetKey(move.m_From, !IsWhiteToPlay());
 
-	//undo capture
-	std::vector<Piece>& enemyPieces = !IsWhiteToPlay() ? GetBlackPiecesList() : GetWhitePiecesList();
-	if (move.m_Capture.has_value())
+	if (m_MaintainPiecesList)
 	{
-		enemyPieces.emplace_back(*move.m_Capture);
-		m_ZobristHash ^= ZobristHash::GetKey(*move.m_Capture, IsWhiteToPlay());
+		std::vector<Piece>& friendlyPieces = !IsWhiteToPlay() ? GetWhitePiecesList() : GetBlackPiecesList();
+		for (Piece& friendlyPiece : friendlyPieces)
+		{
+			if (friendlyPiece.m_Square == move.m_To.m_Square)
+			{
+				friendlyPiece = move.m_From;
+				break;
+			}
+		}
 	}
 
-	//undo en passant square
+	//Undo capture
+	if (move.m_Capture.has_value())
+	{
+		UndoCapturedPiece(*move.m_Capture);
+		m_ZobristHash ^= ZobristHash::GetKey(*move.m_Capture, IsWhiteToPlay());
+
+		if (m_MaintainPiecesList)
+		{
+			std::vector<Piece>& enemyPieces = !IsWhiteToPlay() ? GetBlackPiecesList() : GetWhitePiecesList();
+			enemyPieces.emplace_back(*move.m_Capture);
+		}
+	}
+
+	//Undo en passant square
 	if (move.m_EnPassantBackup.has_value())
 		SetEnPassantSquare(*move.m_EnPassantBackup);
 	else
@@ -398,30 +469,45 @@ void Position::Undo(const Move& move)
 	{
 		if (move.m_To.m_Square > move.m_From.m_Square) //kingside
 		{
-			//search the corresponding rook
-			for (Piece& friendlyPiece : friendlyPieces)
+			Move undoRookMove(PieceType::Rook, (!IsWhiteToPlay() ? f1 : f8), (!IsWhiteToPlay() ? h1 : h8));
+			UpdatePiece(undoRookMove, !m_IsWhiteToPlay);
+			m_ZobristHash ^= ZobristHash::GetKey(undoRookMove.m_From, !IsWhiteToPlay());
+			m_ZobristHash ^= ZobristHash::GetKey(undoRookMove.m_To, !IsWhiteToPlay());
+
+			if (m_MaintainPiecesList)
 			{
-				if (friendlyPiece.m_Square == (!IsWhiteToPlay() ? f1 : f8))
+				//search the corresponding rook
+				std::vector<Piece>& friendlyPieces = !IsWhiteToPlay() ? GetWhitePiecesList() : GetBlackPiecesList();
+				for (Piece& friendlyPiece : friendlyPieces)
 				{
-					assert(friendlyPiece.m_Type == PieceType::Rook);
-					m_ZobristHash ^= ZobristHash::GetKey(friendlyPiece, !IsWhiteToPlay());
-					friendlyPiece.m_Square = (!IsWhiteToPlay() ? h1 : h8);
-					m_ZobristHash ^= ZobristHash::GetKey(friendlyPiece, !IsWhiteToPlay());
-					break;
+					if (friendlyPiece.m_Square == (!IsWhiteToPlay() ? f1 : f8))
+					{
+						assert(friendlyPiece.m_Type == PieceType::Rook);
+						friendlyPiece.m_Square = (!IsWhiteToPlay() ? h1 : h8);
+						break;
+					}
 				}
 			}
 		}
 		else //queenside
 		{
-			for (Piece& friendlyPiece : friendlyPieces)
+			Move undoRookMove(PieceType::Rook, (!IsWhiteToPlay() ? d1 : d8), (!IsWhiteToPlay() ? a1 : a8));
+			UpdatePiece(undoRookMove, !m_IsWhiteToPlay);
+			m_ZobristHash ^= ZobristHash::GetKey(undoRookMove.m_From, !IsWhiteToPlay());
+			m_ZobristHash ^= ZobristHash::GetKey(undoRookMove.m_To, !IsWhiteToPlay());
+
+			if (m_MaintainPiecesList)
 			{
-				if (friendlyPiece.m_Square == (!IsWhiteToPlay() ? d1 : d8))
+				//search the corresponding rook
+				std::vector<Piece>& friendlyPieces = !IsWhiteToPlay() ? GetWhitePiecesList() : GetBlackPiecesList();
+				for (Piece& friendlyPiece : friendlyPieces)
 				{
-					assert(friendlyPiece.m_Type == PieceType::Rook);
-					m_ZobristHash ^= ZobristHash::GetKey(friendlyPiece, !IsWhiteToPlay());
-					friendlyPiece.m_Square = (!IsWhiteToPlay() ? a1 : a8);
-					m_ZobristHash ^= ZobristHash::GetKey(friendlyPiece, !IsWhiteToPlay());
-					break;
+					if (friendlyPiece.m_Square == (!IsWhiteToPlay() ? d1 : d8))
+					{
+						assert(friendlyPiece.m_Type == PieceType::Rook);
+						friendlyPiece.m_Square = (!IsWhiteToPlay() ? a1 : a8);
+						break;
+					}
 				}
 			}
 		}
@@ -517,18 +603,18 @@ bool Position::CheckBitboardsSanity() const
 	isOk |= ((whitePieces3 | blackPieces3) == (m_WhitePieces | m_BlackPieces));
 
 	//check overlap
-	isOk = isOk & ((allPieces2 & whitePieces2) == Bitboard());
-	isOk = isOk & ((m_WhitePawns & m_WhiteKnights) == Bitboard());
-	isOk = isOk & ((m_BlackPawns & m_BlackKnights) == Bitboard());
-	isOk = isOk & ((m_WhitePawns & m_WhiteBishops) == Bitboard());
-	isOk = isOk & ((m_BlackPawns & m_BlackBishops) == Bitboard());
-	isOk = isOk & ((m_WhitePawns & m_WhiteRooks) == Bitboard());
-	isOk = isOk & ((m_BlackPawns & m_BlackRooks) == Bitboard());
+	isOk = isOk && ((allPieces2 & whitePieces2) == Bitboard());
+	isOk = isOk && ((m_WhitePawns & m_WhiteKnights) == Bitboard());
+	isOk = isOk && ((m_BlackPawns & m_BlackKnights) == Bitboard());
+	isOk = isOk && ((m_WhitePawns & m_WhiteBishops) == Bitboard());
+	isOk = isOk && ((m_BlackPawns & m_BlackBishops) == Bitboard());
+	isOk = isOk && ((m_WhitePawns & m_WhiteRooks) == Bitboard());
+	isOk = isOk && ((m_BlackPawns & m_BlackRooks) == Bitboard());
 
 	return isOk;
 }
 
-void Position::UpdatePiece(const Move& move)
+void Position::UpdatePiece(const Move& move, bool isWhite)
 {
 	for (const Piece* piece : {&move.m_From, &move.m_To})
 	{
@@ -537,47 +623,125 @@ void Position::UpdatePiece(const Move& move)
 		switch (piece->m_Type)
 		{
 		case PieceType::Pawn:
-			(m_IsWhiteToPlay ? m_WhitePawns : m_BlackPawns) ^= movedPiece;
+			(isWhite ? m_WhitePawns : m_BlackPawns) ^= movedPiece;
 			break;
 		case PieceType::Knight:
-			(m_IsWhiteToPlay ? m_WhiteKnights : m_BlackKnights) ^= movedPiece;
+			(isWhite ? m_WhiteKnights : m_BlackKnights) ^= movedPiece;
 			break;
 		case PieceType::Bishop:
-			(m_IsWhiteToPlay ? m_WhiteBishops : m_BlackBishops) ^= movedPiece;
+			(isWhite ? m_WhiteBishops : m_BlackBishops) ^= movedPiece;
 			break;
 		case PieceType::Rook:
-			(m_IsWhiteToPlay ? m_WhiteRooks : m_BlackRooks) ^= movedPiece;
+			(isWhite ? m_WhiteRooks : m_BlackRooks) ^= movedPiece;
 			break;
 		case PieceType::Queen:
-			(m_IsWhiteToPlay ? m_WhiteQueens : m_BlackQueens) ^= movedPiece;
+			(isWhite ? m_WhiteQueens : m_BlackQueens) ^= movedPiece;
 			break;
 		case PieceType::King:
-			(m_IsWhiteToPlay ? m_WhiteKing : m_BlackKing) ^= movedPiece;
+			(isWhite ? m_WhiteKing : m_BlackKing) ^= movedPiece;
 			break;
 		default:
 			assert(false);
 			break;
 		}
 
-		(m_IsWhiteToPlay ? m_WhitePieces : m_BlackPieces) ^= movedPiece;
+		(isWhite ? m_WhitePieces : m_BlackPieces) ^= movedPiece;
 	}
 }
 
-void Position::UpdateCapturedPiece(int squareIdx)
+void Position::UpdateCapturedPiece(int squareIdx, std::optional<Piece>& capturedPiece)
 {
-	const Bitboard capturedPiece(squareIdx);
-	Bitboard* bitboard = (m_IsWhiteToPlay ? &m_BlackPawns : &m_WhitePawns);
-	*bitboard ^= (*bitboard & capturedPiece);
+	const Bitboard captureSquare(squareIdx);
+
+	//update full set
+	Bitboard* bitboard = (m_IsWhiteToPlay ? &m_BlackPieces : &m_WhitePieces);
+	if (!(*bitboard & captureSquare))
+		return;
+	*bitboard ^= (*bitboard & captureSquare);
+
+	//update piece type set
+	 bitboard = (m_IsWhiteToPlay ? &m_BlackPawns : &m_WhitePawns);
+	if ((*bitboard & captureSquare) > 0)
+	{
+		*bitboard ^= (*bitboard & captureSquare);
+		capturedPiece = Piece(PieceType::Pawn, squareIdx);
+		m_ZobristHash ^= ZobristHash::GetKey(*capturedPiece, !m_IsWhiteToPlay);
+		return;
+	}
+
 	bitboard = (m_IsWhiteToPlay ? &m_BlackKnights : &m_WhiteKnights);
-	*bitboard ^= (*bitboard & capturedPiece);
+	if ((*bitboard & captureSquare) > 0)
+	{
+		*bitboard ^= (*bitboard & captureSquare);
+		capturedPiece = Piece(PieceType::Knight, squareIdx);
+		m_ZobristHash ^= ZobristHash::GetKey(*capturedPiece, !m_IsWhiteToPlay);
+		return;
+	}
+
 	bitboard = (m_IsWhiteToPlay ? &m_BlackBishops : &m_WhiteBishops);
-	*bitboard ^= (*bitboard & capturedPiece);
+	if ((*bitboard & captureSquare) > 0)
+	{
+		*bitboard ^= (*bitboard & captureSquare);
+		capturedPiece = Piece(PieceType::Bishop, squareIdx);
+		m_ZobristHash ^= ZobristHash::GetKey(*capturedPiece, !m_IsWhiteToPlay);
+		return;
+	}
+
 	bitboard = (m_IsWhiteToPlay ? &m_BlackRooks : &m_WhiteRooks);
-	*bitboard ^= (*bitboard & capturedPiece);
+	if ((*bitboard & captureSquare) > 0)
+	{
+		*bitboard ^= (*bitboard & captureSquare);
+		capturedPiece = Piece(PieceType::Rook, squareIdx);
+		m_ZobristHash ^= ZobristHash::GetKey(*capturedPiece, !m_IsWhiteToPlay);
+		return;
+	}
+
 	bitboard = (m_IsWhiteToPlay ? &m_BlackQueens : &m_WhiteQueens);
-	*bitboard ^= (*bitboard & capturedPiece);
+	if ((*bitboard & captureSquare) > 0)
+	{
+		*bitboard ^= (*bitboard & captureSquare);
+		capturedPiece = Piece(PieceType::Queen, squareIdx);
+		m_ZobristHash ^= ZobristHash::GetKey(*capturedPiece, !m_IsWhiteToPlay);
+		return;
+	}
+
 	bitboard = (m_IsWhiteToPlay ? &m_BlackKing : &m_WhiteKing);
-	*bitboard ^= (*bitboard & capturedPiece);
-	bitboard = (m_IsWhiteToPlay ? &m_BlackPieces : &m_WhitePieces);
-	*bitboard ^= (*bitboard & capturedPiece);
+	if ((*bitboard & captureSquare) > 0)
+	{
+		*bitboard ^= (*bitboard & captureSquare);
+		capturedPiece = Piece(PieceType::King, squareIdx);
+		m_ZobristHash ^= ZobristHash::GetKey(*capturedPiece, !m_IsWhiteToPlay);
+		return;
+	}	
+}
+
+void Position::UndoCapturedPiece(const Piece& piece)
+{
+	Bitboard pieceSquare = Bitboard(piece.m_Square);
+	switch (piece.m_Type)
+	{
+	case PieceType::Pawn:
+		(m_IsWhiteToPlay ? m_WhitePawns : m_BlackPawns) ^= pieceSquare;
+		break;
+	case PieceType::Knight:
+		(m_IsWhiteToPlay ? m_WhiteKnights : m_BlackKnights) ^= pieceSquare;
+		break;
+	case PieceType::Bishop:
+		(m_IsWhiteToPlay ? m_WhiteBishops : m_BlackBishops) ^= pieceSquare;
+		break;
+	case PieceType::Rook:
+		(m_IsWhiteToPlay ? m_WhiteRooks : m_BlackRooks) ^= pieceSquare;
+		break;
+	case PieceType::Queen:
+		(m_IsWhiteToPlay ? m_WhiteQueens : m_BlackQueens) ^= pieceSquare;
+		break;
+	case PieceType::King:
+		(m_IsWhiteToPlay ? m_WhiteKing : m_BlackKing) ^= pieceSquare;
+		break;
+	default:
+		assert(false);
+		break;
+	}
+
+	(m_IsWhiteToPlay ? m_WhitePieces : m_BlackPieces) ^= pieceSquare;
 }

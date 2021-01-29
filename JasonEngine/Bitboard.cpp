@@ -214,9 +214,25 @@ Bitboard Bitboard::UndoPseudoRotate45AntiClockwise() const
 	return rotatedBitboard;
 }
 
+int Bitboard::CountSetBits() const
+{
+	// https://en.wikipedia.org/wiki/Hamming_weight
+	// This is better when most bits in x are 0
+	// This is algorithm works the same for all data sizes.
+	// This algorithm uses 3 arithmetic operations and 1 comparison/branch per "1" bit in x.
+	int count;
+	uint64_t x = m_Value;
+	for (count = 0; x; count++)
+	{
+		x &= x - 1;
+	}
+
+	return count;
+}
+
 int Bitboard::GetSquare() const
 {
-	return __builtin_ctzll(m_Value);
+	return static_cast<int>(_tzcnt_u64(m_Value));// __builtin_ctzll(m_Value);
 }
 
 std::string Bitboard::ToString() const

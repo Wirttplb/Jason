@@ -28,7 +28,7 @@ void ZobristTests::Run()
 	std::srand(0);
 	newPosition = startingPosition;
 	int count = 0;
-	for (int i = 0; i < 400; i++)//217 half-moves is end of game 400
+	for (int i = 0; i < 400; i++)//217 half-moves is end of game
 	{
 		std::optional<Move> move = MoveSearcher::GetRandomMove(newPosition);
 		if (!move.has_value())

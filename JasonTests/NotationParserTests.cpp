@@ -35,7 +35,7 @@ void NotationParserTests::Run()
 	ASSERT(!position1.CanWhiteCastleQueenSide());
 	ASSERT(!position1.CanBlackCastleQueenSide());
 	ASSERT(!position1.GetEnPassantSquare().has_value());
-	ASSERT(position1.GetPiecesToPlay(PieceType::Queen).front()->m_Square == a1);
+	ASSERT(position1.GetPiecesToPlay(PieceType::Queen).front().m_Square == a1);
 
 	//had a bug with castling moves parsing
 	Position positionA = perftPosition4;

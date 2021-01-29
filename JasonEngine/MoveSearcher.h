@@ -23,6 +23,8 @@ public:
 	/// <returns>All legal moves for every piece for a given position, a move being the positions before and after of a piece (and type because of queening)</returns>
 	static std::vector<Move> GetLegalMoves(const Position& position);
 	static std::vector<Move> GetLegalMovesFromBitboards(const Position& position);
+	/// <summary>Returns Bitboard of accessible pseudo-legal squares, used for controlled squares enumeration</summary>
+	static Bitboard GetPseudoLegalSquaresFromBitboards(const Position& position, bool isWhite);
 
 	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
 	static std::vector<Move> GetLegalMoves(const Position& position, const Piece& piece, bool isWhitePiece);
@@ -48,6 +50,8 @@ public:
 	/// Compute all possible positions from one position, up to given depth (lots of copy, SLOW!)
 	/// </summary>
 	static std::vector<Position> GetAllPossiblePositions(const Position& position, int depth);
+	/// <summary> Much faster, does not make copies of position</summary>
+	static size_t CountNodes(Position& position, int depth);
 
 	/// <summary>
 	/// Compute all unique positions from one position, up to given depth (lots of copy, SLOW!)

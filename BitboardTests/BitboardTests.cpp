@@ -40,9 +40,18 @@ int main()
 
 	//std::cout<< unRotatedB.ToString() << std::endl;
 
+	Bitboard j;
+	j.m_Value = 654;
+
+	bool isTrue = !j;
+
+
 	Bitboard c;
-	c.m_Value = 588089187320725504;//pawns
+	c.m_Value = 71213169107795968;//blackpawns
 	std::cout<< c << std::endl;
+
+	c.m_Value = 8606776832;//pawns
+	std::cout << c << std::endl;
 
 	//c.m_Value = 2310346626054553664;//2nd diag a8h1
 	//std::cout << c << std::endl;

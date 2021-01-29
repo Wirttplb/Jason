@@ -31,9 +31,10 @@ class Piece
 {
 public:
 	Piece() {};
-	Piece(PieceType type, int square) : m_Type(type), m_Square(square) {};
+	Piece(PieceType type, Square square) : m_Type(type), m_Square(square) {};
+	Piece(PieceType type, int square) : m_Type(type), m_Square(Square(square)) {};
 	
-	int m_Square = a1;
+	Square m_Square = a1;
 	PieceType m_Type = PieceType::Pawn;
 
 	/// <summary>Returns position square index</summary>
@@ -50,8 +51,8 @@ class Move
 {
 public:
 	Move() {};
-	Move(PieceType type, int from, int to) : m_From(type, from), m_To(type, to) {};
-	Move(PieceType fromType, PieceType toType, int from, int to) : m_From(fromType, from), m_To(toType, to) {};
+	Move(PieceType type, Square from, Square to) : m_From(type, from), m_To(type, to) {};
+	Move(PieceType fromType, PieceType toType, Square from, Square to) : m_From(fromType, from), m_To(toType, to) {};
 
 	bool IsCapture() const { return m_Capture.has_value(); };
 

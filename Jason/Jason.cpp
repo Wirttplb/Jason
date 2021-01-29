@@ -41,7 +41,7 @@ int main()
     bool isGameOver = false;
     size_t turnCount = 0;
 
-    int evaluationDepth = 3;
+    int evaluationDepth = 4;
 
     while (!isGameOver)//&& turnCount < 200)
     {

@@ -55,6 +55,8 @@ public:
 	Bitboard UndoPseudoRotate45Clockwise() const;
 	Bitboard UndoPseudoRotate45AntiClockwise() const;
 
+	int CountSetBits() const;
+
 	/// <returns>Square index ; only a single bit should be set, otherwise unknown result</returns>
 	/// <remark>Row index is square / 8 (or square >> 3) ; File index is square % 8 (or square & 7)<remark>
 	int GetSquare() const;

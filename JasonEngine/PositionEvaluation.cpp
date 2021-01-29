@@ -11,77 +11,13 @@ static constexpr double Mate = 1000000;
 
 double PositionEvaluation::EvaluateMove(Position& position, Move& move, int depth)
 {
-	//m_InitialDepth = depth;
 	position.Update(move);
 	constexpr double alpha = std::numeric_limits<double>::lowest();
 	constexpr double beta = std::numeric_limits<double>::max();
-	double score = AlphaBetaNegamax(position, depth, alpha, beta, position.IsWhiteToPlay());
+	double score = 0.0;// AlphaBetaNegamax(position, depth, alpha, beta, position.IsWhiteToPlay());
 	position.Undo(move);
 
 	return score;
-}
-
-double PositionEvaluation::AlphaBetaNegamax(Position& position, int depth, double alpha, double beta, bool maximizeWhite)
-{
-	const double originalAlpha = alpha;
-
-	//Transposition table lookup
-	if ((m_TranspositionTable.find(position) != m_TranspositionTable.end()) && (m_TranspositionTable[position].m_Depth >= depth))
-	{
-		switch (m_TranspositionTable[position].m_Flag)
-		{
-		case TranspositionTableEntry::Flag::Exact:
-			return m_TranspositionTable[position].m_Score;
-		case TranspositionTableEntry::Flag::LowerBound:
-			alpha = std::max(alpha, m_TranspositionTable[position].m_Score);
-			break;
-		case TranspositionTableEntry::Flag::UpperBound:
-			beta = std::min(beta, m_TranspositionTable[position].m_Score);
-			break;
-		default:
-			assert(false);
-			break;
-		}
-
-		if (alpha >= beta)
-			return m_TranspositionTable[position].m_Score;
-	}
-
-	if (depth == 0)
-		return (maximizeWhite ? 1.0 : -1.0) * EvaluatePosition(position);
-
-	std::vector<Move> childMoves = MoveSearcher::GetLegalMoves(position);
-	if (childMoves.empty())
-		return (maximizeWhite ? 1.0 : -1.0) * EvaluatePosition(position);
-
-	double value = 0.0;
-	const size_t piecesCount = position.GetBlackPiecesList().size() + position.GetWhitePiecesList().size();
-	value = std::numeric_limits<double>::lowest();
-	for (Move& childMove : childMoves)
-	{
-		position.Update(childMove);
-		const size_t piecesCount2 = position.GetBlackPiecesList().size() + position.GetWhitePiecesList().size();
-		const int actualDepth = depth - 1;// (piecesCount == piecesCount2) ? depth - 1 : depth; //go deeper when we sense a tactic (capture...) ~ Quiescent search
-		value = std::max(value, -AlphaBetaNegamax(position, actualDepth, -beta, -alpha, !maximizeWhite));
-		alpha = std::max(alpha, value);
-		position.Undo(childMove);
-
-		if (alpha >= beta)
-			break;//cutoff
-	}
-
-	//Transposition Table Store
-	m_TranspositionTable[position].m_Score = value;
-	if (value <= originalAlpha)
-		m_TranspositionTable[position].m_Flag = TranspositionTableEntry::Flag::UpperBound;
-	else if (value >= beta)
-		m_TranspositionTable[position].m_Flag = TranspositionTableEntry::Flag::LowerBound;
-	else
-		m_TranspositionTable[position].m_Flag = TranspositionTableEntry::Flag::Exact;
-
-	m_TranspositionTable[position].m_Depth = depth;
-
-	return value;
 }
 
 double PositionEvaluation::Minimax(Position& position, int depth, bool maximizeWhite)
@@ -152,31 +88,19 @@ double PositionEvaluation::EvaluatePosition(const Position& position)
 
 	double score = 0.0;
 	//Check material
-	const std::vector<Piece>& whitePieces = position.GetWhitePiecesList();
-	const std::vector<Piece>& blackPieces = position.GetBlackPiecesList();
-	double whiteMaterial = 0.0;
-	double blackMaterial = 0.0;
-	for (const Piece& piece : whitePieces)
-	{
-		whiteMaterial += GetPieceValue(piece.m_Type);
-	}
-	for (const Piece& piece : blackPieces)
-	{
-		blackMaterial += GetPieceValue(piece.m_Type);
-	}
+	score = CountMaterial(position, true) - CountMaterial(position, false);
 
-	score = whiteMaterial - blackMaterial;
-
-	//check hanging pieces
-	//std::vector<const Piece*> hangingPieces = GetHangingPieces(position);
-	//for (const Piece* piece : hangingPieces)
-	//{
-	//	score += GetPieceValue(piece->m_Type) * (position.IsWhiteToPlay() ? 1.0 : -1.0);
-	//}
+	//penalty for moving same pieces twice
+	if (position.GetMoves().size() > 3)
+	{
+		const int lastIdx = static_cast<int>(position.GetMoves().size()) - 1;
+		if (position.GetMoves()[lastIdx].m_From.m_Square == position.GetMoves()[lastIdx - 2].m_To.m_Square)
+			score = (position.IsWhiteToPlay() ? -0.33 : 0.33);
+	}
 
 	//Check double pawns
-	int whiteDoubledPawns = CountDoubledPawn(position, true);
-	int blackDoubledPawns = CountDoubledPawn(position, false);
+	int whiteDoubledPawns = CountDoubledPawns(position, true);
+	int blackDoubledPawns = CountDoubledPawns(position, false);
 
 	score -= static_cast<double>(whiteDoubledPawns) * 0.33;
 	score += static_cast<double>(blackDoubledPawns) * 0.33;
@@ -188,30 +112,28 @@ double PositionEvaluation::EvaluatePosition(const Position& position)
 	if (position.HasBlackCastled())
 		score -= castleBonus;
 
-	//Check number of controled squares
-	std::set<int> whiteControlledByPawns;
-	std::set<int> whiteControlledSquares = GetControlledSquares(position, true, whiteControlledByPawns);
-	std::set<int> blackControlledByPawns;
-	std::set<int> blackControlledSquares = GetControlledSquares(position, false, blackControlledByPawns);
+	Bitboard whiteControlledSquares = GetControlledSquares(position, true);
+	Bitboard blackControlledSquares = GetControlledSquares(position, false);
+	score -= (blackControlledSquares.CountSetBits() / 64.0) * 1.0;
+	score += (whiteControlledSquares.CountSetBits() / 64.0) * 1.0;
 
-	score -= (blackControlledSquares.size() / 64.0) * 1.0;
-	score += (whiteControlledSquares.size() / 64.0) * 1.0;
-	//Check control of center (by pawns)
-	score -= (CountCenterControlledByPawns(blackControlledByPawns, false) / 4.0) * 0.5;
-	score += (CountCenterControlledByPawns(whiteControlledByPawns, true) / 4.0) * 0.5;
+	score += CountCenterPawns(position, true) * 0.5;
+	score -= CountCenterPawns(position, false) * 0.5;
+
+	//////////////////////////
 
 	//Check space behind pawns
 	//Check king in check?
 	//Check concentration of pieces around enemy king for an attack/mate?
-	const Piece* whiteKing = position.GetPiece(PieceType::King, true);
-	const Piece* blackKing = position.GetPiece(PieceType::King, false);
-	if (!whiteKing || !blackKing)
-	{
-		assert(false);
-		return score;
-	}
+	//const Piece* whiteKing = position.GetPiece(PieceType::King, true);
+	//const Piece* blackKing = position.GetPiece(PieceType::King, false);
+	//if (!whiteKing || !blackKing)
+	//{
+	//	assert(false);
+	//	return score;
+	//}
 
-	double squareDistanceToWhiteKing = 0.0;
+	/*double squareDistanceToWhiteKing = 0.0;
 	double squareDistanceToBlackKing = 1.0;
 	for (const Piece& piece : whitePieces)
 	{
@@ -226,14 +148,23 @@ double PositionEvaluation::EvaluatePosition(const Position& position)
 		{
 			squareDistanceToWhiteKing += SqDistanceBetweenPieces(piece, *whiteKing);
 		}
-	}
+	}*/
 
-	score += squareDistanceToWhiteKing * 0.003;
-	score -= squareDistanceToBlackKing * 0.003;
-
-	assert(abs(score) < Mate);
+	//score += squareDistanceToWhiteKing * 0.003;
+	//score -= squareDistanceToBlackKing * 0.003;
 
 	return score;
+}
+
+double PositionEvaluation::CountMaterial(const Position& position, bool isWhite)
+{
+	double material = 0.0;
+	material += (isWhite ? position.GetWhitePawns().CountSetBits() : position.GetBlackPawns().CountSetBits());
+	material += 3.0 * (isWhite ? position.GetWhiteKnights().CountSetBits() : position.GetBlackKnights().CountSetBits());
+	material += 3.5 * (isWhite ? position.GetWhiteBishops().CountSetBits() : position.GetBlackBishops().CountSetBits());
+	material += 5.0 * (isWhite ? position.GetWhiteRooks().CountSetBits() : position.GetBlackRooks().CountSetBits());
+	material += 9.0 * (isWhite ? position.GetWhiteQueens().CountSetBits() : position.GetBlackQueens().CountSetBits());
+	return material;
 }
 
 double PositionEvaluation::GetPieceValue(PieceType type)
@@ -263,82 +194,29 @@ double PositionEvaluation::GetPieceValue(PieceType type)
 	return value;
 }
 
-bool PositionEvaluation::IsPieceDefended(const Position& position, const Piece& piece, bool isWhite)
-{
-	const std::vector<Piece>& friendlyPieces = isWhite ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
-	for (const Piece& friendlyPiece : friendlyPieces)
-	{
-		if (&friendlyPiece == &piece)
-			continue;
-
-		std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, friendlyPiece, isWhite);
-		for (const Move& move : moves)
-		{
-			if (move.m_To.m_Square == piece.m_Square)
-				return true;
-		}
-	}
-
-	return false;
-}
-
-bool PositionEvaluation::IsPieceAttacked(const Position& position, const Piece& piece, bool isWhite)
-{
-	const std::vector<Piece>& enemyPieces = isWhite ? position.GetBlackPiecesList() : position.GetWhitePiecesList();
-	for (const Piece& enemyPiece : enemyPieces)
-	{
-		std::vector<Move> moves  = MoveSearcher::GetLegalMoves(position, enemyPiece, !isWhite);
-		for (const Move& move : moves)
-		{
-			if (move.m_To.m_Square == piece.m_Square)
-				return true;
-		}
-	}
-
-	return false;
-}
-
-std::vector<const Piece*> PositionEvaluation::GetHangingPieces(const Position& position)
-{
-	std::vector<const Piece*> hangingPieces;
-	const std::vector<Piece>& enemyPieces = position.IsWhiteToPlay() ? position.GetBlackPiecesList() : position.GetWhitePiecesList();
-	for (const Piece& piece : enemyPieces)
-	{
-		if (IsPieceAttacked(position, piece, !position.IsWhiteToPlay()) && !IsPieceDefended(position, piece, !position.IsWhiteToPlay()))
-			hangingPieces.push_back(&piece);
-	}
-
-	return hangingPieces;
-}
-
-int PositionEvaluation::CountDoubledPawn(const Position& position, bool isWhite)
+int PositionEvaluation::CountDoubledPawns(const Position& position, bool isWhite)
 {
 	int count = 0;
-	const std::vector<Piece>& pieces = isWhite ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
-	
-	std::set<int> checkedFiles;
-	for (const Piece& piece : pieces)
+	const Bitboard& pawns = isWhite ? position.GetWhitePawns() : position.GetBlackPawns();
+	for (int i = 0; i < 8; i++)
 	{
-		if (piece.m_Type == PieceType::Pawn)
-		{
-			if (checkedFiles.find(piece.m_Square % 8) != checkedFiles.end())
-				continue;
-
-			checkedFiles.insert(piece.m_Square % 8);
-			for (const Piece& piece2 : pieces)
-			{
-				if ((&piece != &piece2) && (piece2.m_Type == PieceType::Pawn) && (piece.m_Square % 8 == piece2.m_Square % 8))
-					count++;
-			}
-		}
+		Bitboard file = pawns & _files[i];
+		int countOnFile = file.CountSetBits();
+		if (countOnFile > 1)
+			count += countOnFile;
 	}
 
 	return count;
 }
 
-static int SquareToIdx(const std::array<int, 2>& square)
+int PositionEvaluation::CountCenterPawns(const Position& position, bool isWhite)
 {
-	return square[0] + 8 * square[1];
+	static const Bitboard whiteCenter = _d4 | _e4;
+	static const Bitboard blackCenter = _d5 | _e5;
+	Bitboard centerPawns = (isWhite ? position.GetWhitePawns() : position.GetBlackPawns()) &
+		(isWhite ? whiteCenter : blackCenter);
+
+	return centerPawns.CountSetBits();
 }
 
 std::set<int> PositionEvaluation::GetControlledSquares(const Position& position, const Piece& piece, bool isWhite)
@@ -389,22 +267,27 @@ std::set<int> PositionEvaluation::GetControlledSquares(const Position& position,
 	return controlledSquares;
 }
 
+Bitboard PositionEvaluation::GetControlledSquares(const Position& position, bool isWhite)
+{
+	return MoveSearcher::GetPseudoLegalSquaresFromBitboards(position, isWhite);
+}
+
 int PositionEvaluation::CountCenterControlledByPawns(const std::set<int>& squares, bool isWhite)
 {
 	std::set<int> center;
 	for (int square : squares)
 	{
 		if (isWhite && (
-			square == SquareToIdx({ 2, 4 }) ||
-			square == SquareToIdx({ 3, 4 }) ||
-			square == SquareToIdx({ 4, 4 }) ||
-			square == SquareToIdx({ 5, 4 })))
+			square == c4 ||
+			square == d4 ||
+			square == e4 ||
+			square == f4))
 			center.insert(square);
 		else if (!isWhite && (
-			square == SquareToIdx({ 2, 3 }) ||
-			square == SquareToIdx({ 3, 3 }) ||
-			square == SquareToIdx({ 4, 3 }) ||
-			square == SquareToIdx({ 5, 3 })))
+			square == c5 ||
+			square == d5 ||
+			square == e5 ||
+			square == f5))
 			center.insert(square);
 	}
 

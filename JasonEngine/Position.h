@@ -67,6 +67,7 @@ public:
 	bool HasBlackCastled() const { return m_HasBlackCastled; };
 
 	bool IsInsufficientMaterial() const;
+	bool IsInsufficientMaterialFromBitboards() const;
 
 	const std::vector<Piece>& GetWhitePiecesList() const { return m_WhitePiecesList; };
 	const std::vector<Piece>& GetBlackPiecesList() const { return m_BlackPiecesList; };
@@ -112,17 +113,17 @@ public:
 	/// <summary>
 	/// Returns pieces for given type and their position of side whose turn is to move (if there is one! Can have more than 1)
 	/// </summary>
-	std::vector<const Piece*> GetPieces(PieceType type, bool isWhite) const;
+	std::vector<Piece> GetPieces(PieceType type, bool isWhite) const;
 
 	/// <summary>
 	/// Returns first piece found for given type and their position of side whose turn is to move (if there is one! Can have more than 1)
 	/// </summary>
-	const Piece* GetPiece(PieceType type, bool isWhite) const;
+	std::optional<Piece> GetPiece(PieceType type, bool isWhite) const;
 
 	/// <summary>
 	/// Returns pieces for given type and their position of side whose turn is to move (if there is one! Can have more than 1)
 	/// </summary>
-	std::vector<const Piece*> GetPiecesToPlay(PieceType type) const;
+	std::vector<Piece> GetPiecesToPlay(PieceType type) const;
 
 	const std::vector<Move>& GetMoves() const { return m_Moves; };
 	std::vector<Move>& GetMoves() { return m_Moves; };
@@ -149,8 +150,11 @@ public:
 
 private:
 
-	void UpdatePiece(const Move& move);
-	void UpdateCapturedPiece(int squareIdx);
+	void UpdatePiece(const Move& move, bool isWhite);
+
+	/// <param name="capturedPiece">Captured piece if any [OUT]</param>
+	void UpdateCapturedPiece(int squareIdx, std::optional<Piece>& capturedPiece);
+	void UndoCapturedPiece(const Piece& piece);
 
 	//REPLACING list of pieces with bitboards!!
 	Bitboard m_WhitePieces;
@@ -171,6 +175,8 @@ private:
 
 	std::vector<Piece> m_WhitePiecesList; //Position representation is piece-centric, this might change in the future
 	std::vector<Piece> m_BlackPiecesList;
+	bool m_MaintainPiecesList = false;
+
 	bool m_IsWhiteToPlay = true;
 	GameStatus m_GameStatus = GameStatus::Running;
 	bool m_CanWhiteCastleKingSide = true;

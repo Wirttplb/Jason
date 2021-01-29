@@ -309,46 +309,51 @@ void MoveSearcherTests::Run()
 	positions = MoveSearcher::GetAllPossiblePositions(staleMateBlackToPlay);
 	ASSERT(positions.empty());
 
-	////starting position
-	//Position startingPosition;
-	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition);
-	//ASSERT(positions.size() == 20);
+	//starting position
+	Position startingPosition;
+	positions = MoveSearcher::GetAllPossiblePositions(startingPosition);
+	ASSERT(positions.size() == 20);
 
-	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 1);
-	//uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 1);
-	//ASSERT(positions.size() == 20);
-	//ASSERT(uniquePositions.size() == 20);
+	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 1);
+	uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 1);
+	ASSERT(positions.size() == 20);
+	ASSERT(uniquePositions.size() == 20);
 
-	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 2);
-	//uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 2);
-	//ASSERT(positions.size() == 20 * 20);
-	//ASSERT(uniquePositions.size() == 20 * 20);
+	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 2);
+	uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 2);
+	size_t positionsCount = MoveSearcher::CountNodes(startingPosition, 2);
+	ASSERT(positions.size() == 20 * 20);
+	ASSERT(uniquePositions.size() == 20 * 20);
+	ASSERT(positionsCount == 20 * 20);
 
-	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 3);
-	//uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 3);
-	//ASSERT(positions.size() == 8902);
-	//ASSERT(uniquePositions.size() == 7602); //5362 if we dont count en passant
+	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 3);
+	uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 3);
+	positionsCount = MoveSearcher::CountNodes(startingPosition, 3);
+	ASSERT(positions.size() == 8902);
+	ASSERT(uniquePositions.size() == 7602); //5362 if we dont count en passant
+	ASSERT(positionsCount == 8902);
 
-	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 4);
-	//uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 4);
-	//ASSERT(positions.size() == 197281);
-	//ASSERT(uniquePositions.size() == 101240); //72084 if we dont count en passant
+	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 4);
+	uniquePositions = MoveSearcher::GetAllUniquePositions(startingPosition, 4);
+	positionsCount = MoveSearcher::CountNodes(startingPosition, 4);
+	ASSERT(positions.size() == 197281);
+	ASSERT(uniquePositions.size() == 101240); //72084 if we dont count en passant
+	ASSERT(positionsCount == 197281);
 
-	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 4);
-	//ASSERT(positions.size() == 197281);
+	positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 5);
+	positionsCount = MoveSearcher::CountNodes(startingPosition, 5);
+	ASSERT(positions.size() == 4865609);
+	ASSERT(positionsCount == 4865609);
 
-	//positions = MoveSearcher::GetAllPossiblePositions(startingPosition, 5);
-	//ASSERT(positions.size() == 4865609);
+	//Perft #2
+	positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 1);
+	ASSERT(positions.size() == 48);
 
-	////Perft #2
-	//positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 1);
-	//ASSERT(positions.size() == 48);
+	positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 2);
+	ASSERT(positions.size() == 2039);
 
-	//positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 2);
-	//ASSERT(positions.size() == 2039);
-
-	//positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 3);
-	//ASSERT(positions.size() == 97862);
+	positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 3);
+	ASSERT(positions.size() == 97862);
 
 	positions = MoveSearcher::GetAllPossiblePositions(perftPosition2, 4);
 	ASSERT(positions.size() == 4085603);

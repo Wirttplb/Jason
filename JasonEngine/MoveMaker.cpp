@@ -22,59 +22,27 @@ bool MoveMaker::MakeMove(Position& position, int depth)
 std::optional<Position> MoveMaker::FindMove(Position& position, int depth)
 {
 	std::optional<Position> newPosition;
-	std::vector<Move> allLegalMoves = MoveSearcher::GetLegalMoves(position);
+	std::vector<Move> allLegalMoves = MoveSearcher::GetLegalMovesFromBitboards(position);
 
 	if (allLegalMoves.empty())
 		return newPosition; //Stalemate
 
 	//position score is signed, > 0 is good for white ; < 0 good for black
-	double bestScore = position.IsWhiteToPlay() ? std::numeric_limits<double>::lowest() : std::numeric_limits<double>::max();
-	Move& bestMove = allLegalMoves.front();
-	//to promote castles
-	//PositionEvaluation::Score bestCastlingMoveScore = bestScore;
-	//std::optional<Move> castlingMove;
-	
-	//Evaluate all legal moves based on new position score (~minimax rule)
-	for (Move& move : allLegalMoves)
+	constexpr double alpha = std::numeric_limits<double>::lowest();
+	constexpr double beta = std::numeric_limits<double>::max();
+	std::optional<Move> bestMove;
+	double score = AlphaBetaNegamax(position, depth, alpha, beta, position.IsWhiteToPlay(), bestMove);
+	if (!bestMove.has_value())
 	{
-		const double score = m_PositionEvaluator.EvaluateMove(position, move, depth);
-		
-		if ((position.IsWhiteToPlay() && score > bestScore) || (!position.IsWhiteToPlay() && score < bestScore))
-		{
-			bestScore = score;
-			bestMove = move;
-		}
-
-		//if (move.IsCastling() && ((position.IsWhiteToPlay() && score > bestCastlingMoveScore) || (!position.IsWhiteToPlay() && score < bestCastlingMoveScore)))
-		//{
-		//	bestCastlingMoveScore = score;
-		//	castlingMove = move;
-		//}
+		assert(false);
+		return newPosition;
 	}
-
-	//Promote castling
-	//if (castlingMove && abs(bestCastlingMoveScore - bestScore) < 0.9)
-	//	bestMove = *castlingMove;
-
-	//RANDOM MOVE
-	//const int rand = std::rand();
-	//bestMove = allLegalMoves[rand % allLegalMoves.size()];
 
 	newPosition = position;
-	newPosition->Update(bestMove);
+	newPosition->Update(*bestMove);
 
 	//Check there is still a king!!
-	int n = 0;
-	for (const Piece& piece : newPosition->GetWhitePiecesList())
-	{
-		if (piece.m_Type == PieceType::King)
-			n++;
-	}
-	for (const Piece& piece : newPosition->GetBlackPiecesList())
-	{
-		if (piece.m_Type == PieceType::King)
-			n++;
-	}
+	const int n = position.GetWhiteKing().CountSetBits() + position.GetBlackKing().CountSetBits();
 	assert(n == 2);
 
 	return newPosition;
@@ -83,7 +51,7 @@ std::optional<Position> MoveMaker::FindMove(Position& position, int depth)
 bool MoveMaker::MakeMove(Position& position, Move& move)
 {
 	//Check move is legal
-	std::vector<Move> legalMoves = MoveSearcher::GetLegalMoves(position, move.m_From, position.IsWhiteToPlay());
+	std::vector<Move> legalMoves = MoveSearcher::GetLegalMovesFromBitboards(position, move.m_From, position.IsWhiteToPlay());
 
 	bool isLegal = false;
 	for (const Move& legalMove : legalMoves)
@@ -105,29 +73,91 @@ bool MoveMaker::MakeMove(Position& position, Move& move)
 void MoveMaker::CheckGameOver(Position& position)
 {
 	//check for insufficient material
-	if (position.IsInsufficientMaterial())
+	if (position.IsInsufficientMaterialFromBitboards())
 	{
 		position.SetGameStatus(Position::GameStatus::StaleMate);
 		return;
 	}
 
 	//Check all legal moves
-	std::vector<Move> allLegalMoves;
-	const std::vector<Piece>& piecesToMove = position.IsWhiteToPlay() ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
-	for (const Piece& piece : piecesToMove)
-	{
-		//Get Legal moves
-		std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, piece, position.IsWhiteToPlay());
-		allLegalMoves.insert(allLegalMoves.end(), moves.begin(), moves.end());
-	}
-
+	std::vector<Move> allLegalMoves = MoveSearcher::GetLegalMovesFromBitboards(position);
 	if (allLegalMoves.empty())
 	{
-		if (MoveSearcher::IsKingInCheck(position, position.IsWhiteToPlay()))
+		if (MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()))
 			position.SetGameStatus(Position::GameStatus::CheckMate);
 		else
 			position.SetGameStatus(Position::GameStatus::StaleMate);
 	}
 
 	return;
+}
+
+double MoveMaker::AlphaBetaNegamax(Position& position, int depth, double alpha, double beta, bool maximizeWhite, std::optional<Move>& bestMove)
+{
+	const double originalAlpha = alpha;
+
+	//Transposition table lookup
+	if ((m_TranspositionTable.find(position.GetZobristHash()) != m_TranspositionTable.end()) && (m_TranspositionTable[position.GetZobristHash()].m_Depth >= depth))
+	{
+		switch (m_TranspositionTable[position.GetZobristHash()].m_Flag)
+		{
+		case TranspositionTableEntry::Flag::Exact:
+			return m_TranspositionTable[position.GetZobristHash()].m_Score;
+		case TranspositionTableEntry::Flag::LowerBound:
+			alpha = std::max(alpha, m_TranspositionTable[position.GetZobristHash()].m_Score);
+			break;
+		case TranspositionTableEntry::Flag::UpperBound:
+			beta = std::min(beta, m_TranspositionTable[position.GetZobristHash()].m_Score);
+			break;
+		default:
+			assert(false);
+			break;
+		}
+
+		if (alpha >= beta)
+			return m_TranspositionTable[position.GetZobristHash()].m_Score;
+	}
+
+	if (depth == 0)
+		return (maximizeWhite ? 1.0 : -1.0) * PositionEvaluation::EvaluatePosition(position);
+
+	std::vector<Move> childMoves = MoveSearcher::GetLegalMovesFromBitboards(position);
+	if (childMoves.empty())
+		return (maximizeWhite ? 1.0 : -1.0) * PositionEvaluation::EvaluatePosition(position);
+
+	double value = std::numeric_limits<double>::lowest();
+	const int piecesCount = position.GetBlackPieces().CountSetBits() + position.GetWhitePieces().CountSetBits();
+	for (Move& childMove : childMoves)
+	{
+		position.Update(childMove);
+		const int piecesCount2 = position.GetBlackPieces().CountSetBits() + position.GetWhitePieces().CountSetBits();
+		const int actualDepth = (piecesCount == piecesCount2) ? depth - 1 : depth -1; //go deeper when we sense a tactic (capture...) ~ Quiescent search
+		std::optional<Move> bestMoveDummy; //only returns best move from 0 depth
+		double score = -AlphaBetaNegamax(position, actualDepth, -beta, -alpha, !maximizeWhite, bestMoveDummy);
+		position.Undo(childMove);
+
+		if (score > value)
+		{
+			value = score;
+			bestMove = childMove;
+		}
+		
+		alpha = std::max(alpha, value);
+
+		if (alpha >= beta)
+			break;//cutoff
+	}
+
+	//Transposition Table Store
+	m_TranspositionTable[position.GetZobristHash()].m_Score = value;
+	if (value <= originalAlpha)
+		m_TranspositionTable[position.GetZobristHash()].m_Flag = TranspositionTableEntry::Flag::UpperBound;
+	else if (value >= beta)
+		m_TranspositionTable[position.GetZobristHash()].m_Flag = TranspositionTableEntry::Flag::LowerBound;
+	else
+		m_TranspositionTable[position.GetZobristHash()].m_Flag = TranspositionTableEntry::Flag::Exact;
+
+	m_TranspositionTable[position.GetZobristHash()].m_Depth = depth;
+
+	return value;
 }

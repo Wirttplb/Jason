@@ -1,17 +1,21 @@
 #include <iostream>
 #include <time.h>
 #include "NotationParserTests.h"
+#include "PositionTests.h"
 #include "ZobristTests.h"
 #include "MoveSearcherTests.h"
 #include "TacticsTests.h"
 
 int main()
 {
+    std::cout << "Tests are running..." << std::endl;
+
     time_t start;
     time_t end;
     
     time(&start);
-    //NotationParserTests::Run();
+    NotationParserTests::Run();
+    //PositionTests::Run();
     //ZobristTests::Run();
     MoveSearcherTests::Run();
     //TacticsTests::Run();
