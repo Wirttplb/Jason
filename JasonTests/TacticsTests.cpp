@@ -50,12 +50,11 @@ void TacticsTests::Run()
 	//ASSERT(removeKnightForkDefender.GetMoves()[1].m_To == Piece(PieceType::Bishop, 1, 5));
 	//ASSERT(removeKnightForkDefender.GetMoves()[2].m_To == Piece(PieceType::Knight, 3, 5));
 
-	Move move;
-	PositionEvaluation evaluator;
+	/*Move move;
 	move.m_From = Piece(PieceType::Queen, e3);
 	move.m_To = Piece(PieceType::Queen, b6);
-	const double score = evaluator.EvaluateMove(removeKnightForkDefender, move, 4);
-	ASSERT(score > 0);
+	const double score = PositionEvaluation::EvaluateMove(removeKnightForkDefender, move, 4);
+	ASSERT(score > 0);*/
 
 	RunPosition(twoAttackOne, 1, 3);
 	ASSERT(twoAttackOne.GetMoves()[0].m_To.m_Square == c3);

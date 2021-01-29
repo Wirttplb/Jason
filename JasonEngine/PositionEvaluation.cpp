@@ -2,59 +2,36 @@
 #include "PositionEvaluation.h"
 #include "MoveMaker.h"
 #include "MoveSearcher.h"
+#include "BitboardUtility.h"
 #include <assert.h>
 
-/// <summary>
-/// Absolute score for a mate
-/// </summary>
+/// <summary>Absolute score for a mate</summary>
 static constexpr double Mate = 1000000;
 
-double PositionEvaluation::EvaluateMove(Position& position, Move& move, int depth)
-{
-	position.Update(move);
-	constexpr double alpha = std::numeric_limits<double>::lowest();
-	constexpr double beta = std::numeric_limits<double>::max();
-	double score = 0.0;// AlphaBetaNegamax(position, depth, alpha, beta, position.IsWhiteToPlay());
-	position.Undo(move);
+static constexpr double BishopPairBonus = 15.0;
+static constexpr double CastlingBonus = 50.0;
 
-	return score;
-}
+static constexpr double CenterPawnBonus = 50.0;
+static constexpr double DoubledPawnPunishment = -20.0; //40 for a pair
+static constexpr double IsolatedPawnPunishment = -40.0;
 
-double PositionEvaluation::Minimax(Position& position, int depth, bool maximizeWhite)
-{
-	if (depth == 0)
-		return EvaluatePosition(position);
+static constexpr double KnightEndgamePunishment = -10.0;
+static constexpr double BishopEndgamePunishment = 10.0;
 
-	std::vector<Move> childMoves = MoveSearcher::GetLegalMoves(position);
-	if (childMoves.empty())
-		return EvaluatePosition(position);
+static constexpr double RookOnSemiOpenFileBonus = 20.0;
+static constexpr double RookOnOpenFileBonus = 30.0;
 
-	double value = 0.0;
-	if (maximizeWhite)
-	{
-		value = std::numeric_limits<double>::lowest();
-		for (Move& childMove : childMoves)
-		{
-			position.Update(childMove);
-			value = std::max(value, Minimax(position, depth - 1, false));
-			position.Undo(childMove);
-		}
+static constexpr double Blockin_d_or_ePawnPunishment = -40.0; //Punishment for blocking unmoved pawns on d and e files
 
-		return value;
-	}
-	else
-	{
-		value = std::numeric_limits<double>::max();
-		for (Move& childMove : childMoves)
-		{
-			position.Update(childMove);
-			value = std::min(value, Minimax(position, depth - 1, true));
-			position.Undo(childMove);
-		}
+static constexpr double KnightPawnBonus = 2.0; //Knights better with lots of pawns
+static constexpr double BishopPawnPunishment = -2.0; //Bishops worse with lots of pawns
+static constexpr double RookPawnPunishment = -2.0; //Rooks worse with lots of pawns
 
-		return value;
-	}
-}
+static constexpr double ControlledSquareBonusFactor = 0.3;
+static constexpr double CenterAttackedBonusFactor = 1.0; //Factor to multiply with how many center squares are attacked by own pieces
+static constexpr double KingSquaresAttackBonusFactor = 5.0; //Factor to multiply with how many squares around enemy king that are attacked by own pieces
+
+static constexpr double SamePieceTwicePunishment = -50.0; //Penaly for moving same piece twice in opening
 
 static double SqDistanceBetweenPieces(const Piece& a, const Piece& b)
 {
@@ -86,27 +63,44 @@ double PositionEvaluation::EvaluatePosition(const Position& position)
 		break;
 	}
 
-	double score = 0.0;
 	//Check material
-	score = CountMaterial(position, true) - CountMaterial(position, false);
+	double score = CountMaterial(position, true) - CountMaterial(position, false);
+
+	//Bishop pair bonus
+	if (position.GetWhiteBishops().CountSetBits() >= 2)
+		score += BishopPairBonus;
+	if (position.GetBlackBishops().CountSetBits() >= 2)
+		score -= BishopPairBonus;
+
+	//Rook on open files
+	std::pair<int, int> whiteRooksOnOpenFiles = PositionEvaluation::CountRooksOnOpenFiles(position, true);
+	std::pair<int, int> blackRooksOnOpenFiles = PositionEvaluation::CountRooksOnOpenFiles(position, false);
+	score += whiteRooksOnOpenFiles.first * RookOnOpenFileBonus;
+	score += whiteRooksOnOpenFiles.second * RookOnSemiOpenFileBonus;
+	score -= blackRooksOnOpenFiles.first * RookOnOpenFileBonus;
+	score -= blackRooksOnOpenFiles.second * RookOnSemiOpenFileBonus;
 
 	//penalty for moving same pieces twice
 	if (position.GetMoves().size() > 3)
 	{
 		const int lastIdx = static_cast<int>(position.GetMoves().size()) - 1;
 		if (position.GetMoves()[lastIdx].m_From.m_Square == position.GetMoves()[lastIdx - 2].m_To.m_Square)
-			score = (position.IsWhiteToPlay() ? -0.33 : 0.33);
+			score += (position.IsWhiteToPlay() ? SamePieceTwicePunishment : -SamePieceTwicePunishment);
 	}
+
+	//Center pawns
+	score += CountCenterPawns(position, true) * CenterPawnBonus;
+	score -= CountCenterPawns(position, false) * CenterPawnBonus;
 
 	//Check double pawns
 	int whiteDoubledPawns = CountDoubledPawns(position, true);
 	int blackDoubledPawns = CountDoubledPawns(position, false);
 
-	score -= static_cast<double>(whiteDoubledPawns) * 0.33;
-	score += static_cast<double>(blackDoubledPawns) * 0.33;
+	score += static_cast<double>(whiteDoubledPawns) * DoubledPawnPunishment;
+	score -= static_cast<double>(blackDoubledPawns) * DoubledPawnPunishment;
 
 	//Castling bonus: castling improves score during opening, importance of castling decays during the game
-	double castleBonus = 1.0 * 0.025 * std::max(0.0, 40.0 - static_cast<double>(position.GetMoves().size()));
+	const double castleBonus = CastlingBonus * std::max(0.0, 40.0 - static_cast<double>(position.GetMoves().size()));
 	if (position.HasWhiteCastled())
 		score += castleBonus;
 	if (position.HasBlackCastled())
@@ -114,11 +108,13 @@ double PositionEvaluation::EvaluatePosition(const Position& position)
 
 	Bitboard whiteControlledSquares = GetControlledSquares(position, true);
 	Bitboard blackControlledSquares = GetControlledSquares(position, false);
-	score -= (blackControlledSquares.CountSetBits() / 64.0) * 1.0;
-	score += (whiteControlledSquares.CountSetBits() / 64.0) * 1.0;
+	score += whiteControlledSquares.CountSetBits() * ControlledSquareBonusFactor;
+	score -= blackControlledSquares.CountSetBits() * ControlledSquareBonusFactor;
 
-	score += CountCenterPawns(position, true) * 0.5;
-	score -= CountCenterPawns(position, false) * 0.5;
+	Bitboard attackedSquaresAroundWhiteKing = GetAttackedSquaresAroundKing(position, blackControlledSquares, true);
+	Bitboard attackedSquaresAroundBlackKing = GetAttackedSquaresAroundKing(position, whiteControlledSquares, false);
+	score += attackedSquaresAroundBlackKing.CountSetBits() * KingSquaresAttackBonusFactor;
+	score -= attackedSquaresAroundWhiteKing.CountSetBits() * KingSquaresAttackBonusFactor;
 
 	//////////////////////////
 
@@ -159,33 +155,33 @@ double PositionEvaluation::EvaluatePosition(const Position& position)
 double PositionEvaluation::CountMaterial(const Position& position, bool isWhite)
 {
 	double material = 0.0;
-	material += (isWhite ? position.GetWhitePawns().CountSetBits() : position.GetBlackPawns().CountSetBits());
-	material += 3.0 * (isWhite ? position.GetWhiteKnights().CountSetBits() : position.GetBlackKnights().CountSetBits());
-	material += 3.5 * (isWhite ? position.GetWhiteBishops().CountSetBits() : position.GetBlackBishops().CountSetBits());
-	material += 5.0 * (isWhite ? position.GetWhiteRooks().CountSetBits() : position.GetBlackRooks().CountSetBits());
-	material += 9.0 * (isWhite ? position.GetWhiteQueens().CountSetBits() : position.GetBlackQueens().CountSetBits());
+	material += GetPieceValue(PieceType::Pawn) * (isWhite ? position.GetWhitePawns().CountSetBits() : position.GetBlackPawns().CountSetBits());
+	material += GetPieceValue(PieceType::Knight) * (isWhite ? position.GetWhiteKnights().CountSetBits() : position.GetBlackKnights().CountSetBits());
+	material += GetPieceValue(PieceType::Bishop) * (isWhite ? position.GetWhiteBishops().CountSetBits() : position.GetBlackBishops().CountSetBits());
+	material += GetPieceValue(PieceType::Rook) * (isWhite ? position.GetWhiteRooks().CountSetBits() : position.GetBlackRooks().CountSetBits());
+	material += GetPieceValue(PieceType::Queen) * (isWhite ? position.GetWhiteQueens().CountSetBits() : position.GetBlackQueens().CountSetBits());
 	return material;
 }
 
-double PositionEvaluation::GetPieceValue(PieceType type)
+constexpr double PositionEvaluation::GetPieceValue(PieceType type)
 {
 	double value = 0.0;
 	switch (type)
 	{
 	case PieceType::Queen:
-		value = 9;
+		value = 900.0;
 		break;
 	case PieceType::Rook:
-		value = 5;
+		value = 490.0;
 		break;
 	case PieceType::Bishop:
-		value = 3;
+		value = 320.0;
 		break;
 	case PieceType::Knight:
-		value = 3;
+		value = 290.0;
 		break;
 	case PieceType::Pawn:
-		value = 1;
+		value = 100.0;
 		break;
 	default:
 		break;
@@ -292,4 +288,37 @@ int PositionEvaluation::CountCenterControlledByPawns(const std::set<int>& square
 	}
 
 	return static_cast<int>(center.size());
+}
+
+Bitboard PositionEvaluation::GetAttackedSquaresAroundKing(const Position& position, const Bitboard& attackedSquares, bool isWhite)
+{
+	const Bitboard& kingSquare = (isWhite ? position.GetWhiteKing() : position.GetBlackKing());
+	const int kingSquareIdx = kingSquare.GetSquare();
+	return (MoveSearcher::GetMoveTable(PieceType::King)[kingSquareIdx] | kingSquare) & (attackedSquares);
+}
+
+std::pair<int, int> PositionEvaluation::CountRooksOnOpenFiles(const Position& position, bool isWhite)
+{
+	std::pair<int, int> result = { 0,0 };
+	const Bitboard& rooks = (isWhite ? position.GetWhiteRooks() : position.GetBlackRooks());
+	Bitboard allPawns = position.GetWhitePawns() | position.GetBlackPawns();
+	const Bitboard& sameColorPawns = (isWhite ? position.GetWhitePawns() : position.GetBlackPawns());
+
+	//loop over set bits
+	uint64_t bitset = rooks;
+	while (bitset != 0)
+	{
+		const uint64_t t = bitset & (~bitset + 1);
+		const int idx = static_cast<int>(_tzcnt_u64(bitset));
+
+		const int file = idx & 7;// or % 8
+		if (!(_files[file] & allPawns))
+			result.first++;
+		else if (!(_files[file] & sameColorPawns))
+			result.second++;
+
+		bitset ^= t;
+	}
+
+	return result;
 }

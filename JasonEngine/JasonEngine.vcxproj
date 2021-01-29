@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="BasicDefinitions.h" />
     <ClInclude Include="Bitboard.h" />
+    <ClInclude Include="BitboardUtility.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="MoveMaker.h" />
     <ClInclude Include="MoveSearcher.h" />

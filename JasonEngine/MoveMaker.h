@@ -37,6 +37,9 @@ private:
 	/// <remark>Works best when it happens to test the best move first at most levels, in other words when eval function is quite good</remark>
 	double AlphaBetaNegamax(Position& position, int depth, double alpha, double beta, bool maximizeWhite, std::optional<Move>& bestMove);
 
+	/// <summary>Depth limited minimax algorithm</summary>
+	double Minimax(Position& position, int depth, bool maximizeWhite, std::optional<Move>& bestMove);
+
 	/// <summary>Transposition table entry</summary>
 	struct TranspositionTableEntry
 	{
@@ -51,6 +54,7 @@ private:
 		Flag m_Flag = Flag::Exact;
 		int m_Depth = 0;
 		double m_Score = 0.0;
+		Move m_BestMove;
 	};
 
 	std::unordered_map<uint64_t, TranspositionTableEntry> m_TranspositionTable; //simple transposition table, store scores of positions evaluated at depth 0 to, key is Zobrist hash

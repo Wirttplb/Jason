@@ -1,35 +1,9 @@
 #include "pch.h"
 #include "MoveSearcher.h"
 #include "MoveMaker.h"
+#include "BitboardUtility.h"
 #include <assert.h>
 #include <iterator>
-
-/// <summary>
-/// Loop over set bits from right to left, callback is called with index of set bit
-/// </summary>
-static void LoopOverSetBits(const Bitboard& bitboard, void callback(int idx))
-{
-	uint64_t bitset = bitboard;
-	while (bitset != 0)
-	{
-		const uint64_t t = bitset & (~bitset + 1);
-		const int idx = static_cast<int>(_tzcnt_u64(bitset));// __builtin_ctzll(bitset);
-		callback(idx);
-		bitset ^= t;
-	}
-}
-
-static void LoopOverSetBits(const uint8_t& byte, void callback(int idx))
-{
-	uint8_t bitset = byte;
-	while (bitset != 0)
-	{
-		const uint8_t t = bitset & (~bitset + 1);
-		const int idx = _tzcnt_u32(bitset);// __builtin_ctz(bitset);
-		callback(idx);
-		bitset ^= t;
-	}
-}
 
 static PieceType _type = PieceType::Pawn;
 static int _from = 0;
@@ -48,28 +22,6 @@ static std::vector<Move> GenerateMoveList(PieceType type, int from, const Bitboa
 static void MakeMove(int to)
 {
 	Move move(_type, static_cast<Square>(_from), static_cast<Square>(to));
-	
-	//if (_type == PieceType::Pawn)
-	//{
-	//	//Queening moves! COULD BE PLACED IN A TABLE
-	//	const int row = (to / 8); //could replace int to by bitboard to avoid division here...
-	//	if (row == 0 || row == 7)
-	//	{
-	//		move.m_To.m_Type = PieceType::Queen;
-	//		_moves.emplace_back(move);
-	//		move.m_To.m_Type = PieceType::Rook;
-	//		_moves.emplace_back(move);
-	//		move.m_To.m_Type = PieceType::Bishop;
-	//		_moves.emplace_back(move);
-	//		move.m_To.m_Type = PieceType::Knight;
-	//		_moves.emplace_back(move);
-	//	}
-	//	else
-	//		_moves.emplace_back(move);
-	//}
-	//else
-	//	_moves.emplace_back(move);
-
 	_moves.emplace_back(move);
 }
 
@@ -1286,4 +1238,24 @@ std::optional<Move> MoveSearcher::GetRandomMove(const Position& position)
 	const int rand = std::rand();
 	move = allLegalMoves[rand % allLegalMoves.size()];
 	return move;
+}
+
+const std::vector<Bitboard>& MoveSearcher::GetMoveTable(PieceType type, bool isWhite)
+{
+	switch (type)
+	{
+	case PieceType::King:
+			return KingMoveTable;
+	case PieceType::Queen:
+		return QueenMoveTable;
+	case PieceType::Rook:
+		return RookMoveTable;
+	case PieceType::Bishop:
+		return BishopMoveTable;
+	case PieceType::Knight:
+		return KnightMoveTable;
+	case PieceType::Pawn:
+	default:
+		return (isWhite ? WhitePawnMoveTable : BlackPawnMoveTable);
+	}
 }

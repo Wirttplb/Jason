@@ -66,6 +66,9 @@ public:
 	/// </summary>
 	static std::optional<Move> GetRandomMove(const Position& position);
 
+	/// <returns>Move table (accessible squares on empty board) ; for pawns, single step moves</returns>
+	static const std::vector<Bitboard>& GetMoveTable(PieceType type, bool isWhite = true);
+
 private:
 	/// <summary>
 	/// Returns true if move is blocked because of collision

@@ -38,6 +38,14 @@ std::optional<Position> MoveMaker::FindMove(Position& position, int depth)
 		return newPosition;
 	}
 
+	////TEST CHECK
+	//std::optional<Move> bestMove2;
+	//double score2 = MoveMaker::Minimax(position, depth, position.IsWhiteToPlay(), bestMove2);
+	//if ((abs(score - score2) > 0.0000001) || !(*bestMove == *bestMove2))
+	//{
+	//	bestMove = bestMove2;
+	//}
+
 	newPosition = position;
 	newPosition->Update(*bestMove);
 
@@ -102,7 +110,10 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, double alpha, 
 		switch (m_TranspositionTable[position.GetZobristHash()].m_Flag)
 		{
 		case TranspositionTableEntry::Flag::Exact:
+		{
+			bestMove = m_TranspositionTable[position.GetZobristHash()].m_BestMove;
 			return m_TranspositionTable[position.GetZobristHash()].m_Score;
+		}
 		case TranspositionTableEntry::Flag::LowerBound:
 			alpha = std::max(alpha, m_TranspositionTable[position.GetZobristHash()].m_Score);
 			break;
@@ -115,7 +126,10 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, double alpha, 
 		}
 
 		if (alpha >= beta)
+		{
+			bestMove = m_TranspositionTable[position.GetZobristHash()].m_BestMove;
 			return m_TranspositionTable[position.GetZobristHash()].m_Score;
+		}
 	}
 
 	if (depth == 0)
@@ -158,6 +172,57 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, double alpha, 
 		m_TranspositionTable[position.GetZobristHash()].m_Flag = TranspositionTableEntry::Flag::Exact;
 
 	m_TranspositionTable[position.GetZobristHash()].m_Depth = depth;
+	m_TranspositionTable[position.GetZobristHash()].m_BestMove = *bestMove;
 
 	return value;
+}
+
+double MoveMaker::Minimax(Position& position, int depth, bool maximizeWhite, std::optional<Move>& bestMove)
+{
+	if (depth == 0)
+		return PositionEvaluation::EvaluatePosition(position);
+
+	std::vector<Move> childMoves = MoveSearcher::GetLegalMovesFromBitboards(position);
+	if (childMoves.empty())
+		return PositionEvaluation::EvaluatePosition(position);
+
+	double value = 0.0;
+	if (maximizeWhite)
+	{
+		value = std::numeric_limits<double>::lowest();
+		for (Move& childMove : childMoves)
+		{
+			position.Update(childMove);
+			std::optional<Move> dummyBestMove;
+			const double score = Minimax(position, depth - 1, false, dummyBestMove);
+			position.Undo(childMove);
+
+			if (score > value)
+			{
+				value = score;
+				bestMove = childMove;
+			}
+		}
+
+		return value;
+	}
+	else
+	{
+		value = std::numeric_limits<double>::max();
+		for (Move& childMove : childMoves)
+		{
+			position.Update(childMove);
+			std::optional<Move> dummyBestMove;
+			const double score = std::min(value, Minimax(position, depth - 1, true, dummyBestMove));
+			position.Undo(childMove);
+
+			if (score < value)
+			{
+				value = score;
+				bestMove = childMove;
+			}
+		}
+
+		return value;
+	}
 }
