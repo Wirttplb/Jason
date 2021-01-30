@@ -148,9 +148,12 @@ public:
 
 	bool CheckBitboardsSanity() const;
 
+	void SetMaintainPiecesList(bool value) { m_MaintainPiecesList = value; };
+
 private:
 
 	void UpdatePiece(const Move& move, bool isWhite);
+	void UpdateSquare(const Piece& piece, bool isWhite);
 
 	/// <param name="capturedPiece">Captured piece if any [OUT]</param>
 	void UpdateCapturedPiece(int squareIdx, std::optional<Piece>& capturedPiece);
@@ -175,7 +178,7 @@ private:
 
 	std::vector<Piece> m_WhitePiecesList; //Position representation is piece-centric, this might change in the future
 	std::vector<Piece> m_BlackPiecesList;
-	bool m_MaintainPiecesList = false;
+	bool m_MaintainPiecesList = true; //true by default, actual Jason.exe should turn this off
 
 	bool m_IsWhiteToPlay = true;
 	GameStatus m_GameStatus = GameStatus::Running;

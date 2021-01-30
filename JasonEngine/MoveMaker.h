@@ -20,18 +20,13 @@ public:
 	/// <returns>true if move was applied, false if illegal or game is already over</returns>
 	bool MakeMove(Position& position, Move& move);
 
-	static void CheckGameOver(Position& position);
+	/// <param=name"isTerminalNode">if true, won't check for no legal modes</param>
+	static void CheckGameOver(Position& position, bool isTerminalNode);
 private:
 
-	/// <returns>Best move found (a new position), invalid if StaleMate</returns>
-	/// <param>Evaluation depth</param>
-	std::optional<Position> FindMove(Position& position, int depth);
-
-	struct BestMove
-	{
-		double m_Score = 0.0;
-		std::optional<Move> m_BestMove;
-	};
+	/// <returns>True if move found, false if StaleMate</returns>
+	/// <param=name"depth">Evaluation depth</param>
+	std::optional<Move> FindMove(Position& position, int depth);
 
 	/// <summary>Depth limited alpha-beta negamax algorithm</summary>
 	/// <remark>Works best when it happens to test the best move first at most levels, in other words when eval function is quite good</remark>

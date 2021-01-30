@@ -37,7 +37,7 @@ public:
 	Square m_Square = a1;
 	PieceType m_Type = PieceType::Pawn;
 
-	/// <summary>Returns position square index</summary>
+	/// <summary>Returns square position as {x, y} (Slow!)</summary>
 	std::array<int, 2> Position() const { return { m_Square % 8, m_Square / 8 }; };
 
 	bool operator==(const Piece& piece) const
@@ -71,6 +71,11 @@ public:
 	{
 		return (m_From.m_Type == PieceType::Pawn) &&
 			(abs(m_From.m_Square - m_To.m_Square) == 16);
+	}
+	bool IsQueening() const
+	{
+		return (m_From.m_Type == PieceType::Pawn) &&
+			((m_To.m_Square <= 7) || (m_To.m_Square >= 56));
 	}
 
 	Piece m_From;

@@ -7,53 +7,23 @@
 
 bool MoveMaker::MakeMove(Position& position, int depth)
 {
-	bool moveFound = false;
-	std::optional<Position> newPosition = FindMove(position, depth);
+	std::optional<Move> bestMove = FindMove(position, depth);
 
-	if (newPosition.has_value())
-	{
-		position = *newPosition;
-		moveFound = true;
-	}
+	if (bestMove.has_value())
+		position.Update(*bestMove);
 
-	return moveFound;
+	return bestMove.has_value();
 }
 
-std::optional<Position> MoveMaker::FindMove(Position& position, int depth)
+std::optional<Move> MoveMaker::FindMove(Position& position, int depth)
 {
-	std::optional<Position> newPosition;
-	std::vector<Move> allLegalMoves = MoveSearcher::GetLegalMovesFromBitboards(position);
-
-	if (allLegalMoves.empty())
-		return newPosition; //Stalemate
-
-	//position score is signed, > 0 is good for white ; < 0 good for black
 	constexpr double alpha = std::numeric_limits<double>::lowest();
 	constexpr double beta = std::numeric_limits<double>::max();
 	std::optional<Move> bestMove;
-	double score = AlphaBetaNegamax(position, depth, alpha, beta, position.IsWhiteToPlay(), bestMove);
-	if (!bestMove.has_value())
-	{
-		assert(false);
-		return newPosition;
-	}
 
-	////TEST CHECK
-	//std::optional<Move> bestMove2;
-	//double score2 = MoveMaker::Minimax(position, depth, position.IsWhiteToPlay(), bestMove2);
-	//if ((abs(score - score2) > 0.0000001) || !(*bestMove == *bestMove2))
-	//{
-	//	bestMove = bestMove2;
-	//}
+	AlphaBetaNegamax(position, depth, alpha, beta, position.IsWhiteToPlay(), bestMove);
 
-	newPosition = position;
-	newPosition->Update(*bestMove);
-
-	//Check there is still a king!!
-	const int n = position.GetWhiteKing().CountSetBits() + position.GetBlackKing().CountSetBits();
-	assert(n == 2);
-
-	return newPosition;
+	return bestMove;
 }
 
 bool MoveMaker::MakeMove(Position& position, Move& move)
@@ -78,7 +48,7 @@ bool MoveMaker::MakeMove(Position& position, Move& move)
 	return true;
 }
 
-void MoveMaker::CheckGameOver(Position& position)
+void MoveMaker::CheckGameOver(Position& position, bool isTerminalNode)
 {
 	//check for insufficient material
 	if (position.IsInsufficientMaterialFromBitboards())
@@ -88,7 +58,7 @@ void MoveMaker::CheckGameOver(Position& position)
 	}
 
 	//Check all legal moves
-	std::vector<Move> allLegalMoves = MoveSearcher::GetLegalMovesFromBitboards(position);
+	std::vector<Move> allLegalMoves = (isTerminalNode ? std::vector<Move>() : MoveSearcher::GetLegalMovesFromBitboards(position));
 	if (allLegalMoves.empty())
 	{
 		if (MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()))
@@ -133,11 +103,11 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, double alpha, 
 	}
 
 	if (depth == 0)
-		return (maximizeWhite ? 1.0 : -1.0) * PositionEvaluation::EvaluatePosition(position);
+		return (maximizeWhite ? 1.0 : -1.0) * PositionEvaluation::EvaluatePosition(position, false);
 
 	std::vector<Move> childMoves = MoveSearcher::GetLegalMovesFromBitboards(position);
 	if (childMoves.empty())
-		return (maximizeWhite ? 1.0 : -1.0) * PositionEvaluation::EvaluatePosition(position);
+		return (maximizeWhite ? 1.0 : -1.0) * PositionEvaluation::EvaluatePosition(position, true);
 
 	double value = std::numeric_limits<double>::lowest();
 	const int piecesCount = position.GetBlackPieces().CountSetBits() + position.GetWhitePieces().CountSetBits();
@@ -180,11 +150,11 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, double alpha, 
 double MoveMaker::Minimax(Position& position, int depth, bool maximizeWhite, std::optional<Move>& bestMove)
 {
 	if (depth == 0)
-		return PositionEvaluation::EvaluatePosition(position);
+		return PositionEvaluation::EvaluatePosition(position, false);
 
 	std::vector<Move> childMoves = MoveSearcher::GetLegalMovesFromBitboards(position);
 	if (childMoves.empty())
-		return PositionEvaluation::EvaluatePosition(position);
+		return PositionEvaluation::EvaluatePosition(position, true);
 
 	double value = 0.0;
 	if (maximizeWhite)

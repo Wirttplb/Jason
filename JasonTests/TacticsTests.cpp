@@ -24,7 +24,7 @@ static void RunPosition(Position& position, int maxMoves, int evaluationDepth, b
 			evaluationDepth--; //should not have to go as deep if evaluation is right for first move
 	}
 
-	MoveMaker::CheckGameOver(position);
+	MoveMaker::CheckGameOver(position, false);
 }
 
 void TacticsTests::Run()

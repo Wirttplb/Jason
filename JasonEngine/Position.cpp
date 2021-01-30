@@ -157,9 +157,9 @@ bool Position::IsInsufficientMaterial() const
 
 bool Position::IsInsufficientMaterialFromBitboards() const
 {
-	if (m_WhitePawns > 0 || m_BlackPawns > 0 ||
-		m_WhiteRooks > 0 || m_BlackRooks > 0 ||
-		m_WhiteQueens > 0 || m_BlackQueens > 0)
+	if ((m_WhitePawns > 0) || (m_BlackPawns > 0) ||
+		(m_WhiteRooks > 0) || (m_BlackRooks > 0) ||
+		(m_WhiteQueens > 0) || (m_BlackQueens > 0))
 		return false;
 
 	int minorPieceCount = (m_WhiteKnights | m_BlackKnights | m_WhiteBishops | m_BlackBishops).CountSetBits();
@@ -448,12 +448,12 @@ void Position::Undo(const Move& move)
 	//Undo capture
 	if (move.m_Capture.has_value())
 	{
-		UndoCapturedPiece(*move.m_Capture);
-		m_ZobristHash ^= ZobristHash::GetKey(*move.m_Capture, IsWhiteToPlay());
+		UpdateSquare(*move.m_Capture, m_IsWhiteToPlay);
+		m_ZobristHash ^= ZobristHash::GetKey(*move.m_Capture, m_IsWhiteToPlay);
 
 		if (m_MaintainPiecesList)
 		{
-			std::vector<Piece>& enemyPieces = !IsWhiteToPlay() ? GetBlackPiecesList() : GetWhitePiecesList();
+			std::vector<Piece>& enemyPieces = !m_IsWhiteToPlay ? GetBlackPiecesList() : GetWhitePiecesList();
 			enemyPieces.emplace_back(*move.m_Capture);
 		}
 	}
@@ -616,37 +616,40 @@ bool Position::CheckBitboardsSanity() const
 
 void Position::UpdatePiece(const Move& move, bool isWhite)
 {
-	for (const Piece* piece : {&move.m_From, &move.m_To})
+	UpdateSquare(move.m_From, isWhite);
+	UpdateSquare(move.m_To, isWhite);
+}
+
+void Position::UpdateSquare(const Piece& piece, bool isWhite)
+{
+	const Bitboard movedPiece(piece.m_Square);
+
+	switch (piece.m_Type)
 	{
-		const Bitboard movedPiece(piece->m_Square);
-
-		switch (piece->m_Type)
-		{
-		case PieceType::Pawn:
-			(isWhite ? m_WhitePawns : m_BlackPawns) ^= movedPiece;
-			break;
-		case PieceType::Knight:
-			(isWhite ? m_WhiteKnights : m_BlackKnights) ^= movedPiece;
-			break;
-		case PieceType::Bishop:
-			(isWhite ? m_WhiteBishops : m_BlackBishops) ^= movedPiece;
-			break;
-		case PieceType::Rook:
-			(isWhite ? m_WhiteRooks : m_BlackRooks) ^= movedPiece;
-			break;
-		case PieceType::Queen:
-			(isWhite ? m_WhiteQueens : m_BlackQueens) ^= movedPiece;
-			break;
-		case PieceType::King:
-			(isWhite ? m_WhiteKing : m_BlackKing) ^= movedPiece;
-			break;
-		default:
-			assert(false);
-			break;
-		}
-
-		(isWhite ? m_WhitePieces : m_BlackPieces) ^= movedPiece;
+	case PieceType::Pawn:
+		(isWhite ? m_WhitePawns : m_BlackPawns) ^= movedPiece;
+		break;
+	case PieceType::Knight:
+		(isWhite ? m_WhiteKnights : m_BlackKnights) ^= movedPiece;
+		break;
+	case PieceType::Bishop:
+		(isWhite ? m_WhiteBishops : m_BlackBishops) ^= movedPiece;
+		break;
+	case PieceType::Rook:
+		(isWhite ? m_WhiteRooks : m_BlackRooks) ^= movedPiece;
+		break;
+	case PieceType::Queen:
+		(isWhite ? m_WhiteQueens : m_BlackQueens) ^= movedPiece;
+		break;
+	case PieceType::King:
+		(isWhite ? m_WhiteKing : m_BlackKing) ^= movedPiece;
+		break;
+	default:
+		assert(false);
+		break;
 	}
+
+	(isWhite ? m_WhitePieces : m_BlackPieces) ^= movedPiece;
 }
 
 void Position::UpdateCapturedPiece(int squareIdx, std::optional<Piece>& capturedPiece)
@@ -713,35 +716,4 @@ void Position::UpdateCapturedPiece(int squareIdx, std::optional<Piece>& captured
 		m_ZobristHash ^= ZobristHash::GetKey(*capturedPiece, !m_IsWhiteToPlay);
 		return;
 	}	
-}
-
-void Position::UndoCapturedPiece(const Piece& piece)
-{
-	Bitboard pieceSquare = Bitboard(piece.m_Square);
-	switch (piece.m_Type)
-	{
-	case PieceType::Pawn:
-		(m_IsWhiteToPlay ? m_WhitePawns : m_BlackPawns) ^= pieceSquare;
-		break;
-	case PieceType::Knight:
-		(m_IsWhiteToPlay ? m_WhiteKnights : m_BlackKnights) ^= pieceSquare;
-		break;
-	case PieceType::Bishop:
-		(m_IsWhiteToPlay ? m_WhiteBishops : m_BlackBishops) ^= pieceSquare;
-		break;
-	case PieceType::Rook:
-		(m_IsWhiteToPlay ? m_WhiteRooks : m_BlackRooks) ^= pieceSquare;
-		break;
-	case PieceType::Queen:
-		(m_IsWhiteToPlay ? m_WhiteQueens : m_BlackQueens) ^= pieceSquare;
-		break;
-	case PieceType::King:
-		(m_IsWhiteToPlay ? m_WhiteKing : m_BlackKing) ^= pieceSquare;
-		break;
-	default:
-		assert(false);
-		break;
-	}
-
-	(m_IsWhiteToPlay ? m_WhitePieces : m_BlackPieces) ^= pieceSquare;
 }

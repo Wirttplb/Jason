@@ -15,7 +15,7 @@ int main()
     
     time(&start);
     NotationParserTests::Run();
-    //PositionTests::Run();
+    PositionTests::Run();
     //ZobristTests::Run();
     MoveSearcherTests::Run();
     //TacticsTests::Run();

@@ -42,12 +42,12 @@ static double SqDistanceBetweenPieces(const Piece& a, const Piece& b)
 	return ((ax - bx)  * (ax - bx) + (ay - by) * (ay - by));
 }
 
-double PositionEvaluation::EvaluatePosition(const Position& position)
+double PositionEvaluation::EvaluatePosition(Position& position, bool isTerminalNode)
 {
 	Position positionCopy = position;
 
 	//Check checkmate/stalemate
-	MoveMaker::CheckGameOver(positionCopy);
+	MoveMaker::CheckGameOver(positionCopy, isTerminalNode);
 	switch (positionCopy.GetGameStatus())
 	{
 	case Position::GameStatus::StaleMate:
@@ -215,79 +215,10 @@ int PositionEvaluation::CountCenterPawns(const Position& position, bool isWhite)
 	return centerPawns.CountSetBits();
 }
 
-std::set<int> PositionEvaluation::GetControlledSquares(const Position& position, const Piece& piece, bool isWhite)
+Bitboard PositionEvaluation::GetControlledSquares(Position& position, bool isWhite)
 {
-	std::set<int> controlledSquares;
-	if (piece.m_Type == PieceType()) //Pawn is special case
-	{
-		const int direction = isWhite ? 1 : -1;
-		const int nextY = piece.m_Square / 8 + 1 * direction;
-		if (nextY > 0 && nextY < 7)
-		{
-			if ((piece.m_Square % 8 > 0))
-				controlledSquares.insert(piece.m_Square - 1 + 8 * direction );
-
-			if (piece.m_Square % 8 < 7)
-				controlledSquares.insert(piece.m_Square + 1 + 8 * direction);
-		}
-	}
-	else
-	{
-		std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, piece, true);
-		for (const Move& move : moves)
-		{
-			controlledSquares.insert(move.m_To.m_Square);
-		}
-	}
-
-	return controlledSquares;
-}
-
-std::set<int> PositionEvaluation::GetControlledSquares(const Position& position, bool isWhite, std::set<int>& byPawn)
-{
-	std::set<int> controlledSquares;
-	byPawn.clear();
-
-	const std::vector<Piece>& pieces = isWhite ? position.GetWhitePiecesList() : position.GetBlackPiecesList();
-	for (const Piece& piece : pieces)
-	{
-		const std::set<int> squares = GetControlledSquares(position, piece, isWhite);
-		for (int square : squares)
-		{
-			controlledSquares.insert(square); //set controlled by pawn flag
-			if (piece.m_Type == PieceType::Pawn)
-				byPawn.insert(square);
-		}
-	}
-
-	return controlledSquares;
-}
-
-Bitboard PositionEvaluation::GetControlledSquares(const Position& position, bool isWhite)
-{
+	//SHOULD BE UPDATED TO replace pawn moves vs pawn takes
 	return MoveSearcher::GetPseudoLegalSquaresFromBitboards(position, isWhite);
-}
-
-int PositionEvaluation::CountCenterControlledByPawns(const std::set<int>& squares, bool isWhite)
-{
-	std::set<int> center;
-	for (int square : squares)
-	{
-		if (isWhite && (
-			square == c4 ||
-			square == d4 ||
-			square == e4 ||
-			square == f4))
-			center.insert(square);
-		else if (!isWhite && (
-			square == c5 ||
-			square == d5 ||
-			square == e5 ||
-			square == f5))
-			center.insert(square);
-	}
-
-	return static_cast<int>(center.size());
 }
 
 Bitboard PositionEvaluation::GetAttackedSquaresAroundKing(const Position& position, const Bitboard& attackedSquares, bool isWhite)

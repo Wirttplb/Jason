@@ -508,7 +508,8 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 		for (const Piece& p : pieces)
 		{
 			bool canReachSquare = false;
-			const std::vector<Move> legalMoves = MoveSearcher::GetLegalMovesFromBitboards(position, p, position.IsWhiteToPlay());
+			Position positionCopy = position;
+			const std::vector<Move> legalMoves = MoveSearcher::GetLegalMovesFromBitboards(positionCopy, p, position.IsWhiteToPlay());
 			for (const Move& legalMove : legalMoves)
 			{
 				const std::array<int, 2>& square = legalMove.m_To.Position();
