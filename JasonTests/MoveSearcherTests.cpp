@@ -101,11 +101,11 @@ static void TestIllegalCastles()
 {
 	//legal castles
 	Position position("4k3/8/8/8/8/8/8/R3K2R w KQ - 0 1");
-	std::vector<Position> positions = MoveSearcher::GetAllPossiblePositions(position, 1);
+	std::vector<Move> moves = MoveSearcher::GetLegalMovesFromBitboards(position);
 	int castles = 0;
-	for (const Position& p : positions)
+	for (const Move& m : moves)
 	{
-		if (p.GetMoves().back().IsCastling())
+		if (m.IsCastling())
 			castles++;
 	}
 
@@ -113,11 +113,11 @@ static void TestIllegalCastles()
 
 	//pawn controls square
 	position = Position("4k3/8/8/8/8/8/2p3p1/R3K2R w KQ - 0 1");
-	positions = MoveSearcher::GetAllPossiblePositions(position, 1);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position);
 	castles = 0;
-	for (const Position& p : positions)
+	for (const Move& m : moves)
 	{
-		if (p.GetMoves().back().IsCastling())
+		if (m.IsCastling())
 			castles++;
 	}
 
@@ -125,11 +125,11 @@ static void TestIllegalCastles()
 
 	//king in check
 	position = Position("4k3/4r3/8/8/8/8/8/R3K2R w KQ - 0 1");
-	positions = MoveSearcher::GetAllPossiblePositions(position, 1);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position);
 	castles = 0;
-	for (const Position& p : positions)
+	for (const Move& m : moves)
 	{
-		if (p.GetMoves().back().IsCastling())
+		if (m.IsCastling())
 			castles++;
 	}
 
@@ -137,11 +137,11 @@ static void TestIllegalCastles()
 
 	//enemy piece blocks
 	position = Position("4k3/8/8/8/8/8/8/R1n1K1nR w KQ - 0 1");
-	positions = MoveSearcher::GetAllPossiblePositions(position, 1);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position);
 	castles = 0;
-	for (const Position& p : positions)
+	for (const Move& m : moves)
 	{
-		if (p.GetMoves().back().IsCastling())
+		if (m.IsCastling())
 			castles++;
 	}
 
@@ -149,11 +149,11 @@ static void TestIllegalCastles()
 
 	//enemy piece blocks #2
 	position = Position("4k3/8/8/8/8/8/8/R2nKn1R w KQ - 0 1");
-	positions = MoveSearcher::GetAllPossiblePositions(position, 1);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position);
 	castles = 0;
-	for (const Position& p : positions)
+	for (const Move& m : moves)
 	{
-		if (p.GetMoves().back().IsCastling())
+		if (m.IsCastling())
 			castles++;
 	}
 
@@ -161,11 +161,11 @@ static void TestIllegalCastles()
 
 	//enemy piece blocks #3
 	position = Position("4k3/8/8/8/8/6n1/8/Rn2K2R w KQ - 0 1");
-	positions = MoveSearcher::GetAllPossiblePositions(position, 1);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position);
 	castles = 0;
-	for (const Position& p : positions)
+	for (const Move& m : moves)
 	{
-		if (p.GetMoves().back().IsCastling())
+		if (m.IsCastling())
 			castles++;
 	}
 
@@ -173,11 +173,11 @@ static void TestIllegalCastles()
 
 	//friend piece blocks
 	position = Position("4k3/8/8/8/8/8/8/R1N1KN1R w KQ - 0 1");
-	positions = MoveSearcher::GetAllPossiblePositions(position, 1);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position);
 	castles = 0;
-	for (const Position& p : positions)
+	for (const Move& m : moves)
 	{
-		if (p.GetMoves().back().IsCastling())
+		if (m.IsCastling())
 			castles++;
 	}
 
@@ -303,147 +303,147 @@ void MoveSearcherTests::Run()
 
 	//simple stalemate
 	staleMateWhiteToPlay.SetMaintainPiecesList(false);
-	size_t positionCount = MoveSearcher::CountNodes(staleMateWhiteToPlay, 1);
+	size_t positionCount = MoveSearcher::Perft(staleMateWhiteToPlay, 1);
 	ASSERT(positionCount == 0);
 
 	staleMateBlackToPlay.SetMaintainPiecesList(false);
-	positionCount = MoveSearcher::CountNodes(staleMateBlackToPlay, 1);
+	positionCount = MoveSearcher::Perft(staleMateBlackToPlay, 1);
 	ASSERT(positionCount == 0);
 
 	//starting position
 	Position startingPosition;
 	startingPosition.SetMaintainPiecesList(false);
-	size_t positionsCount = MoveSearcher::CountNodes(startingPosition, 1);
-	std::unordered_set<uint64_t>  uniqueCount = MoveSearcher::GetUniqueNodes(startingPosition, 1);
+	size_t positionsCount = MoveSearcher::Perft(startingPosition, 1);
+	std::unordered_set<uint64_t>  uniqueCount = MoveSearcher::UniquePerft(startingPosition, 1);
 	ASSERT(positionsCount == 20);
 	ASSERT(uniqueCount.size() == 20);
 
-	uniqueCount = MoveSearcher::GetUniqueNodes(startingPosition, 2);
-	positionsCount = MoveSearcher::CountNodes(startingPosition, 2);
+	uniqueCount = MoveSearcher::UniquePerft(startingPosition, 2);
+	positionsCount = MoveSearcher::Perft(startingPosition, 2);
 	ASSERT(positionsCount == 20 * 20);
 	ASSERT(uniqueCount.size() == 20 * 20);
 
-	uniqueCount = MoveSearcher::GetUniqueNodes(startingPosition, 3);
-	positionsCount = MoveSearcher::CountNodes(startingPosition, 3);
+	uniqueCount = MoveSearcher::UniquePerft(startingPosition, 3);
+	positionsCount = MoveSearcher::Perft(startingPosition, 3);
 	ASSERT(uniqueCount.size() == 7602); //5362 if we dont count en passant
 	ASSERT(positionsCount == 8902);
 
-	uniqueCount = MoveSearcher::GetUniqueNodes(startingPosition, 4);
-	positionsCount = MoveSearcher::CountNodes(startingPosition, 4);
+	uniqueCount = MoveSearcher::UniquePerft(startingPosition, 4);
+	positionsCount = MoveSearcher::Perft(startingPosition, 4);
 	ASSERT(uniqueCount.size() == 101240); //72084 if we dont count en passant
 	ASSERT(positionsCount == 197281);
 
-	positionsCount = MoveSearcher::CountNodes(startingPosition, 5);
+	positionsCount = MoveSearcher::Perft(startingPosition, 5);
 	ASSERT(positionsCount == 4865609);
 
-	positionsCount = MoveSearcher::CountNodes(startingPosition, 6);
+	positionsCount = MoveSearcher::Perft(startingPosition, 6);
 	ASSERT(positionsCount == 119060324);
 
 	//Perft #2
 	perftPosition2.SetMaintainPiecesList(false);
-	positionsCount = MoveSearcher::CountNodes(perftPosition2, 1);
+	positionsCount = MoveSearcher::Perft(perftPosition2, 1);
 	ASSERT(positionsCount == 48);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition2, 2);
+	positionsCount = MoveSearcher::Perft(perftPosition2, 2);
 	ASSERT(positionsCount == 2039);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition2, 3);
+	positionsCount = MoveSearcher::Perft(perftPosition2, 3);
 	ASSERT(positionsCount == 97862);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition2, 4);
+	positionsCount = MoveSearcher::Perft(perftPosition2, 4);
 	ASSERT(positionsCount == 4085603);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition2, 5);
+	positionsCount = MoveSearcher::Perft(perftPosition2, 5);
 	ASSERT(positionsCount == 193690690);
 
 	//Perft #3
 	perftPosition3.SetMaintainPiecesList(false);
-	positionsCount = MoveSearcher::CountNodes(perftPosition3, 1);
+	positionsCount = MoveSearcher::Perft(perftPosition3, 1);
 	ASSERT(positionsCount == 14);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition3, 2);
+	positionsCount = MoveSearcher::Perft(perftPosition3, 2);
 	ASSERT(positionsCount == 191);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition3, 3);
+	positionsCount = MoveSearcher::Perft(perftPosition3, 3);
 	ASSERT(positionsCount == 2812);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition3, 4);
+	positionsCount = MoveSearcher::Perft(perftPosition3, 4);
 	ASSERT(positionsCount == 43238);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition3, 5);
+	positionsCount = MoveSearcher::Perft(perftPosition3, 5);
 	ASSERT(positionsCount == 674624);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition3, 6);
+	positionsCount = MoveSearcher::Perft(perftPosition3, 6);
 	ASSERT(positionsCount == 11030083);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition3, 7);
+	positionsCount = MoveSearcher::Perft(perftPosition3, 7);
 	ASSERT(positionsCount == 178633661);
 
 	//Perft #4
 	perftPosition4.SetMaintainPiecesList(false);
-	positionsCount = MoveSearcher::CountNodes(perftPosition4, 1);
+	positionsCount = MoveSearcher::Perft(perftPosition4, 1);
 	ASSERT(positionsCount == 6);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition4, 2);
+	positionsCount = MoveSearcher::Perft(perftPosition4, 2);
 	ASSERT(positionsCount == 264);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition4, 3);
+	positionsCount = MoveSearcher::Perft(perftPosition4, 3);
 	ASSERT(positionsCount == 9467);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition4, 4);
+	positionsCount = MoveSearcher::Perft(perftPosition4, 4);
 	ASSERT(positionsCount == 422333);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition4, 5);
+	positionsCount = MoveSearcher::Perft(perftPosition4, 5);
 	ASSERT(positionsCount == 15833292);
 
 	//Perft #4 bis
 	perftPosition4bis.SetMaintainPiecesList(false);
-	positionsCount = MoveSearcher::CountNodes(perftPosition4bis, 1);
+	positionsCount = MoveSearcher::Perft(perftPosition4bis, 1);
 	ASSERT(positionsCount == 6);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition4bis, 2);
+	positionsCount = MoveSearcher::Perft(perftPosition4bis, 2);
 	ASSERT(positionsCount == 264);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition4bis, 3);
+	positionsCount = MoveSearcher::Perft(perftPosition4bis, 3);
 	ASSERT(positionsCount == 9467);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition4bis, 4);
+	positionsCount = MoveSearcher::Perft(perftPosition4bis, 4);
 	ASSERT(positionsCount == 422333);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition4bis, 5);
+	positionsCount = MoveSearcher::Perft(perftPosition4bis, 5);
 	ASSERT(positionsCount == 15833292);
 
 	//Perft #5
 	perftPosition5.SetMaintainPiecesList(false);
-	positionsCount = MoveSearcher::CountNodes(perftPosition5, 1);
+	positionsCount = MoveSearcher::Perft(perftPosition5, 1);
 	ASSERT(positionsCount == 44);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition5, 2);
+	positionsCount = MoveSearcher::Perft(perftPosition5, 2);
 	ASSERT(positionsCount == 1486);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition5, 3);
+	positionsCount = MoveSearcher::Perft(perftPosition5, 3);
 	ASSERT(positionsCount == 62379);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition5, 4);
+	positionsCount = MoveSearcher::Perft(perftPosition5, 4);
 	ASSERT(positionsCount == 2103487);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition5, 5);
+	positionsCount = MoveSearcher::Perft(perftPosition5, 5);
 	ASSERT(positionsCount == 89941194);
 
 	//Perft #6
 	perftPosition6.SetMaintainPiecesList(false);
-	positionsCount = MoveSearcher::CountNodes(perftPosition6, 1);
+	positionsCount = MoveSearcher::Perft(perftPosition6, 1);
 	ASSERT(positionsCount == 46);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition6, 2);
+	positionsCount = MoveSearcher::Perft(perftPosition6, 2);
 	ASSERT(positionsCount == 2079);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition6, 3);
+	positionsCount = MoveSearcher::Perft(perftPosition6, 3);
 	ASSERT(positionsCount == 89890);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition6, 4);
+	positionsCount = MoveSearcher::Perft(perftPosition6, 4);
 	ASSERT(positionsCount == 3894594);
 
-	positionsCount = MoveSearcher::CountNodes(perftPosition6, 5);
+	positionsCount = MoveSearcher::Perft(perftPosition6, 5);
 	ASSERT(positionsCount == 164075551);
 }

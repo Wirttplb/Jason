@@ -12,6 +12,7 @@ public:
 	static std::vector<Move> GetLegalMovesFromBitboards(Position& position);
 	/// <summary>Returns Bitboard of accessible pseudo-legal squares, used for controlled squares enumeration</summary>
 	static Bitboard GetPseudoLegalSquaresFromBitboards(Position& position, bool isWhite);
+	static std::vector<Move> GetPseudoLegalMovesFromBitboards(Position& position);
 
 	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
 	/// <remark>Very slow, not used at runtime</remark>
@@ -22,29 +23,12 @@ public:
 
 	/// <returns>All legal moves for pieces of type whose position is described by bitboard</returns>
 	static Bitboard GetPseudoLegalBitboardMoves(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece);
-	static std::vector<Move> GetPseudoLegalMoves(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece);
+	static std::vector<Move> GetPseudoLegalMovesFromBitboards(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece);
 
-	/// <summary>
-	/// Compute moves from one position, reducing search domain to captures/tactical moves
-	/// </summary>
-	static std::vector<Move> GetAllLineMoves(const Position& position);
-
-	/// <summary>
-	/// Compute all possible positions from one position (lots of copy, SLOW!)
-	/// </summary>
-	static std::vector<Position> GetAllPossiblePositions(const Position& position);
-
-	/// <summary>
-	/// Compute all possible positions from one position, up to given depth (lots of copy, SLOW!)
-	/// </summary>
-	static std::vector<Position> GetAllPossiblePositions(const Position& position, int depth);
-	/// <summary> Much faster, does not make copies of position</summary>
-	static size_t CountNodes(Position& position, int depth);
-
-	/// <summary>Compute all unique positions from one position, up to given depth (lots of copy, SLOW!)
-	static std::unordered_set<Position> GetAllUniquePositions(const Position& position, int depth);
-	/// <summary> Much faster, does not make copies of position, return zobrist keys</summary>
-	static std::unordered_set<uint64_t> GetUniqueNodes(Position& position, int depth);
+	/// <summary>Returns number of nodes at given depth</summary>
+	static size_t Perft(Position& position, int depth);
+	/// <summary>Returns set of unique zobrist keys at given depth (unique positions)</summary>
+	static std::unordered_set<uint64_t> UniquePerft(Position& position, int depth);
 
 	static bool IsKingInCheck(const Position& position, bool isWhiteKing);
 	static bool IsKingInCheckFromBitboards(const Position& position, bool isWhiteKing);
