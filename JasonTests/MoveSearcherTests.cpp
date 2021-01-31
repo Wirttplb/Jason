@@ -4,22 +4,11 @@
 #include "TestsUtility.h"
 #include <unordered_set>
 
-#include "NotationParser.h"
-
-static Position staleMateWhiteToPlay("8/8/8/8/8/kq6/8/K7 w - - 0 1");
-static Position staleMateBlackToPlay("8/8/8/8/8/KQ6/8/k7 b - - 0 1");
-static Position perftPosition2("r3k2r / p1ppqpb1 / bn2pnp1 / 3PN3 / 1p2P3 / 2N2Q1p / PPPBBPPP / R3K2R w KQkq -");
-static Position perftPosition3("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -");
-static Position perftPosition4("r3k2r / Pppp1ppp / 1b3nbN / nP6 / BBP1P3 / q4N2 / Pp1P2PP / R2Q1RK1 w kq - 0 1");
-static Position perftPosition4bis("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1");
-static Position perftPosition5("rnbq1k1r / pp1Pbppp / 2p5 / 8 / 2B5 / 8 / PPP1NnPP / RNBQK2R w KQ - 1 8");
-static Position perftPosition6("r4rk1 / 1pp1qppp / p1np1n2 / 2b1p1B1 / 2B1P1b1 / P1NP1N2 / 1PP1QPPP / R4RK1 w - -0 10");
-
 static void TestRookMoves()
 {
 	Position position("4k3/8/8/8/8/8/6K1/R7 w - - 0 1");
 	Piece rook(PieceType::Rook, a1);
-	std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, rook, true);
+	std::vector<Move> moves = MoveSearcher::GetLegalMovesFromBitboards(position, rook, true);
 	ASSERT(moves.size() == 14);
 
 	moves = MoveSearcher::GetLegalMovesFromBitboards(position, rook, true);
@@ -188,131 +177,122 @@ static void TestPawnMoves()
 {
 	Position position("4k3/2p5/8/8/8/8/2P5/4K3 w - - 0 1");
 	Piece pawn(PieceType::Pawn, c2);
-	std::vector<Move> moves = MoveSearcher::GetLegalMoves(position, pawn, true);
+	std::vector<Move> moves = MoveSearcher::GetLegalMovesFromBitboards(position, pawn, true);
 	ASSERT(moves.size() == 2);
 	ASSERT(moves.front() == Move(PieceType::Pawn, c2, c3));
 	ASSERT(moves.back() == Move(PieceType::Pawn, c2, c4));
 
 	pawn = Piece(PieceType::Pawn, c7);
-	moves = MoveSearcher::GetLegalMoves(position, pawn, false);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, pawn, false);
 	ASSERT(moves.size() == 2);
-	ASSERT(moves.front() == Move(PieceType::Pawn, c7, c6));
-	ASSERT(moves.back() == Move(PieceType::Pawn, c7, c5));
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, c7, c5)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, c7, c6)) != moves.end());
 
-	position = Position("4k3 / 2p5 / 8 / 8 / 8 / 1n1n4 / 2P5 / 5K2 w - -0 1");
+	position = Position("4k3/2p5/8/8/8/1n1n4/2P5/5K2 w - - 0 1");
 	pawn = Piece(PieceType::Pawn, c2);
-	moves = MoveSearcher::GetLegalMoves(position, pawn, true);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, pawn, true);
 	ASSERT(moves.size() == 4);
-	ASSERT(moves[0] == Move(PieceType::Pawn, c2, c3));
-	ASSERT(moves[1] == Move(PieceType::Pawn, c2, c4));
-	ASSERT(moves[2] == Move(PieceType::Pawn, c2, b3));
-	ASSERT(moves[3] == Move(PieceType::Pawn, c2, d3));
-
-	position = Position("4k3 / 2p5 / 8 / 8 / 8 / 1n1n4 / 2P5 / 5K2 w - -0 1");
-	pawn = Piece(PieceType::Pawn, c2);
-	moves = MoveSearcher::GetLegalMoves(position, pawn, true);
-	ASSERT(moves.size() == 4);
-	ASSERT(moves[0] == Move(PieceType::Pawn, c2, c3));
-	ASSERT(moves[1] == Move(PieceType::Pawn, c2, c4));
-	ASSERT(moves[2] == Move(PieceType::Pawn, c2, b3));
-	ASSERT(moves[3] == Move(PieceType::Pawn, c2, d3));
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, c2, c3)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, c2, c4)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, c2, b3)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, c2, d3)) != moves.end());
 
 	position = Position("5k2/2p5/1N1N4/8/8/8/2P5/5K2 w - - 0 1");
 	pawn = Piece(PieceType::Pawn, c7);
-	moves = MoveSearcher::GetLegalMoves(position, pawn, false);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, pawn, false);
 	ASSERT(moves.size() == 4);
-	ASSERT(moves[0] == Move(PieceType::Pawn, c7, c6));
-	ASSERT(moves[1] == Move(PieceType::Pawn, c7, c5));
-	ASSERT(moves[2] == Move(PieceType::Pawn, c7, b6));
-	ASSERT(moves[3] == Move(PieceType::Pawn, c7, d6));
-
-	position = Position("5k2/2p5/1N1N4/8/8/8/2P5/5K2 w - - 0 1");
-	pawn = Piece(PieceType::Pawn, c7);
-	moves = MoveSearcher::GetLegalMoves(position, pawn, false);
-	ASSERT(moves.size() == 4);
-	ASSERT(moves[0] == Move(PieceType::Pawn, c7, c6));
-	ASSERT(moves[1] == Move(PieceType::Pawn, c7, c5));
-	ASSERT(moves[2] == Move(PieceType::Pawn, c7, b6));
-	ASSERT(moves[3] == Move(PieceType::Pawn, c7, d6));
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, c7, c6)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, c7, c5)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, c7, b6)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, c7, d6)) != moves.end());
 
 	position = Position("4k3/8/8/2pP4/8/8/8/4K3 w - c6 0 1");
 	pawn = Piece(PieceType::Pawn, d5);
-	moves = MoveSearcher::GetLegalMoves(position, pawn, true);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, pawn, true);
 	ASSERT(moves.size() == 2);
-	ASSERT(moves[0] == Move(PieceType::Pawn, d5, d6));
-	ASSERT(moves[1] == Move(PieceType::Pawn, d5, c6));
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, d5, d6)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, d5, c6)) != moves.end());
 
 	position = Position("4k3/8/8/3Pp3/8/8/8/4K3 w - e6 0 1");
 	pawn = Piece(PieceType::Pawn, d5);
-	moves = MoveSearcher::GetLegalMoves(position, pawn, true);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, pawn, true);
 	ASSERT(moves.size() == 2);
-	ASSERT(moves[0] == Move(PieceType::Pawn, d5, d6));
-	ASSERT(moves[1] == Move(PieceType::Pawn, d5, e6));
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, d5, d6)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, d5, e6)) != moves.end());
 
 	position = Position("4k3/8/8/8/2Pp4/8/8/4K3 b - c3 0 1");
 	pawn = Piece(PieceType::Pawn, d4);
-	moves = MoveSearcher::GetLegalMoves(position, pawn, false);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, pawn, false);
 	ASSERT(moves.size() == 2);
-	ASSERT(moves[0] == Move(PieceType::Pawn, d4, d3));
-	ASSERT(moves[1] == Move(PieceType::Pawn, d4, c3));
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, d4, d3)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, d4, c3)) != moves.end());
 
 	position = Position("4k3/8/8/8/3pP3/8/8/4K3 b - e3 0 1");
 	pawn = Piece(PieceType::Pawn, d4);
-	moves = MoveSearcher::GetLegalMoves(position, pawn, false);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, pawn, false);
 	ASSERT(moves.size() == 2);
-	ASSERT(moves[0] == Move(PieceType::Pawn, d4, d3));
-	ASSERT(moves[1] == Move(PieceType::Pawn, d4, e3));
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, d4, d3)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, d4, e3)) != moves.end());
 
 	position = Position("4k3/1P6/8/3p4/8/8/8/4K3 w - d6 0 1");
 	pawn = Piece(PieceType::Pawn, b7);
-	moves = MoveSearcher::GetLegalMoves(position, pawn, true);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, pawn, true);
 	ASSERT(moves.size() == 4);
-	ASSERT(moves[0] == Move(PieceType::Pawn, PieceType::Queen, b7, b8));
-	ASSERT(moves[1] == Move(PieceType::Pawn, PieceType::Rook, b7, b8));
-	ASSERT(moves[2] == Move(PieceType::Pawn, PieceType::Bishop, b7, b8));
-	ASSERT(moves[3] == Move(PieceType::Pawn, PieceType::Knight, b7, b8));
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Queen, b7, b8)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Rook, b7, b8)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Bishop, b7, b8)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Knight, b7, b8)) != moves.end());
 
 	position = Position("nnn1k3/1P6/8/3p4/8/8/8/4K3 w - d6 0 1");
 	pawn = Piece(PieceType::Pawn, b7);
-	moves = MoveSearcher::GetLegalMoves(position, pawn, true);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, pawn, true);
 	ASSERT(moves.size() == 8);
-	ASSERT(moves[0] == Move(PieceType::Pawn, PieceType::Queen, b7, a8));
-	ASSERT(moves[1] == Move(PieceType::Pawn, PieceType::Rook, b7, a8));
-	ASSERT(moves[2] == Move(PieceType::Pawn, PieceType::Bishop, b7, a8));
-	ASSERT(moves[3] == Move(PieceType::Pawn, PieceType::Knight, b7, a8));
-	ASSERT(moves[4] == Move(PieceType::Pawn, PieceType::Queen, b7, c8));
-	ASSERT(moves[5] == Move(PieceType::Pawn, PieceType::Rook, b7, c8));
-	ASSERT(moves[6] == Move(PieceType::Pawn, PieceType::Bishop, b7, c8));
-	ASSERT(moves[7] == Move(PieceType::Pawn, PieceType::Knight, b7, c8));
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Queen, b7, a8)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Queen, b7, c8)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Rook, b7, a8)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Bishop, b7, a8)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Knight, b7, a8)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Rook, b7, c8)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Bishop, b7, c8)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Knight, b7, c8)) != moves.end());
 
 	position = Position("nnn1k3/1P6/8/3p4/8/8/1p6/N1N1K3 b - - 0 1");
 	pawn = Piece(PieceType::Pawn, b2);
-	moves = MoveSearcher::GetLegalMoves(position, pawn, false);
+	moves = MoveSearcher::GetLegalMovesFromBitboards(position, pawn, false);
 	ASSERT(moves.size() == 12);
-	ASSERT(moves[0] == Move(PieceType::Pawn, PieceType::Queen, b2, b1));
-	ASSERT(moves[4] == Move(PieceType::Pawn, PieceType::Queen, b2, a1));
-	ASSERT(moves[8] == Move(PieceType::Pawn, PieceType::Queen, b2, c1));
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Queen, b2, b1)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Queen, b2, a1)) != moves.end());
+	ASSERT(std::find(moves.begin(), moves.end(), Move(PieceType::Pawn, PieceType::Queen, b2, c1)) != moves.end());
 }
 
 void MoveSearcherTests::Run()
 {
+	time_t start;
+	time(&start);
+
 	TestPawnMoves();
 	TestRookMoves();
 	TestBishopMoves();
 	TestIllegalCastles();
 
+	Position staleMateWhiteToPlay("8/8/8/8/8/kq6/8/K7 w - - 0 1");
+	Position staleMateBlackToPlay("8/8/8/8/8/KQ6/8/k7 b - - 0 1");
+	Position perftPosition2("r3k2r / p1ppqpb1 / bn2pnp1 / 3PN3 / 1p2P3 / 2N2Q1p / PPPBBPPP / R3K2R w KQkq -");
+	Position perftPosition3("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -");
+	Position perftPosition4("r3k2r / Pppp1ppp / 1b3nbN / nP6 / BBP1P3 / q4N2 / Pp1P2PP / R2Q1RK1 w kq - 0 1");
+	Position perftPosition4bis("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1");
+	Position perftPosition5("rnbq1k1r / pp1Pbppp / 2p5 / 8 / 2B5 / 8 / PPP1NnPP / RNBQK2R w KQ - 1 8");
+	Position perftPosition6("r4rk1 / 1pp1qppp / p1np1n2 / 2b1p1B1 / 2B1P1b1 / P1NP1N2 / 1PP1QPPP / R4RK1 w - -0 10");
+
 	//simple stalemate
-	staleMateWhiteToPlay.SetMaintainPiecesList(false);
 	size_t positionCount = MoveSearcher::Perft(staleMateWhiteToPlay, 1);
 	ASSERT(positionCount == 0);
 
-	staleMateBlackToPlay.SetMaintainPiecesList(false);
 	positionCount = MoveSearcher::Perft(staleMateBlackToPlay, 1);
 	ASSERT(positionCount == 0);
 
 	//starting position
 	Position startingPosition;
-	startingPosition.SetMaintainPiecesList(false);
 	size_t positionsCount = MoveSearcher::Perft(startingPosition, 1);
 	std::unordered_set<uint64_t>  uniqueCount = MoveSearcher::UniquePerft(startingPosition, 1);
 	ASSERT(positionsCount == 20);
@@ -340,7 +320,6 @@ void MoveSearcherTests::Run()
 	ASSERT(positionsCount == 119060324);
 
 	//Perft #2
-	perftPosition2.SetMaintainPiecesList(false);
 	positionsCount = MoveSearcher::Perft(perftPosition2, 1);
 	ASSERT(positionsCount == 48);
 
@@ -357,7 +336,6 @@ void MoveSearcherTests::Run()
 	ASSERT(positionsCount == 193690690);
 
 	//Perft #3
-	perftPosition3.SetMaintainPiecesList(false);
 	positionsCount = MoveSearcher::Perft(perftPosition3, 1);
 	ASSERT(positionsCount == 14);
 
@@ -380,7 +358,6 @@ void MoveSearcherTests::Run()
 	ASSERT(positionsCount == 178633661);
 
 	//Perft #4
-	perftPosition4.SetMaintainPiecesList(false);
 	positionsCount = MoveSearcher::Perft(perftPosition4, 1);
 	ASSERT(positionsCount == 6);
 
@@ -397,7 +374,6 @@ void MoveSearcherTests::Run()
 	ASSERT(positionsCount == 15833292);
 
 	//Perft #4 bis
-	perftPosition4bis.SetMaintainPiecesList(false);
 	positionsCount = MoveSearcher::Perft(perftPosition4bis, 1);
 	ASSERT(positionsCount == 6);
 
@@ -414,7 +390,6 @@ void MoveSearcherTests::Run()
 	ASSERT(positionsCount == 15833292);
 
 	//Perft #5
-	perftPosition5.SetMaintainPiecesList(false);
 	positionsCount = MoveSearcher::Perft(perftPosition5, 1);
 	ASSERT(positionsCount == 44);
 
@@ -431,7 +406,6 @@ void MoveSearcherTests::Run()
 	ASSERT(positionsCount == 89941194);
 
 	//Perft #6
-	perftPosition6.SetMaintainPiecesList(false);
 	positionsCount = MoveSearcher::Perft(perftPosition6, 1);
 	ASSERT(positionsCount == 46);
 
@@ -446,4 +420,8 @@ void MoveSearcherTests::Run()
 
 	positionsCount = MoveSearcher::Perft(perftPosition6, 5);
 	ASSERT(positionsCount == 164075551);
+
+	time_t end;
+	time(&end);
+	PrintTestDuration(start, end, "MoveSearcherTests: %.2lf seconds.");
 }

@@ -16,14 +16,15 @@ enum Square : int
 	a8, b8, c8, d8, e8, f8, g8, h8
 };
 
+/// <remark>Sorted by piece value</remark>
 enum class PieceType
 {
-	Pawn,
-	Knight,
-	Bishop,
-	Rook,
-	Queen,
-	King
+	Pawn = 0,
+	Knight = 1,
+	Bishop = 2,
+	Rook = 3,
+	Queen = 4,
+	King = 5
 };
 
 /// <summary>description of a piece and its position</summary>

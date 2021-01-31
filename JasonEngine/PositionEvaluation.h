@@ -12,7 +12,7 @@ public:
 	/// Evaluate a position at depth 0, tactics won't be taken into account
 	/// </summary>
 	/// <returns>Score (>0 for white advantage, <0 for black), 100.0 is value of a pawn</returns>
-	static double EvaluatePosition(Position& position, bool isTerminalNode);
+	static double EvaluatePosition(Position& position);
 
 private:
 	static double CountMaterial(const Position& position, bool isWhite);
@@ -22,6 +22,8 @@ private:
 
 	static int CountDoubledPawns(const Position& position, bool isWhite);
 	static int CountCenterPawns(const Position& position, bool isWhite);
+	static int CountIsolatedPawns(const Position& position, bool isWhite);
+	static double GeAdvancedPawnsBonus(const Position& position, bool isWhite);
 
 	static Bitboard GetControlledSquares(Position& position, bool isWhite);
 

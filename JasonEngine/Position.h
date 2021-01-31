@@ -75,6 +75,9 @@ public:
 	std::vector<Piece>& GetWhitePiecesList() { return m_WhitePiecesList; };
 	std::vector<Piece>& GetBlackPiecesList() { return m_BlackPiecesList; };
 
+	const Bitboard& GetPiecesOfType(PieceType type, bool isWhite) const;
+	Bitboard& GetPiecesOfType(PieceType type, bool isWhite);
+
 	const Bitboard& GetWhitePieces() const { return m_WhitePieces; };
 	Bitboard& GetWhitePieces() { return m_WhitePieces; };
 	const Bitboard& GetBlackPieces() const { return m_BlackPieces; };
@@ -178,7 +181,7 @@ private:
 
 	std::vector<Piece> m_WhitePiecesList; //Position representation is piece-centric, this might change in the future
 	std::vector<Piece> m_BlackPiecesList;
-	bool m_MaintainPiecesList = true; //true by default, actual Jason.exe should turn this off
+	bool m_MaintainPiecesList = false; //false by default, actual Jason.exe should have turned this off
 
 	bool m_IsWhiteToPlay = true;
 	GameStatus m_GameStatus = GameStatus::Running;

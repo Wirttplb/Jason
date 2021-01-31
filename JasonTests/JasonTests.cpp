@@ -1,10 +1,12 @@
 #include <iostream>
-#include <time.h>
+#include "TestsUtility.h"
 #include "NotationParserTests.h"
 #include "PositionTests.h"
 #include "ZobristTests.h"
+#include "MoveMakerTests.h"
 #include "MoveSearcherTests.h"
 #include "TacticsTests.h"
+#include "SpeedTest.h"
 
 int main()
 {
@@ -16,14 +18,12 @@ int main()
     time(&start);
     NotationParserTests::Run();
     PositionTests::Run();
-    //ZobristTests::Run();
-    MoveSearcherTests::Run();
+    ZobristTests::Run();
+    MoveMakerTests::Run();
+    //MoveSearcherTests::Run();
     //TacticsTests::Run();
+    SpeedTest::Run();
     time(&end);
 
-    const double duration = difftime(end, start);
-    std::string message;
-    message.resize(50);
-    sprintf_s(message.data(), 50, "Tests were run in %.2lf seconds.", duration);
-    std::cout << message << std::endl;
+    PrintTestDuration(start, end, "Tests were run in %.2lf seconds");
 }

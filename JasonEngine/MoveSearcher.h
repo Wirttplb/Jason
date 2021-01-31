@@ -1,6 +1,5 @@
 #pragma once
 #include "Position.h"
-#include "MoveMaker.h"
 #include <unordered_set>
 
 class MoveSearcher
@@ -72,5 +71,4 @@ private:
 	static bool IsMoveIllegalFromBitboards(Position& position, Move& move, bool isWhitePiece);
 
 	friend static std::vector<Bitboard> GenerateMoves(PieceType type, bool isWhitePiece, bool isPawnDoubleStep);
-	friend static std::vector<Bitboard> GeneratePawnCaptureMoves(bool isWhitePiece);
-};
+	friend static std::vector<Bitboard> GeneratePawnCaptureMoves(bool isWhitePiece);};

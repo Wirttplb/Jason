@@ -37,8 +37,6 @@ int main()
 
     //Initiate position
     Position position; //starting position
-    position.SetMaintainPiecesList(false);
-
     MoveMaker moveMaker;
     bool isGameOver = false;
     size_t turnCount = 0;
@@ -79,7 +77,7 @@ int main()
             EraseLastLine();
         }
 
-        MoveMaker::CheckGameOver(position, false);
+        moveMaker.CheckGameOver(position);
         isGameOver = (position.GetGameStatus() != Position::GameStatus::Running);
         PrintLastMove(position);
     }

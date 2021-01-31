@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "MoveSearcher.h"
-#include "MoveMaker.h"
 #include "BitboardUtility.h"
 #include <assert.h>
 #include <iterator>
@@ -1246,7 +1245,7 @@ const std::vector<Bitboard>& MoveSearcher::GetMoveTable(PieceType type, bool isW
 	switch (type)
 	{
 	case PieceType::King:
-			return KingMoveTable;
+		return KingMoveTable;
 	case PieceType::Queen:
 		return QueenMoveTable;
 	case PieceType::Rook:

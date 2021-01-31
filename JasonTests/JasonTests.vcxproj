@@ -146,16 +146,20 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="JasonTests.cpp" />
+    <ClCompile Include="MoveMakerTests.cpp" />
     <ClCompile Include="MoveSearcherTests.cpp" />
     <ClCompile Include="NotationParserTests.cpp" />
     <ClCompile Include="PositionTests.cpp" />
+    <ClCompile Include="SpeedTest.cpp" />
     <ClCompile Include="TacticsTests.cpp" />
     <ClCompile Include="ZobristTests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MoveMakerTests.h" />
     <ClInclude Include="MoveSearcherTests.h" />
     <ClInclude Include="NotationParserTests.h" />
     <ClInclude Include="PositionTests.h" />
+    <ClInclude Include="SpeedTest.h" />
     <ClInclude Include="TacticsTests.h" />
     <ClInclude Include="TestsUtility.h" />
     <ClInclude Include="ZobristTests.h" />
