@@ -282,17 +282,10 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 
 	std::vector<Piece> pieces;
 	//castling is easy to parse
-	const bool isKingSideCastle = moveString == "O-O";
-	const bool isQueenSideCastle = moveString == "O-O-O";
-	if (isKingSideCastle || isQueenSideCastle)
-	{
-		move = Move();
-		move->m_From.m_Type = PieceType::King;
-		move->m_From.m_Square = position.IsWhiteToPlay() ? e1 : e8;
-		move->m_To = move->m_From;
-		move->m_To.m_Square = position.IsWhiteToPlay() ? g1 : g8;
-		return move;
-	}
+	if (moveString == "O-O")
+		return position.IsWhiteToPlay() ? WhiteKingSideCastle : BlackKingSideCastle;
+	else if (moveString == "O-O-O")
+		return position.IsWhiteToPlay() ? WhiteQueenSideCastle : BlackQueenSideCastle;
 
 	//first expected char is symbol
 	pieces = position.GetPiecesToPlay(LetterToPieceType(moveString[0]));

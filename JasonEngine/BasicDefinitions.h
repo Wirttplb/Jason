@@ -89,3 +89,8 @@ public:
 	bool m_CanWhiteCastleQueenSideBackup = true;
 	bool m_CanBlackCastleQueenSideBackup = true;
 };
+
+static const Move WhiteKingSideCastle(PieceType::King, e1, g1);
+static const Move WhiteQueenSideCastle(PieceType::King, e1, c1);
+static const Move BlackKingSideCastle(PieceType::King, e8, g8);
+static const Move BlackQueenSideCastle(PieceType::King, e8, c8);

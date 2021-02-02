@@ -20,8 +20,8 @@ int main()
     PositionTests::Run();
     ZobristTests::Run();
     MoveMakerTests::Run();
-    //MoveSearcherTests::Run();
-    //TacticsTests::Run();
+    MoveSearcherTests::Run();
+    TacticsTests::Run();
     SpeedTest::Run();
     time(&end);
 

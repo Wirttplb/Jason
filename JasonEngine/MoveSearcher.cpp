@@ -147,10 +147,6 @@ static const std::vector<Bitboard> QueenMoveTable = GenerateMoves(PieceType::Que
 static const std::vector<Bitboard> RookMoveTable = GenerateMoves(PieceType::Rook);
 static const std::vector<Bitboard> BishopMoveTable = GenerateMoves(PieceType::Bishop);
 static const std::vector<Bitboard> KnightMoveTable = GenerateMoves(PieceType::Knight);
-static const Move WhiteKingSideCastle(PieceType::King, e1, g1);
-static const Move WhiteQueenSideCastle(PieceType::King, e1, c1);
-static const Move BlackKingSideCastle(PieceType::King, e8, g8);
-static const Move BlackQueenSideCastle(PieceType::King, e8, c8);
 static const Bitboard WhiteKingSideCastleInBetweenSquares = _f1 | _g1;
 static const Bitboard WhiteQueenSideCastleInBetweenSquares = _b1 | _c1 | _d1;
 static const Bitboard BlackKingSideCastleInBetweenSquares = _f8 | _g8;
@@ -313,7 +309,7 @@ static void _GetPseudoLegalMovesFromBitboards(int fromSquare)
 std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position)
 {
 	std::vector<Move> allLegalMoves;
-	allLegalMoves.reserve(40);
+	allLegalMoves.reserve(40); //40 legal moves on average
 
 	const Bitboard& pawns = position.IsWhiteToPlay() ? position.GetWhitePawns() : position.GetBlackPawns();
 	const Bitboard& knights = position.IsWhiteToPlay() ? position.GetWhiteKnights() : position.GetBlackKnights();

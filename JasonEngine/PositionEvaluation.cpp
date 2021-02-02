@@ -14,7 +14,7 @@ static constexpr double CastlingBonus = 50.0;
 static constexpr double CenterPawnBonus = 50.0;
 static constexpr double DoubledPawnPunishment = -20.0; //40 for a pair
 static constexpr double IsolatedPawnPunishment = -40.0;
-static constexpr std::array<double, 3> AdvancedPawnBonus = {30.0, 60.0, 90.0}; //on rows 5, 6, 7
+static constexpr std::array<double, 3> AdvancedPawnBonus = {30.0, 50.0, 60.0}; //on rows 5, 6, 7
 
 static constexpr double KnightEndgamePunishment = -10.0;
 static constexpr double BishopEndgamePunishment = 10.0;
@@ -22,7 +22,7 @@ static constexpr double BishopEndgamePunishment = 10.0;
 static constexpr double RookOnSemiOpenFileBonus = 20.0;
 static constexpr double RookOnOpenFileBonus = 30.0;
 
-static constexpr double Blockin_d_or_ePawnPunishment = -40.0; //Punishment for blocking unmoved pawns on d and e files
+static constexpr double Blocking_d_or_ePawnPunishment = -40.0; //Punishment for blocking unmoved pawns on d and e files
 
 static constexpr double KnightPawnBonus = 2.0; //Knights better with lots of pawns
 static constexpr double BishopPawnPunishment = -2.0; //Bishops worse with lots of pawns
@@ -114,6 +114,10 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 	//Advanced pawns bonus
 	score += GeAdvancedPawnsBonus(position, true);
 	score -= GeAdvancedPawnsBonus(position, true);
+
+	//Piece blocking d or e pawn punishment
+	score += CountBlockedEorDPawns(position, true) * Blocking_d_or_ePawnPunishment;
+	score -= CountBlockedEorDPawns(position, false) * Blocking_d_or_ePawnPunishment;
 
 	//Castling bonus: castling improves score during opening, importance of castling decays during the game
 	const double castleBonus = CastlingBonus * std::max(0.0, 40.0 - static_cast<double>(position.GetMoves().size()));
@@ -264,6 +268,22 @@ double PositionEvaluation::GeAdvancedPawnsBonus(const Position& position, bool i
 	}
 
 	return bonus;
+}
+
+static const Bitboard WhiteCenterPawns = (Bitboard(d2) | Bitboard(e2));
+static const Bitboard BlackCenterPawns = (Bitboard(d7) | Bitboard(e7));
+static const Bitboard WhiteBlockingSquares = (Bitboard(d3) | Bitboard(e3));
+static const Bitboard BlackBlockingSquares = (Bitboard(d6) | Bitboard(e6));
+
+int PositionEvaluation::CountBlockedEorDPawns(const Position& position, bool isWhite)
+{
+	const Bitboard& pawns = isWhite ? position.GetWhitePawns() : position.GetBlackPawns();
+	const Bitboard& pieces = isWhite ? position.GetWhitePieces() : position.GetBlackPieces();
+	const Bitboard& blockedSquares = (isWhite ? WhiteCenterPawns : BlackCenterPawns);
+	const Bitboard& blockingSquares = (isWhite ? WhiteBlockingSquares : BlackBlockingSquares);
+
+	const Bitboard blockedPieces = ((blockingSquares & pieces) >> 8) & (blockedSquares & pawns);
+	return blockedPieces.CountSetBits();
 }
 
 Bitboard PositionEvaluation::GetControlledSquares(Position& position, bool isWhite)
