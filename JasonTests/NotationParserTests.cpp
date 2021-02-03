@@ -39,13 +39,11 @@ void NotationParserTests::Run()
 
 	//had a bug with castling moves parsing
 	Position positionA = perftPosition4;
-	Move move;
-	move.m_From = Piece(PieceType::King, g1);
-	move.m_To = Piece(PieceType::King, h1);
+	Move move(PieceType::King, g1, h1);
 	positionA.Update(move);
+
 	Position positionB = perftPosition4bis;
-	move.m_From = Piece(PieceType::King, g8);
-	move.m_To = Piece(PieceType::King, h8);
+	move = Move(PieceType::King, g8, h8);
 	positionB.Update(move);
 	ASSERT(!positionA.IsWhiteToPlay());
 	ASSERT(positionA.CanBlackCastleKingSide() && positionA.CanBlackCastleQueenSide());

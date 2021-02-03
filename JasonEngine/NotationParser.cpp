@@ -252,7 +252,7 @@ std::string NotationParser::TranslateToAlgebraic(const Move& move)
 	//Check for castling moves
 	if (move.IsCastling())
 	{
-		if (move.m_To.m_Square > move.m_From.m_Square) //kingside
+		if (move.GetToSquare() > move.GetFromSquare()) //kingside
 			moveString = "O-O";
 		else //queenside
 			moveString = "O-O-O";
@@ -260,15 +260,15 @@ std::string NotationParser::TranslateToAlgebraic(const Move& move)
 	else
 	{
 		//We use Disambiguation for every move (much less complicated)
-		moveString = (move.m_From.m_Type == PieceType::Pawn) ? "" : TranslateToAlgebraic(move.m_From.m_Type);
-		moveString += TranslateToAlgebraic(static_cast<Square>(move.m_From.m_Square));
+		moveString = (move.GetFromType() == PieceType::Pawn) ? "" : TranslateToAlgebraic(move.GetFromType());
+		moveString += TranslateToAlgebraic(static_cast<Square>(move.GetFromSquare()));
 		if (move.IsCapture())
 			moveString += "x";
-		moveString += TranslateToAlgebraic(static_cast<Square>(move.m_To.m_Square));
+		moveString += TranslateToAlgebraic(static_cast<Square>(move.GetToSquare()));
 
 		//queening
-		if (move.m_From.m_Type != move.m_To.m_Type)
-			moveString += "=" + TranslateToAlgebraic(move.m_To.m_Type);
+		if (move.GetFromType() != move.GetToType())
+			moveString += "=" + TranslateToAlgebraic(move.GetToType());
 	}
 
 	return moveString;
@@ -480,18 +480,16 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 	//get from square
 	if (pieces.size() == 1)
 	{
-		move = Move();
-		move->m_From = pieces.front();
-		move->m_To = pieces.front();
+		move = Move(pieces.front().m_Type, pieces.front().m_Square, pieces.front().m_Square);
 		if (!toFile.has_value())
 			return Move(); //should not happen
 		if (!toRow.has_value())
 		{
 			//pawn move
-			toRow = move->m_From.Position()[1] + 1;
+			toRow = move->GetFrom().Position()[1] + 1;
 		}
 
-		move->m_To.m_Square = Square(*toFile + 8 * (*toRow)); //no check for valid square, allow cheating!
+		move->SetToSquare(Square(*toFile + 8 * (*toRow)));
 	}
 	else
 	{
@@ -505,7 +503,7 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 			const std::vector<Move> legalMoves = MoveSearcher::GetLegalMovesFromBitboards(positionCopy, p, position.IsWhiteToPlay());
 			for (const Move& legalMove : legalMoves)
 			{
-				const std::array<int, 2>& square = legalMove.m_To.Position();
+				const std::array<int, 2>& square = legalMove.GetTo().Position();
 				if (square == std::array<int, 2>{*toFile, * toRow})
 				{
 					canReachSquare = true;
@@ -537,16 +535,14 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 			return Move(); //invalid move
 		assert(pieceToMove.has_value());
 
-		move = Move();
-		move->m_From = *pieceToMove;
-		move->m_To = *pieceToMove;
+		move = Move(pieceToMove->m_Type, pieceToMove->m_Square, pieceToMove->m_Square);
 		if (!toFile.has_value() || !toRow.has_value())
 			return Move();
-		move->m_To.m_Square = Square(*toFile + 8 * (*toRow));
+		move->SetToSquare(Square(*toFile + 8 * (*toRow)));
 	}
 
 	if (move.has_value())
-		move->m_To.m_Type = toType;
+		move->SetToType(toType);
 
 	return move;
 }

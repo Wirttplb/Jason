@@ -91,7 +91,7 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 	if (position.GetMoves().size() > 3)
 	{
 		const int lastIdx = static_cast<int>(position.GetMoves().size()) - 1;
-		if (position.GetMoves()[lastIdx].m_From.m_Square == position.GetMoves()[lastIdx - 2].m_To.m_Square)
+		if (position.GetMoves()[lastIdx].GetFromSquare() == position.GetMoves()[lastIdx - 2].GetToSquare())
 			score += (position.IsWhiteToPlay() ? SamePieceTwicePunishment : -SamePieceTwicePunishment);
 	}
 

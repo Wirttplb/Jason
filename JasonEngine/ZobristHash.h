@@ -3,9 +3,7 @@
 #include <array>
 #include "BasicDefinitions.h"
 
-class Piece;
 class Position;
-enum Square;
 
 /// <summary>
 /// Utility class for initializing, handling and updating a Zobrist hash of a chess position
@@ -15,7 +13,7 @@ class ZobristHash
 public:
 	static uint64_t Init();
 
-	constexpr static uint64_t GetKey(const Piece& piece, bool isWhite);
+	constexpr static uint64_t GetKey(PieceType type, Square square, bool isWhite);
 	constexpr static uint64_t GetWhiteQueenSideCastleKey();
 	constexpr static uint64_t GetWhiteKingSideCastleKey();
 	constexpr static uint64_t GetBlackQueenSideCastleKey();
@@ -86,29 +84,29 @@ constexpr uint64_t ZobristHash::GetEnPassantKey(Square square)
 	return ZobristHash::Table[EnPassantAIdx + square % 8];
 }
 
-constexpr uint64_t ZobristHash::GetKey(const Piece& piece, bool isWhite)
+constexpr uint64_t ZobristHash::GetKey(PieceType type, Square square, bool isWhite)
 {
 	int idx = 0;
-	switch (piece.m_Type)
+	switch (type)
 	{
 	case PieceType::Pawn:
-		idx = piece.m_Square * NumberOfPieceTypes + (isWhite ? WhitePawn : BlackPawn);
+		idx = square * NumberOfPieceTypes + (isWhite ? WhitePawn : BlackPawn);
 		break;
 	case PieceType::Knight:
-		idx = piece.m_Square * NumberOfPieceTypes + (isWhite ? WhiteKnight : BlackKnight);
+		idx = square * NumberOfPieceTypes + (isWhite ? WhiteKnight : BlackKnight);
 		break;
 	case PieceType::Bishop:
-		idx = piece.m_Square * NumberOfPieceTypes + (isWhite ? WhiteBishop : BlackBishop);
-		break;;
+		idx = square * NumberOfPieceTypes + (isWhite ? WhiteBishop : BlackBishop);
+		break;
 	case PieceType::Rook:
-		idx = piece.m_Square * NumberOfPieceTypes + (isWhite ? WhiteRook : BlackRook);
+		idx = square * NumberOfPieceTypes + (isWhite ? WhiteRook : BlackRook);
 		break;
 	case PieceType::Queen:
-		idx = piece.m_Square * NumberOfPieceTypes + (isWhite ? WhiteQueen : BlackQueen);
+		idx = square * NumberOfPieceTypes + (isWhite ? WhiteQueen : BlackQueen);
 		break;
 	default:
 	case PieceType::King:
-		idx = piece.m_Square * NumberOfPieceTypes + (isWhite ? WhiteKing : BlackKing);
+		idx = square * NumberOfPieceTypes + (isWhite ? WhiteKing : BlackKing);
 		break;
 	}
 

@@ -156,11 +156,11 @@ public:
 private:
 
 	void UpdatePiece(const Move& move, bool isWhite);
-	void UpdateSquare(const Piece& piece, bool isWhite);
+	void UndoPiece(const Move& move, bool isWhite);
+	void UpdateSquare(PieceType type, Square square, bool isWhite);
 
 	/// <param name="capturedPiece">Captured piece if any [OUT]</param>
-	void UpdateCapturedPiece(int squareIdx, std::optional<Piece>& capturedPiece);
-	void UndoCapturedPiece(const Piece& piece);
+	void UpdateCapturedPiece(Square square, Move& move);
 
 	//REPLACING list of pieces with bitboards!!
 	Bitboard m_WhitePieces;

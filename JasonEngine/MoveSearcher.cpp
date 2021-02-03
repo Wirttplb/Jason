@@ -121,7 +121,7 @@ static std::array<std::array<Bitboard, 256>, 8> GenerateRookAttacks()
 			std::vector<std::array<int, 2>> attackSquares;
 			for (const Move& move : moves)
 			{
-				attackSquares.emplace_back(std::array<int, 2>{ move.m_To.m_Square % 8, move.m_To.m_Square / 8 });
+				attackSquares.emplace_back(std::array<int, 2>{ move.GetToSquare() % 8, move.GetToSquare() / 8 });
 			}
 			
 			rookAttacksTable[rookSquare][bitset] = ConvertToBitboard(attackSquares) & _1; //attack squares on 1st row
@@ -542,10 +542,8 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position, const Pi
 			continue;
 
 		//move is not blocked by collision, check if illegal move
-		Move move;
-		move.m_From = piece;
-		move.m_To = piece;
-		move.m_To.m_Square = static_cast<Square>(square[0] + 8 * square[1]);
+		Move move(piece.m_Type, piece.m_Square, piece.m_Square);
+		move.SetToSquare(static_cast<Square>(square[0] + 8 * square[1]));
 		if (IsMoveIllegal(position, move, isWhitePiece))
 			continue;
 
@@ -555,21 +553,19 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position, const Pi
 	std::vector<Move> legalMoves;
 	for (const std::array<int, 2> & legalSquare : legalSquares)
 	{
-		Move move;
-		move.m_From = piece;
-		move.m_To = piece;
-		move.m_To.m_Square = static_cast<Square>(legalSquare[0] + 8* legalSquare[1]);
+		Move move(piece.m_Type, piece.m_Square, piece.m_Square);
+		move.SetToSquare(static_cast<Square>(legalSquare[0] + 8 * legalSquare[1]));
 		//Add all possible queening moves if pawn
 		if ((piece.m_Type == PieceType::Pawn) &&
-			((isWhitePiece && (move.m_To.Position()[1] == 7)) || (!isWhitePiece && (move.m_To.Position()[1] == 0))))
+			((isWhitePiece && (move.GetTo().Position()[1] == 7)) || (!isWhitePiece && (move.GetTo().Position()[1] == 0))))
 		{
-			move.m_To.m_Type = PieceType::Queen;
+			move.SetToType(PieceType::Queen);
 			legalMoves.emplace_back(move);
-			move.m_To.m_Type = PieceType::Rook;
+			move.SetToType(PieceType::Rook);
 			legalMoves.emplace_back(move);
-			move.m_To.m_Type = PieceType::Bishop;
+			move.SetToType(PieceType::Bishop);
 			legalMoves.emplace_back(move);
-			move.m_To.m_Type = PieceType::Knight;
+			move.SetToType(PieceType::Knight);
 			legalMoves.emplace_back(move);
 		}
 		else
@@ -606,20 +602,20 @@ std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position, c
 			{
 				MakeValidIdx(legalMoves, queeningMovesIdx);
 				legalMoves[queeningMovesIdx] = legalMoves[i];
-				legalMoves[queeningMovesIdx].m_To.m_Type = PieceType::Rook;
+				legalMoves[queeningMovesIdx].SetToType(PieceType::Rook);
 				queeningMovesIdx++;
 
 				MakeValidIdx(legalMoves, queeningMovesIdx);
 				legalMoves[queeningMovesIdx] = legalMoves[i];
-				legalMoves[queeningMovesIdx].m_To.m_Type = PieceType::Bishop;
+				legalMoves[queeningMovesIdx].SetToType(PieceType::Bishop);
 				queeningMovesIdx++;
 
 				MakeValidIdx(legalMoves, queeningMovesIdx);
 				legalMoves[queeningMovesIdx] = legalMoves[i];
-				legalMoves[queeningMovesIdx].m_To.m_Type = PieceType::Knight;
+				legalMoves[queeningMovesIdx].SetToType(PieceType::Knight);
 				queeningMovesIdx++;
 
-				legalMoves[i].m_To.m_Type = PieceType::Queen;
+				legalMoves[i].SetToType(PieceType::Queen);
 			}
 		}
 
@@ -1005,17 +1001,17 @@ bool MoveSearcher::IsMoveIllegal(const Position& position, const Move& move, boo
 	{
 		if (IsKingInCheck(position, isWhitePiece))
 			isIllegal = true;
-		else if (move.m_To.m_Square > move.m_From.m_Square) //kingside castle, check in between square
+		else if (move.GetToSquare() > move.GetFromSquare()) //kingside castle, check in between square
 		{
 			newPosition = position;
-			moveCopy.m_To.m_Square = Square(static_cast<int>(moveCopy.m_To.m_Square) - 1);
+			moveCopy.SetToSquare(Square(static_cast<int>(moveCopy.GetToSquare()) - 1));
 			newPosition.Update(moveCopy);
 			isIllegal = IsKingInCheck(newPosition, isWhitePiece);
 		}
 		else //queenside
 		{
 			newPosition = position;
-			moveCopy.m_To.m_Square = Square(static_cast<int>(moveCopy.m_To.m_Square) + 1);
+			moveCopy.SetToSquare(Square(static_cast<int>(moveCopy.GetToSquare()) + 1));
 			newPosition.Update(moveCopy);
 			isIllegal = IsKingInCheck(newPosition, isWhitePiece);
 		}
@@ -1038,16 +1034,16 @@ bool MoveSearcher::IsMoveIllegalFromBitboards(Position& position, Move& move, bo
 			isIllegal = true;
 		else
 		{
-			const Square squareBackup = move.m_To.m_Square;
-			if (move.m_To.m_Square > move.m_From.m_Square) //kingside castle, check in between square
-				move.m_To.m_Square = Square(static_cast<int>(move.m_To.m_Square) - 1);
+			const Square squareBackup = move.GetToSquare();
+			if (move.GetToSquare() > move.GetFromSquare()) //kingside castle, check in between square
+				move.SetToSquare(Square(static_cast<int>(move.GetToSquare()) - 1));
 			else //queenside
-				move.m_To.m_Square = Square(static_cast<int>(move.m_To.m_Square) + 1);
+				move.SetToSquare(Square(static_cast<int>(move.GetToSquare()) + 1));
 
 			position.Update(move);
 			isIllegal = IsKingInCheckFromBitboards(position, isWhitePiece);
 			position.Undo(move);
-			move.m_To.m_Square = squareBackup;
+			move.SetToSquare(squareBackup);
 		}
 	}
 

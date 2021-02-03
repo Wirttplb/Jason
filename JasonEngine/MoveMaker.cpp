@@ -32,7 +32,7 @@ std::optional<Move> MoveMaker::FindMove(Position& position, int depth)
 bool MoveMaker::MakeMove(Position& position, Move& move)
 {
 	//Check move is legal
-	std::vector<Move> legalMoves = MoveSearcher::GetLegalMovesFromBitboards(position, move.m_From, position.IsWhiteToPlay());
+	std::vector<Move> legalMoves = MoveSearcher::GetLegalMovesFromBitboards(position, move.GetFrom(), position.IsWhiteToPlay());
 
 	bool isLegal = false;
 	for (const Move& legalMove : legalMoves)
@@ -259,8 +259,8 @@ static constexpr std::array<PieceType, 5> PieceTypesSorted = { PieceType::Queen,
 bool MoveMaker::MovesSorter(const Position& position, const Move& move1, const Move& move2)
 {
 	//Most Valuable Victim - Least Valuable Aggressor heuristic
-	Bitboard toSquare1(move1.m_To.m_Square);
-	Bitboard toSquare2(move2.m_To.m_Square);
+	Bitboard toSquare1(move1.GetToSquare());
+	Bitboard toSquare2(move2.GetToSquare());
 	const Bitboard& enemyPieces = (position.IsWhiteToPlay() ? position.GetBlackPieces() : position.GetWhitePieces());
 	if ((toSquare1 & enemyPieces) && !(toSquare2 & enemyPieces))
 		return true;
@@ -271,7 +271,7 @@ bool MoveMaker::MovesSorter(const Position& position, const Move& move1, const M
 		const Bitboard& enemyPieces = position.GetPiecesOfType(type, !position.IsWhiteToPlay());
 		if (toSquare1 & enemyPieces)
 		{
-			if (!(toSquare2 & enemyPieces) || (move1.m_From.m_Type < move2.m_From.m_Type))
+			if (!(toSquare2 & enemyPieces) || (move1.GetFromType() < move2.GetFromType()))
 				return true;
 		}
 		else if (toSquare2 & enemyPieces)

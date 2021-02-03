@@ -45,36 +45,36 @@ void TacticsTests::Run()
 	ASSERT(staircaseMate2.GetGameStatus() == Position::GameStatus::CheckMate);
 
 	RunPosition(pinKnightFork, 3, 2);
-	ASSERT(pinKnightFork.GetMoves()[0].m_From == Piece(PieceType::Knight, g5));
-	ASSERT(pinKnightFork.GetMoves()[0].m_To == Piece(PieceType::Knight, e6));
-	ASSERT(pinKnightFork.GetMoves()[2].m_From == Piece(PieceType::Knight, e6));
-	ASSERT(pinKnightFork.GetMoves()[2].m_To == Piece(PieceType::Knight, f4));
+	ASSERT(pinKnightFork.GetMoves()[0].GetFrom() == Piece(PieceType::Knight, g5));
+	ASSERT(pinKnightFork.GetMoves()[0].GetTo() == Piece(PieceType::Knight, e6));
+	ASSERT(pinKnightFork.GetMoves()[2].GetFrom() == Piece(PieceType::Knight, e6));
+	ASSERT(pinKnightFork.GetMoves()[2].GetTo() == Piece(PieceType::Knight, f4));
 
 	RunPosition(removeKnightForkDefender, 4, 5);
-	ASSERT(removeKnightForkDefender.GetMoves()[0].m_To == Piece(PieceType::Queen, b6));
-	ASSERT(removeKnightForkDefender.GetMoves()[1].m_To == Piece(PieceType::Bishop, b6));
-	ASSERT(removeKnightForkDefender.GetMoves()[2].m_To == Piece(PieceType::Knight, d6));
+	ASSERT(removeKnightForkDefender.GetMoves()[0].GetTo() == Piece(PieceType::Queen, b6));
+	ASSERT(removeKnightForkDefender.GetMoves()[1].GetTo() == Piece(PieceType::Bishop, b6));
+	ASSERT(removeKnightForkDefender.GetMoves()[2].GetTo() == Piece(PieceType::Knight, d6));
 
 	RunPosition(twoAttackOne, 1, 3);
-	ASSERT(twoAttackOne.GetMoves()[0].m_To.m_Square == c3);
+	ASSERT(twoAttackOne.GetMoves()[0].GetToSquare() == c3);
 
 	RunPosition(queenSacrificeMate, 1, 3);
-	ASSERT(queenSacrificeMate.GetMoves()[0].m_To == Piece(PieceType::Queen, g8));
+	ASSERT(queenSacrificeMate.GetMoves()[0].GetTo() == Piece(PieceType::Queen, g8));
 
 	RunPosition(mateIn2, 1, 3);
-	ASSERT(mateIn2.GetMoves()[0].m_To == Piece(PieceType::Queen, e1));
+	ASSERT(mateIn2.GetMoves()[0].GetTo() == Piece(PieceType::Queen, e1));
 
 	RunPosition(tactic1800, 4, 6);
-	ASSERT(tactic1800.GetMoves()[0].m_To == Piece(PieceType::Queen, e6));
-	ASSERT(tactic1800.GetMoves()[1].m_To == Piece(PieceType::King, h7));
-	ASSERT(tactic1800.GetMoves()[2].m_To == Piece(PieceType::Queen, f5));
-	ASSERT(tactic1800.GetMoves()[3].m_To.m_Type == PieceType::King);
+	ASSERT(tactic1800.GetMoves()[0].GetTo() == Piece(PieceType::Queen, e6));
+	ASSERT(tactic1800.GetMoves()[1].GetTo() == Piece(PieceType::King, h7));
+	ASSERT(tactic1800.GetMoves()[2].GetTo() == Piece(PieceType::Queen, f5));
+	ASSERT(tactic1800.GetMoves()[3].GetToType() == PieceType::King);
 
 	RunPosition(tactic1900, 1, 6);
-	ASSERT(tactic1900.GetMoves()[0].m_To == Piece(PieceType::Rook, d4));
+	ASSERT(tactic1900.GetMoves()[0].GetTo() == Piece(PieceType::Rook, d4));
 
 	RunPosition(tactic2000, 1, 6);
-	ASSERT(tactic2000.GetMoves()[0].m_To == Piece(PieceType::Pawn, a6));
+	ASSERT(tactic2000.GetMoves()[0].GetTo() == Piece(PieceType::Pawn, a6));
 
 	//The following test is still failing
 	RunPosition(tactic2200, 5, 8);

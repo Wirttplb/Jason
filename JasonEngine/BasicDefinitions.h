@@ -17,7 +17,7 @@ enum Square : int
 };
 
 /// <remark>Sorted by piece value</remark>
-enum class PieceType
+enum class PieceType : int
 {
 	Pawn = 0,
 	Knight = 1,
@@ -28,6 +28,7 @@ enum class PieceType
 };
 
 /// <summary>description of a piece and its position</summary>
+/// <remark>can be compressed down to 6 + 3 bits (square + type)</remark>
 class Piece
 {
 public:
@@ -52,42 +53,194 @@ class Move
 {
 public:
 	Move() {};
-	Move(PieceType type, Square from, Square to) : m_From(type, from), m_To(type, to) {};
-	Move(PieceType fromType, PieceType toType, Square from, Square to) : m_From(fromType, from), m_To(toType, to) {};
+	Move(PieceType type, Square from, Square to)
+	{
+		m_Move = static_cast<uint64_t>((from & 0x3f) | ((to & 0x3f) << 6) | ((static_cast<int>(type) & 0x7) << 12) | ((static_cast<int>(type) & 0x7) << 15));
+	};
+	Move(PieceType fromType, PieceType toType, Square from, Square to)
+	{
+		m_Move = static_cast<uint64_t>((from & 0x3f) | ((to & 0x3f) << 6) | ((static_cast<int>(fromType) & 0x7) << 12) | ((static_cast<int>(toType) & 0x7) << 15));
+	};
 
-	bool IsCapture() const { return m_Capture.has_value(); };
-
+	/// <remark>Slow operator, only for tests</remark>
 	bool operator==(const Move& move) const
 	{
-		return (m_From == move.m_From && m_To == move.m_To); //dont check for capture
+		return (GetFrom() == move.GetFrom()) && (GetTo() == move.GetTo()); //m_Move == move.m_Move;
 	}
 
-	bool IsCastling() const
+	/// <summary>bits 0 to 5 = From square</summary>
+	inline Square GetFromSquare() const { return static_cast<Square>(m_Move & 0x3f); };
+	/// <summary>bits 6 to 11 = To square</summary>
+	inline Square GetToSquare() const { return static_cast<Square>((m_Move >> 6) & 0x3f); }
+
+	/// <summary>bits 12 to 14 is from type</summary>
+	inline PieceType GetFromType() const
 	{
-		return (m_From.m_Type == PieceType::King) &&
-			(abs(m_From.m_Square - m_To.m_Square) == 2); //2 lateral steps, same row
-	}
+		return static_cast<PieceType>((m_Move >> 12) & 0x07);
+	};
 
-	bool IsTwoStepsPawn() const
+	/// <summary>bits 15 to 17 is from type</summary>
+	inline PieceType GetToType() const
 	{
-		return (m_From.m_Type == PieceType::Pawn) &&
-			(abs(m_From.m_Square - m_To.m_Square) == 16);
-	}
-	bool IsQueening() const
+		return static_cast<PieceType>((m_Move >> 15) & 0x07);
+	};
+
+	inline void SetFromSquare(Square from)
 	{
-		return (m_From.m_Type == PieceType::Pawn) &&
-			((m_To.m_Square <= 7) || (m_To.m_Square >= 56));
+		m_Move &= ~0x3f;
+		m_Move |= from & 0x3f;
 	}
 
-	Piece m_From;
-	Piece m_To;
-	std::optional<Piece> m_Capture; //captured piece
-	std::optional<Square> m_EnPassantBackup; //en passant square BEFORE move
+	inline void SetToSquare(Square to)
+	{
+		m_Move &= ~0xfc0;
+		m_Move |= (static_cast<uint64_t>(to) & 0x3f) << 6;
+	}
 
-	bool m_CanWhiteCastleKingSideBackup = true; //backups flags for BEFORE move
-	bool m_CanBlackCastleKingSideBackup = true;
-	bool m_CanWhiteCastleQueenSideBackup = true;
-	bool m_CanBlackCastleQueenSideBackup = true;
+	inline void SetFromType(PieceType type)
+	{
+		m_Move &= ~0x7000;
+		m_Move |= (static_cast<uint64_t>(type) & 0x7) << 12;
+	}
+
+	inline void SetToType(PieceType type)
+	{
+		m_Move &= ~0x38000;
+		m_Move |= (static_cast<uint64_t>(type) & 0x7) << 15;
+	}
+
+	/// <summary>Returns from piece ; Slow</summary>
+	Piece GetFrom() const { return Piece(GetFromType(), GetFromSquare()); };
+	/// <summary>returns to piece ; Slow</summary>
+	Piece GetTo() const { return Piece(GetToType(), GetToSquare()); };
+
+	inline void SetFrom(PieceType type, Square square)
+	{
+		SetFromType(type);
+		SetFromSquare(square);
+	};
+
+	inline void SetTo(PieceType type, Square square)
+	{
+		SetToType(type);
+		SetToSquare(square);
+	};
+
+	/// <summary>capture flag is bit 18</summary>
+	inline bool IsCapture() const
+	{
+		return ((m_Move >> 18) & 0x1) > 0;
+	};
+
+	/// <summary>capture type is bits 19, 20, 21</summary>
+	inline PieceType GetCaptureType() const
+	{
+		return static_cast<PieceType>((m_Move >> 19) & 0x07);
+	}
+
+	/// <summary>capture square is bits 22 to 27</summary>
+	inline Square GetCaptureSquare() const
+	{
+		return static_cast<Square>((m_Move >> 22) & 0x3f);
+	}
+
+	inline void SetCapture(PieceType type, Square square)
+	{
+		//m_Capture = Piece(type, square);
+		m_Move &= ~0xFFC0000;
+		m_Move |= 1 << 18; //is capture flag
+		m_Move |= (static_cast<uint64_t>(type) & 0x7) << 19;
+		m_Move |= (static_cast<uint64_t>(square) & 0x3f) << 22;
+	};
+
+	/// <summary>en passant flag is bit 28</summary>
+	inline bool HasEnPassantBackup() const
+	{
+		return ((m_Move >> 28) & 0x1) > 0;
+	}
+
+	/// <summary>en passant file is bits 29 to 31</summary>
+	inline int GetEnPassantBackupFile() const
+	{
+		return ((m_Move >> 29) & 0x07);
+	}
+
+	inline void SetEnPassantBackup(Square square)
+	{
+		m_Move &= ~0xF0000000;
+		m_Move |= 1 << 28; //has en passant backup flag
+		m_Move |= static_cast<uint64_t>((square & 7) & 0x7) << 29;
+	}
+
+	inline bool GetCanWhiteCastleKingSideBackup() const
+	{
+		return ((m_Move >> 32) & 0x1) > 0;
+	}
+
+	inline bool GetCanBlackCastleKingSideBackup() const
+	{
+		return ((m_Move >> 33) & 0x1) > 0;
+	}
+
+	inline bool GetCanWhiteCastleQueenSideBackup() const
+	{
+		return ((m_Move >> 34) & 0x1) > 0;
+	}
+
+	inline bool GetCanBlackCastleQueenSideBackup() const
+	{
+		return ((m_Move >> 35) & 0x1) > 0;
+	}
+
+	inline void SetCanWhiteCastleKingSideBackup(bool value)
+	{
+		m_Move &= ~0x100000000;
+		m_Move |= static_cast<uint64_t>(value ? 1 : 0) << 32;
+	}
+
+	inline void SetCanBlackCastleKingSideBackup(bool value)
+	{
+		m_Move &= ~0x200000000;
+		m_Move |= static_cast<uint64_t>(value ? 1 : 0) << 33;
+	}
+
+	inline void SetCanWhiteCastleQueenSideBackup(bool value)
+	{
+		m_Move &= ~0x400000000;
+		m_Move |= static_cast<uint64_t>(value ? 1 : 0) << 34;
+	}
+
+	inline void SetCanBlackCastleQueenSideBackup(bool value)
+	{
+		m_Move &= ~0x800000000;
+		m_Move |= static_cast<uint64_t>(value ? 1 : 0) << 35;
+	}
+
+	inline bool IsCastling() const
+	{
+		return (GetFromType() == PieceType::King) &&
+			(abs(GetFromSquare() - GetToSquare()) == 2); //2 lateral steps, same row
+	}
+
+	inline bool IsTwoStepsPawn() const
+	{
+		return (GetFromType() == PieceType::Pawn) &&
+			(abs(GetFromSquare() - GetToSquare()) == 16);
+	}
+
+	inline bool IsQueening() const
+	{
+		if (GetFromType() == PieceType::Pawn)
+		{
+			const int toSquare = GetToSquare();
+			return ((toSquare <= 7) || (toSquare >= 56));
+		}
+
+		return false;
+	}
+
+private:
+	uint64_t m_Move = 0;
 };
 
 static const Move WhiteKingSideCastle(PieceType::King, e1, g1);
