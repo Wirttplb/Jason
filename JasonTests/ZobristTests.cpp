@@ -40,7 +40,7 @@ void ZobristTests::Run()
 
 		ASSERT(newPosition.GetZobristHash() == newPosition.ComputeZobristHash());
 	}
-	ASSERT(count == 217 && MoveSearcher::IsKingInCheck(newPosition, false));
+	ASSERT(count == 217 && MoveSearcher::IsKingInCheckFromBitboards(newPosition, false));
 
 	//undo all moves
 	std::vector<Move> moves = newPosition.GetMoves();
@@ -70,7 +70,7 @@ void ZobristTests::Run()
 		if (newPosition.IsInsufficientMaterial())
 			break;
 	}
-	ASSERT(count == 244 && !MoveSearcher::IsKingInCheck(newPosition, false) && !MoveSearcher::IsKingInCheck(newPosition, true));
+	ASSERT(count == 244 && !MoveSearcher::IsKingInCheckFromBitboards(newPosition, false) && !MoveSearcher::IsKingInCheckFromBitboards(newPosition, true));
 
 	//undo all moves
 	moves = newPosition.GetMoves();
@@ -100,7 +100,7 @@ void ZobristTests::Run()
 		if (newPosition.IsInsufficientMaterial())
 			break;
 	}
-	ASSERT(count == 514 && !MoveSearcher::IsKingInCheck(newPosition, false) && !MoveSearcher::IsKingInCheck(newPosition, true));
+	ASSERT(count == 514 && !MoveSearcher::IsKingInCheckFromBitboards(newPosition, false) && !MoveSearcher::IsKingInCheckFromBitboards(newPosition, true));
 
 	//undo all moves
 	moves = newPosition.GetMoves();

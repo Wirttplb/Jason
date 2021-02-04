@@ -6,41 +6,47 @@ class MoveSearcher
 {
 public:
 	/// <returns>All legal moves for every piece for a given position, a move being the positions before and after of a piece (and type because of queening)</returns>
-	/// <remark>Not bitboards version is very slow, not used at runtime</remark>
-	static std::vector<Move> GetLegalMoves(const Position& position);
 	static std::vector<Move> GetLegalMovesFromBitboards(Position& position);
+
+	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
+	static std::vector<Move> GetLegalMovesFromBitboards(Position& position, PieceType type, Square square, bool isWhitePiece);
+
 	/// <summary>Returns Bitboard of accessible pseudo-legal squares, used for controlled squares enumeration</summary>
-	static Bitboard GetPseudoLegalSquaresFromBitboards(Position& position, bool isWhite);
+	/// <param name="pawnAttackSquares">if true will return only pawn attack squares without checking enemy presence ("controlled squares")</param>
+	static Bitboard GetPseudoLegalSquaresFromBitboards(Position& position, bool isWhite, bool pawnControlledSquares);
 	static std::vector<Move> GetPseudoLegalMovesFromBitboards(Position& position);
-
-	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
-	/// <remark>Very slow, not used at runtime</remark>
-	static std::vector<Move> GetLegalMoves(const Position& position, const Piece& piece, bool isWhitePiece);
-
-	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
-	static std::vector<Move> GetLegalMovesFromBitboards(Position& position, const Piece& piece, bool isWhitePiece);
-
-	/// <returns>All legal moves for pieces of type whose position is described by bitboard</returns>
-	static Bitboard GetPseudoLegalBitboardMoves(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece);
+	
+	/// <returns>All pseudo legal moves to-squares for pieces of type whose position is described by bitboard</returns>
+	/// <param name="pawnAttackSquares">if true will return only pawn attack squares without checking enemy presence ("controlled squares")</param>
+	static Bitboard GetPseudoLegalBitboardMoves(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece, bool pawnControlledSquares);
+	
+	/// <returns>All pseudo legal moves for pieces of type whose position is described by bitboard</returns>
 	static std::vector<Move> GetPseudoLegalMovesFromBitboards(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece);
 
 	/// <summary>Returns number of nodes at given depth</summary>
 	static size_t Perft(Position& position, int depth);
+
 	/// <summary>Returns set of unique zobrist keys at given depth (unique positions)</summary>
 	static std::unordered_set<uint64_t> UniquePerft(Position& position, int depth);
 
-	static bool IsKingInCheck(const Position& position, bool isWhiteKing);
 	static bool IsKingInCheckFromBitboards(const Position& position, bool isWhiteKing);
 
-	/// <summary>
-	/// Return a random legal move from a given position (null if stalemate or checkmate)
-	/// </summary>
+	/// <summary>Returns a random legal move from a given position (null if stalemate or checkmate)</summary>
 	static std::optional<Move> GetRandomMove(const Position& position);
 
 	/// <returns>Move table (accessible squares on empty board) ; for pawns, single step moves</returns>
 	static const std::vector<Bitboard>& GetMoveTable(PieceType type, bool isWhite = true);
 
 private:
+	/// <returns>All legal moves for every piece for a given position, a move being the positions before and after of a piece (and type because of queening)</returns>
+	/// <remark>Very slow, not used at runtime, only for table generation</remark>
+	static std::vector<Move> GetLegalMoves(const Position& position);
+	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
+	/// <remark>Very slow, not used at runtime</remark>
+	static std::vector<Move> GetLegalMoves(const Position& position, const Piece& piece, bool isWhitePiece);
+
+	static bool IsKingInCheck(const Position& position, bool isWhiteKing);
+
 	/// <summary>
 	/// Get all accessible squares for a piece (where they can move if there was no collision)
 	/// </summary>
@@ -72,4 +78,5 @@ private:
 
 	friend static std::vector<Bitboard> GenerateMoves(PieceType type, bool isWhitePiece, bool isPawnDoubleStep);
 	friend static std::vector<Bitboard> GeneratePawnCaptureMoves(bool isWhitePiece);
+	friend static std::array<std::array<Bitboard, 256>, 8> GenerateRookAttacks();
 };

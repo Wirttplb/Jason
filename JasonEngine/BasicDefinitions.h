@@ -28,7 +28,7 @@ enum class PieceType : int
 };
 
 /// <summary>description of a piece and its position</summary>
-/// <remark>can be compressed down to 6 + 3 bits (square + type)</remark>
+/// <remark>Usage should be limited at runtime, could be removed in the future, redundant with Bitboards and Move class</remark>
 class Piece
 {
 public:
@@ -49,6 +49,7 @@ public:
 };
 
 /// <summary>Description of a move, with all information needed to undo the move</summary>
+/// <remark>This class is easily instantiated millions of times at runtime, single integer member variable to reduce memory footprint</remark>
 class Move
 {
 public:

@@ -500,7 +500,7 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 		{
 			bool canReachSquare = false;
 			Position positionCopy = position;
-			const std::vector<Move> legalMoves = MoveSearcher::GetLegalMovesFromBitboards(positionCopy, p, position.IsWhiteToPlay());
+			const std::vector<Move> legalMoves = MoveSearcher::GetLegalMovesFromBitboards(positionCopy, p.m_Type, p.m_Square, position.IsWhiteToPlay());
 			for (const Move& legalMove : legalMoves)
 			{
 				const std::array<int, 2>& square = legalMove.GetTo().Position();

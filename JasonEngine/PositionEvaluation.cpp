@@ -11,7 +11,7 @@ static constexpr double Mate = 1000000;
 static constexpr double BishopPairBonus = 15.0;
 static constexpr double CastlingBonus = 50.0;
 
-static constexpr double CenterPawnBonus = 50.0;
+static constexpr double CenterPawnBonus = 40.0;
 static constexpr double DoubledPawnPunishment = -20.0; //40 for a pair
 static constexpr double IsolatedPawnPunishment = -40.0;
 static constexpr std::array<double, 3> AdvancedPawnBonus = {30.0, 50.0, 60.0}; //on rows 5, 6, 7
@@ -88,12 +88,12 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 	score -= blackRooksOnOpenFiles.second * RookOnSemiOpenFileBonus;
 
 	//penalty for moving same pieces twice
-	if (position.GetMoves().size() > 3)
+	/*if (position.GetMoves().size() > 3)
 	{
 		const int lastIdx = static_cast<int>(position.GetMoves().size()) - 1;
 		if (position.GetMoves()[lastIdx].GetFromSquare() == position.GetMoves()[lastIdx - 2].GetToSquare())
 			score += (position.IsWhiteToPlay() ? SamePieceTwicePunishment : -SamePieceTwicePunishment);
-	}
+	}*/
 
 	//Center pawns bonus
 	score += CountCenterPawns(position, true) * CenterPawnBonus;
@@ -137,37 +137,8 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 	score -= attackedSquaresAroundWhiteKing.CountSetBits() * KingSquaresAttackBonusFactor;
 
 	//////////////////////////
-
 	//Check space behind pawns
-	//Check king in check?
-	//Check concentration of pieces around enemy king for an attack/mate?
-	//const Piece* whiteKing = position.GetPiece(PieceType::King, true);
-	//const Piece* blackKing = position.GetPiece(PieceType::King, false);
-	//if (!whiteKing || !blackKing)
-	//{
-	//	assert(false);
-	//	return score;
-	//}
-
-	/*double squareDistanceToWhiteKing = 0.0;
-	double squareDistanceToBlackKing = 1.0;
-	for (const Piece& piece : whitePieces)
-	{
-		if (piece.m_Type != PieceType::King)
-		{
-			squareDistanceToBlackKing += SqDistanceBetweenPieces(piece, *blackKing);
-		}
-	}
-	for (const Piece& piece : blackPieces)
-	{
-		if (piece.m_Type != PieceType::King)
-		{
-			squareDistanceToWhiteKing += SqDistanceBetweenPieces(piece, *whiteKing);
-		}
-	}*/
-
-	//score += squareDistanceToWhiteKing * 0.003;
-	//score -= squareDistanceToBlackKing * 0.003;
+	//King in check for quiescence check..
 
 	return score;
 }
@@ -288,8 +259,8 @@ int PositionEvaluation::CountBlockedEorDPawns(const Position& position, bool isW
 
 Bitboard PositionEvaluation::GetControlledSquares(Position& position, bool isWhite)
 {
-	//SHOULD BE UPDATED TO replace pawn moves vs pawn takes
-	return MoveSearcher::GetPseudoLegalSquaresFromBitboards(position, isWhite);
+	bool pawnControlledSquares = true;
+	return MoveSearcher::GetPseudoLegalSquaresFromBitboards(position, isWhite, pawnControlledSquares);
 }
 
 Bitboard PositionEvaluation::GetAttackedSquaresAroundKing(const Position& position, const Bitboard& attackedSquares, bool isWhite)

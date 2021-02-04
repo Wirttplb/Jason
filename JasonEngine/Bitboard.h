@@ -403,6 +403,7 @@ static const Bitboard c1h6
 
 static const std::array<Bitboard, 8> _rows = { _1, _2, _3, _4, _5, _6, _7, _8 };
 static const std::array<Bitboard, 8> _files = { _a, _b, _c, _d, _e, _f, _g, _h };
+static const Bitboard _bcdefg = _b & _c & _d & _e & _f & _g;
 
 ///<remark>Includes the r row</summary>
 static constexpr Bitboard GetRowsAbove(int r)

@@ -201,8 +201,32 @@ static constexpr std::array<Bitboard, 8> GenerateFilesOnLeftOf()
 	return result;
 }
 
+static constexpr std::array<Bitboard, 8> GenerateRowsUnderOf()
+{
+	std::array<Bitboard, 8> result;
+	for (int r = 0; r < 8; r++)
+	{
+		result[r] = GetRowsUnder(r);
+	}
+
+	return result;
+}
+
+static constexpr std::array<Bitboard, 8> GenerateRowsAboveOf()
+{
+	std::array<Bitboard, 8> result;
+	for (int r = 0; r < 8; r++)
+	{
+		result[r] = GetRowsAbove(r);
+	}
+
+	return result;
+}
+
 static const std::array<Bitboard, 8> FilesOnRight = GenerateFilesOnRightOf();
 static const std::array<Bitboard, 8> FilesOnLeft = GenerateFilesOnLeftOf();
+static const std::array<Bitboard, 8> RowsUnder = GenerateRowsUnderOf();
+static const std::array<Bitboard, 8> RowsAbove = GenerateRowsAboveOf();
 
 /// <summary> Generates bishop attacks from square index and occupancy </summary>
 static Bitboard GenerateBishopAttacks(int fromSquare, const Bitboard& occupancy)
@@ -230,7 +254,7 @@ static Bitboard GenerateBishopAttacks(int fromSquare, const Bitboard& occupancy)
 
 	uint64_t rotatedDiag = occupancy.PseudoRotate45Clockwise().m_Value & extractDiagMask;
 	//shift to first row
-	rotatedDiag = rotatedDiag >> (diagIdx) * 8;// (7 - diagIdx) * 8;
+	rotatedDiag = rotatedDiag >> (diagIdx) * 8;
 	Bitboard diagAttacksA1H8 = RookAttackTable[squareIdxInDiag][rotatedDiag];
 	//unshift, reapply mask and unrotate
 	diagAttacksA1H8 = diagAttacksA1H8 << (diagIdx) * 8;
@@ -238,7 +262,7 @@ static Bitboard GenerateBishopAttacks(int fromSquare, const Bitboard& occupancy)
 	diagAttacksA1H8 = diagAttacksA1H8.UndoPseudoRotate45Clockwise();
 
 	//Attacks on A8H1 directed diagonal
-	diagIdx = file + row + 1;// row - file;
+	diagIdx = file + row + 1;
 	extractDiagMask = _rows[0];
 
 	if (diagIdx > 7)
@@ -284,14 +308,13 @@ std::vector<Move> MoveSearcher::GetLegalMoves(const Position& position)
 }
 
 //static global variables, very fragile!!
-static Piece _piece;
+static PieceType _pieceType = PieceType::Pawn;
 static std::vector<Move> __moves;
 static Position* _position = nullptr;
 /// <summary> same as GetLegalMovesFromBitboards but uses static global variables </summary>
 static void _GetLegalMovesFromBitboards(int fromSquare)
 {
-	_piece.m_Square = static_cast<Square>(fromSquare);
-	std::vector<Move> newMoves = MoveSearcher::GetLegalMovesFromBitboards(*_position, _piece, _position->IsWhiteToPlay());
+	std::vector<Move> newMoves = MoveSearcher::GetLegalMovesFromBitboards(*_position, _pieceType, static_cast<Square>(fromSquare), _position->IsWhiteToPlay());
 	__moves.insert(__moves.end(),
 		std::make_move_iterator(newMoves.begin()),
 		std::make_move_iterator(newMoves.end()));
@@ -299,12 +322,19 @@ static void _GetLegalMovesFromBitboards(int fromSquare)
 
 static void _GetPseudoLegalMovesFromBitboards(int fromSquare)
 {
-	_piece.m_Square = static_cast<Square>(fromSquare);
-	std::vector<Move> newMoves = MoveSearcher::GetPseudoLegalMovesFromBitboards(*_position, _piece.m_Type, Bitboard(_piece.m_Square), _position->IsWhiteToPlay());
+	std::vector<Move> newMoves = MoveSearcher::GetPseudoLegalMovesFromBitboards(*_position, _pieceType, Bitboard(fromSquare), _position->IsWhiteToPlay());
 	__moves.insert(__moves.end(),
 		std::make_move_iterator(newMoves.begin()),
 		std::make_move_iterator(newMoves.end()));
 }
+
+//static void GetLegalPawnMoves(Position& position, const Bitboard& from)
+//{
+//	std::vector<Move> newMoves = MoveSearcher::GetPseudoLegalMovesFromBitboards(*_position, _pieceType, from, _position->IsWhiteToPlay());
+//	__moves.insert(__moves.end(),
+//		std::make_move_iterator(newMoves.begin()),
+//		std::make_move_iterator(newMoves.end()));
+//}
 
 std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position)
 {
@@ -321,7 +351,7 @@ std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position)
 
 	__moves.clear();
 	_position = &position;
-	_piece.m_Type = PieceType::Pawn;
+	_pieceType = PieceType::Pawn;
 	LoopOverSetBits(pawns, _GetLegalMovesFromBitboards);
 
 	allLegalMoves.insert(allLegalMoves.end(),
@@ -329,7 +359,7 @@ std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position)
 		std::make_move_iterator(__moves.end()));
 
 	__moves.clear();
-	_piece.m_Type = PieceType::Knight;
+	_pieceType = PieceType::Knight;
 	LoopOverSetBits(knights, _GetLegalMovesFromBitboards);
 
 	allLegalMoves.insert(allLegalMoves.end(),
@@ -337,7 +367,7 @@ std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position)
 		std::make_move_iterator(__moves.end()));
 
 	__moves.clear();
-	_piece.m_Type = PieceType::Rook;
+	_pieceType = PieceType::Rook;
 	LoopOverSetBits(rooks, _GetLegalMovesFromBitboards);
 
 	allLegalMoves.insert(allLegalMoves.end(),
@@ -345,7 +375,7 @@ std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position)
 		std::make_move_iterator(__moves.end()));
 
 	__moves.clear();
-	_piece.m_Type = PieceType::Bishop;
+	_pieceType = PieceType::Bishop;
 	LoopOverSetBits(bishops, _GetLegalMovesFromBitboards);
 
 	allLegalMoves.insert(allLegalMoves.end(),
@@ -353,7 +383,7 @@ std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position)
 		std::make_move_iterator(__moves.end()));
 
 	__moves.clear();
-	_piece.m_Type = PieceType::Queen;
+	_pieceType = PieceType::Queen;
 	LoopOverSetBits(queens, _GetLegalMovesFromBitboards);
 
 	allLegalMoves.insert(allLegalMoves.end(),
@@ -361,7 +391,7 @@ std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position)
 		std::make_move_iterator(__moves.end()));
 
 	__moves.clear();
-	_piece.m_Type = PieceType::King;
+	_pieceType = PieceType::King;
 	LoopOverSetBits(king, _GetLegalMovesFromBitboards);
 
 	allLegalMoves.insert(allLegalMoves.end(),
@@ -375,10 +405,10 @@ static bool _isWhite = false;
 static Bitboard _bitboard;
 static void _GetPseudoLegalSquaresFromBitboards(int fromSquare)
 {
-	_bitboard = MoveSearcher::GetPseudoLegalBitboardMoves(*_position, _type, Bitboard(fromSquare), _isWhite);
+	_bitboard = MoveSearcher::GetPseudoLegalBitboardMoves(*_position, _type, Bitboard(fromSquare), _isWhite, false);
 }
 
-Bitboard MoveSearcher::GetPseudoLegalSquaresFromBitboards(Position& position, bool isWhite)
+Bitboard MoveSearcher::GetPseudoLegalSquaresFromBitboards(Position& position, bool isWhite, bool pawnControlledSquares)
 {
 	Bitboard legalSquares;
 
@@ -388,31 +418,29 @@ Bitboard MoveSearcher::GetPseudoLegalSquaresFromBitboards(Position& position, bo
 	const Bitboard& rooks = isWhite ? position.GetWhiteRooks() : position.GetBlackRooks();
 	const Bitboard& queens = isWhite ? position.GetWhiteQueens() : position.GetBlackQueens();
 	const Bitboard& king = isWhite ? position.GetWhiteKing() : position.GetBlackKing();
-	//loop on all set bits for every piece type
+	//loop on all set bits for every piece type, except pawns which can be done in one step
 
+	legalSquares |= GetPseudoLegalBitboardMoves(position, PieceType::Pawn, pawns, isWhite, pawnControlledSquares);
+	
 	_isWhite = isWhite;
 	_position = &position;
-	_piece.m_Type = PieceType::Pawn;
-	LoopOverSetBits(pawns, _GetPseudoLegalSquaresFromBitboards);
-	legalSquares |= _bitboard;
-
-	_piece.m_Type = PieceType::Knight;
+	_pieceType = PieceType::Knight;
 	LoopOverSetBits(knights, _GetPseudoLegalSquaresFromBitboards);
 	legalSquares |= _bitboard;
 
-	_piece.m_Type = PieceType::Rook;
+	_pieceType = PieceType::Rook;
 	LoopOverSetBits(rooks, _GetPseudoLegalSquaresFromBitboards);
 	legalSquares |= _bitboard;
 
-	_piece.m_Type = PieceType::Bishop;
+	_pieceType = PieceType::Bishop;
 	LoopOverSetBits(bishops, _GetPseudoLegalSquaresFromBitboards);
 	legalSquares |= _bitboard;
 
-	_piece.m_Type = PieceType::Queen;
+	_pieceType = PieceType::Queen;
 	LoopOverSetBits(queens, _GetPseudoLegalSquaresFromBitboards);
 	legalSquares |= _bitboard;
 
-	_piece.m_Type = PieceType::King;
+	_pieceType = PieceType::King;
 	LoopOverSetBits(king, _GetPseudoLegalSquaresFromBitboards);
 	legalSquares |= _bitboard;
 
@@ -434,7 +462,7 @@ std::vector<Move> MoveSearcher::GetPseudoLegalMovesFromBitboards(Position& posit
 
 	__moves.clear();
 	_position = &position;
-	_piece.m_Type = PieceType::Pawn;
+	_pieceType = PieceType::Pawn;
 	LoopOverSetBits(pawns, _GetPseudoLegalMovesFromBitboards);
 
 	allLegalMoves.insert(allLegalMoves.end(),
@@ -442,7 +470,7 @@ std::vector<Move> MoveSearcher::GetPseudoLegalMovesFromBitboards(Position& posit
 		std::make_move_iterator(__moves.end()));
 
 	__moves.clear();
-	_piece.m_Type = PieceType::Knight;
+	_pieceType = PieceType::Knight;
 	LoopOverSetBits(knights, _GetPseudoLegalMovesFromBitboards);
 
 	allLegalMoves.insert(allLegalMoves.end(),
@@ -450,7 +478,7 @@ std::vector<Move> MoveSearcher::GetPseudoLegalMovesFromBitboards(Position& posit
 		std::make_move_iterator(__moves.end()));
 
 	__moves.clear();
-	_piece.m_Type = PieceType::Rook;
+	_pieceType = PieceType::Rook;
 	LoopOverSetBits(rooks, _GetPseudoLegalMovesFromBitboards);
 
 	allLegalMoves.insert(allLegalMoves.end(),
@@ -458,7 +486,7 @@ std::vector<Move> MoveSearcher::GetPseudoLegalMovesFromBitboards(Position& posit
 		std::make_move_iterator(__moves.end()));
 
 	__moves.clear();
-	_piece.m_Type = PieceType::Bishop;
+	_pieceType = PieceType::Bishop;
 	LoopOverSetBits(bishops, _GetPseudoLegalMovesFromBitboards);
 
 	allLegalMoves.insert(allLegalMoves.end(),
@@ -466,7 +494,7 @@ std::vector<Move> MoveSearcher::GetPseudoLegalMovesFromBitboards(Position& posit
 		std::make_move_iterator(__moves.end()));
 
 	__moves.clear();
-	_piece.m_Type = PieceType::Queen;
+	_pieceType = PieceType::Queen;
 	LoopOverSetBits(queens, _GetPseudoLegalMovesFromBitboards);
 
 	allLegalMoves.insert(allLegalMoves.end(),
@@ -474,7 +502,7 @@ std::vector<Move> MoveSearcher::GetPseudoLegalMovesFromBitboards(Position& posit
 		std::make_move_iterator(__moves.end()));
 
 	__moves.clear();
-	_piece.m_Type = PieceType::King;
+	_pieceType = PieceType::King;
 	LoopOverSetBits(king, _GetPseudoLegalMovesFromBitboards);
 
 	allLegalMoves.insert(allLegalMoves.end(),
@@ -584,9 +612,9 @@ static void MakeValidIdx(std::vector<Move>& vector, size_t i)
 	}
 }
 
-std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position, const Piece& piece, bool isWhitePiece)
+std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position, PieceType type, Square square, bool isWhitePiece)
 {
-	std::vector<Move> legalMoves = GetPseudoLegalMovesFromBitboards(position, piece.m_Type, piece.m_Square, isWhitePiece);
+	std::vector<Move> legalMoves = GetPseudoLegalMovesFromBitboards(position, type, square, isWhitePiece);
 	
 	if (!legalMoves.empty())
 	{
@@ -625,10 +653,9 @@ std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position, c
 	return legalMoves;
 }
 
-Bitboard MoveSearcher::GetPseudoLegalBitboardMoves(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece)
+Bitboard MoveSearcher::GetPseudoLegalBitboardMoves(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece, bool pawnAttackSquares)
 {
 	Bitboard toSquares;
-	//FOR FIRST IMPL, BITBOARD INPUT IS SINGLE SQUARE
 	const Bitboard& friendlyPieces = (isWhitePiece ? position.GetWhitePieces() : position.GetBlackPieces());
 	const Bitboard& enemyPieces = (isWhitePiece ? position.GetBlackPieces() : position.GetWhitePieces());
 	const Bitboard& allPieces = (friendlyPieces | enemyPieces);
@@ -661,23 +688,31 @@ Bitboard MoveSearcher::GetPseudoLegalBitboardMoves(const Position& position, Pie
 		}
 		case PieceType::Pawn:
 		{
-			//Add single steps
-			const std::vector<Bitboard>& pawnMoveTable = isWhitePiece ? WhitePawnMoveTable : BlackPawnMoveTable;
-			toSquares = pawnMoveTable[bitboard.GetSquare()] & ~(allPieces); //check collisions
-			//Add double steps
-			const std::vector<Bitboard>& pawnDoubleStepsMoveTable = isWhitePiece ? WhitePawnDoubleStepMoveTable : BlackPawnDoubleStepMoveTable;
-			Bitboard doubleSteptoSquare = pawnDoubleStepsMoveTable[bitboard.GetSquare()] & ~(allPieces);
-			if (doubleSteptoSquare > 0)
+			if (!pawnAttackSquares)
 			{
-				Bitboard blockingPieces = (isWhitePiece ? _3 : _6) & allPieces; //check collisions on row 3 or 6
-				doubleSteptoSquare &= ~(isWhitePiece ? blockingPieces << 8 : blockingPieces >> 8);
+				//For pawns we are able to parallelize (bitboard isn't single square)
+				//Add single steps, check collisions too
+				toSquares = (isWhitePiece ? (~_8 & bitboard) << 8 : (~_1 & bitboard) >> 8) & ~(allPieces);
+
+				//Add double steps
+				Bitboard doubleSteptoSquares = (isWhitePiece ? (_2 & bitboard) << 16 : (_7 & bitboard) >> 16) & ~(allPieces);
+				//check collisions on row 3 or 6
+				Bitboard blockingPieces = (isWhitePiece ? _3 : _6) & allPieces;
+				doubleSteptoSquares &= ~(isWhitePiece ? blockingPieces << 8 : blockingPieces >> 8);
+				toSquares |= doubleSteptoSquares;
 			}
 
-			toSquares |= doubleSteptoSquare;
 			//Add captures and en passant
-			const std::vector<Bitboard>& pawnCaptureMoveTable = isWhitePiece ? WhitePawnCaptureMoveTable : BlackPawnCaptureMoveTable;
-			Bitboard enPassant = (position.GetEnPassantSquare().has_value() ? Bitboard(*position.GetEnPassantSquare()) : Bitboard());
-			toSquares |= pawnCaptureMoveTable[bitboard.GetSquare()] & (enemyPieces | enPassant);
+			const Bitboard allButA_Pawns = (~_a) & bitboard;
+			const Bitboard allButH_Pawns = (~_h) & bitboard;
+			Bitboard attackSquares = ((isWhitePiece ? allButH_Pawns << 9 : allButH_Pawns >> 7) | (isWhitePiece ? allButA_Pawns << 7 : allButA_Pawns >> 9));
+			if (!pawnAttackSquares)
+			{
+				const Bitboard enPassant = (position.GetEnPassantSquare().has_value() ? Bitboard(*position.GetEnPassantSquare()) : Bitboard());
+				attackSquares &= (enemyPieces | enPassant);
+			}
+			toSquares |= attackSquares;
+
 			break;
 		}
 		case PieceType::Queen:
@@ -705,7 +740,7 @@ Bitboard MoveSearcher::GetPseudoLegalBitboardMoves(const Position& position, Pie
 std::vector<Move> MoveSearcher::GetPseudoLegalMovesFromBitboards(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece)
 {
 	//collision checked but checks unchecked ("pseudo-legal")
-	Bitboard toSquares = GetPseudoLegalBitboardMoves(position, type, bitboard, isWhitePiece);
+	Bitboard toSquares = GetPseudoLegalBitboardMoves(position, type, bitboard, isWhitePiece, false);
 	std::vector<Move> pseudoLegalMoves = GenerateMoveList(type, bitboard.GetSquare(), toSquares);
 
 	return pseudoLegalMoves;
@@ -1187,7 +1222,7 @@ bool MoveSearcher::IsKingInCheckFromBitboards(const Position& position, bool isW
 	//Only check bishops, rooks or queens if in alignment with rook
 	if ((enemyPieces > 0) && ((enemyPieces & BishopMoveTable[kingSquare]) > 0))
 	{
-		attackSquares = GetPseudoLegalBitboardMoves(position, PieceType::Bishop, kingPosition, isWhiteKing);
+		attackSquares = GetPseudoLegalBitboardMoves(position, PieceType::Bishop, kingPosition, isWhiteKing, false);
 		if ((attackSquares & enemyPieces) > 0)
 			return true;
 	}
@@ -1196,7 +1231,7 @@ bool MoveSearcher::IsKingInCheckFromBitboards(const Position& position, bool isW
 		(isWhiteKing ? position.GetBlackQueens() : position.GetWhiteQueens());
 	if ((enemyPieces > 0) && ((enemyPieces & RookMoveTable[kingSquare]) > 0))
 	{
-		attackSquares = GetPseudoLegalBitboardMoves(position, PieceType::Rook, kingPosition, isWhiteKing);
+		attackSquares = GetPseudoLegalBitboardMoves(position, PieceType::Rook, kingPosition, isWhiteKing, false);
 		if ((attackSquares & enemyPieces) > 0)
 			return true;
 	}
