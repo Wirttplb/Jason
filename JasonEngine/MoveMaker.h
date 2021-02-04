@@ -61,6 +61,8 @@ private:
 	/// <summary>Depth limited minimax algorithm, very slow, only for testing against alpha-beta negamax</summary>
 	double Minimax(Position& position, int depth, bool maximizeWhite, std::optional<Move>& bestMove);
 
+	double QuiescentSearch(Position& position, int depth, double alpha, double beta, bool maximizeWhite);
+
 	/// <summary>
 	/// Evaluate a position at depth 0
 	/// </summary>

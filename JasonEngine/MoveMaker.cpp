@@ -84,46 +84,44 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int dep
 
 	//Transposition table lookup
 	size_t transpositionTableKey = GetTranspositionTableKey(position);
-	//if ((m_TranspositionTable[transpositionTableKey].m_ZobristHash == position.GetZobristHash()) &&
-	//	(m_TranspositionTable[transpositionTableKey].m_Depth >= depth))
-	//{
-	//	switch (m_TranspositionTable[transpositionTableKey].m_Flag)
-	//	{
-	//	case TranspositionTableEntry::Flag::Exact:
-	//	{
-	//		//if (initialDepth == depth)
-	//		//{
-	//		bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
-	//		return m_TranspositionTable[transpositionTableKey].m_Score;
-	//		//}
-	//	}
-	//	case TranspositionTableEntry::Flag::LowerBound:
-	//		alpha = std::max(alpha, m_TranspositionTable[transpositionTableKey].m_Score);
-	//		break;
-	//	case TranspositionTableEntry::Flag::UpperBound:
-	//		beta = std::min(beta, m_TranspositionTable[transpositionTableKey].m_Score);
-	//		break;
-	//	default:
-	//		assert(false);
-	//		break;
-	//	}
+	if ((m_TranspositionTable[transpositionTableKey].m_ZobristHash == position.GetZobristHash()) &&
+		(m_TranspositionTable[transpositionTableKey].m_Depth >= depth))
+	{
+		switch (m_TranspositionTable[transpositionTableKey].m_Flag)
+		{
+		case TranspositionTableEntry::Flag::Exact:
+		{
+			//if (initialDepth == depth)
+			//{
+			bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
+			return m_TranspositionTable[transpositionTableKey].m_Score;
+			//}
+		}
+		case TranspositionTableEntry::Flag::LowerBound:
+			alpha = std::max(alpha, m_TranspositionTable[transpositionTableKey].m_Score);
+			break;
+		case TranspositionTableEntry::Flag::UpperBound:
+			beta = std::min(beta, m_TranspositionTable[transpositionTableKey].m_Score);
+			break;
+		default:
+			assert(false);
+			break;
+		}
 
-	//	if (alpha >= beta)
-	//	{
-	//		bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
-	//		return m_TranspositionTable[transpositionTableKey].m_Score;
-	//	}
-	//}
+		if (alpha >= beta)
+		{
+			bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
+			return m_TranspositionTable[transpositionTableKey].m_Score;
+		}
+	}
 
 	if (depth == 0)
+	{
+		//Last 2 depth as max depth
+		//int quiescentSearchMaxDepth = 0;
+		//return QuiescentSearch(position, quiescentSearchMaxDepth, alpha, beta, maximizeWhite);
 		return (maximizeWhite ? 1.0 : -1.0) * EvaluatePosition(position);
-
-	//1st Attempt at Quiescence search ; initialDepth = 8 = maxDepth, evaluation can be done when node appears quiescent at depth 6
-	if (depth <= 3 && (position.GetMoves().size() > 3) &&
-		!position.GetMoves().back().IsCapture() &&
-		!(position.GetMoves().end() - 2)->IsCapture() &&
-		!(position.GetMoves().end() - 3)->IsCapture())
-		return (maximizeWhite ? 1.0 : -1.0) * EvaluatePosition(position);		
+	}
 
 	//Don't search valid moves again if it has been done in last iteration
 	//There should be no collision otherwise childMoves may become invalid after next iterations
@@ -224,6 +222,46 @@ double MoveMaker::Minimax(Position& position, int depth, bool maximizeWhite, std
 
 		return value;
 	}
+}
+
+double MoveMaker::QuiescentSearch(Position& position, int depth, double alpha, double beta, bool maximizeWhite)
+{
+	double score = (maximizeWhite ? 1.0 : -1.0) * EvaluatePosition(position);
+
+	if (depth == 0)
+		return score;
+	if (score >= beta)
+		return beta;
+	if (alpha < score)
+		alpha = score;
+
+	size_t transpositionTableKey = GetTranspositionTableKey(position);
+	if (m_LegalMovesTable[transpositionTableKey].first != position.GetZobristHash())
+	{
+		m_LegalMovesTable[transpositionTableKey].first = position.GetZobristHash();
+		m_LegalMovesTable[transpositionTableKey].second = MoveSearcher::GetLegalMovesFromBitboards(position);
+	}
+	std::vector<Move> childMoves = m_LegalMovesTable[transpositionTableKey].second;
+	
+	//Sort moves
+	SortMoves(position, childMoves);
+
+	for (Move& move : childMoves)
+	{
+		if (move.IsCapture())
+		{
+			position.Update(move);
+			double score = -QuiescentSearch(position, depth - 1, -beta, -alpha, !maximizeWhite);
+			position.Undo(move);
+
+			if (score >= beta)
+				return beta;
+			if (score > alpha)
+				alpha = score;
+		}
+	}
+
+	return alpha;
 }
 
 double MoveMaker::EvaluatePosition(Position& position)

@@ -21,6 +21,10 @@ static void RunPosition(Position& position, int maxMoves, int evaluationDepth)//
 
 void TacticsTests::Run()
 {
+	time_t start;
+	time_t end;
+	time(&start);
+
 	static Position queenMate("4k3/8/1Q2K3/8/8/8/8/8 w - - 0 1");
 	static Position staircaseMate("4k3 / R7 / 1Q6 / 8 / 8 / 8 / 8 / 4K3 w - -0 1");
 	static Position staircaseMate2("4k3/8/1Q6/8/8/8/8/R3K3 w - - 0 1");
@@ -33,7 +37,6 @@ void TacticsTests::Run()
 	static Position tactic1900("3r2k1/1n3pp1/p3p1qp/P3P3/RprPN3/4Q2P/5PP1/1R4K1 b - - 4 28");
 	static Position tactic2000("1k1r4/p1pnb3/1nQ1p3/P7/3P4/4PN2/1P2KPq1/RN6 w - - 0 1");
 	static Position tactic2200("8/p7/2N2p2/1P1Ppkpp/2K5/5P1P/5b2/8 w - - 0 46");
-
 
 	RunPosition(queenMate, 1, 2);
 	ASSERT(queenMate.GetGameStatus() == Position::GameStatus::CheckMate);
@@ -83,4 +86,7 @@ void TacticsTests::Run()
 	//ASSERT(tactic2200.GetMoves()[2].m_To == Piece(PieceType::Pawn, d6));
 	//ASSERT(tactic2200.GetMoves()[3].m_To == Piece(PieceType::Bishop, b6));
 	//ASSERT(tactic2200.GetMoves()[4].m_To == Piece(PieceType::Knight, d5));
+
+	time(&end);
+	PrintTestDuration(start, end, "TacticsTest: %.2lf seconds.");
 }

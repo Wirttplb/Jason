@@ -20,9 +20,9 @@ int main()
     PositionTests::Run();
     ZobristTests::Run();
     MoveMakerTests::Run();
-    MoveSearcherTests::Run();
+    //MoveSearcherTests::Run();
     TacticsTests::Run();
-    SpeedTest::Run();
+    //SpeedTest::Run();
     time(&end);
 
     PrintTestDuration(start, end, "Tests were run in %.2lf seconds");
