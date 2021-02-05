@@ -88,12 +88,13 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 	score -= blackRooksOnOpenFiles.second * RookOnSemiOpenFileBonus;
 
 	//penalty for moving same pieces twice
-	/*if (position.GetMoves().size() > 3)
+	//Removal of this makes tacticsTest fails (tactic1800)..., should investigate!
+	if (position.GetMoves().size() > 3)
 	{
 		const int lastIdx = static_cast<int>(position.GetMoves().size()) - 1;
 		if (position.GetMoves()[lastIdx].GetFromSquare() == position.GetMoves()[lastIdx - 2].GetToSquare())
 			score += (position.IsWhiteToPlay() ? SamePieceTwicePunishment : -SamePieceTwicePunishment);
-	}*/
+	}
 
 	//Center pawns bonus
 	score += CountCenterPawns(position, true) * CenterPawnBonus;
@@ -141,6 +142,13 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 	//King in check for quiescence check..
 
 	return score;
+}
+
+bool PositionEvaluation::IsPositionQuiet(const Position& position)
+{
+	return (!position.GetMoves().back().IsCapture() &&
+		((position.GetMoves().size() < 2) || !(position.GetMoves().end() - 2)->IsCapture()) &&
+		!MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()));
 }
 
 double PositionEvaluation::CountMaterial(const Position& position, bool isWhite)

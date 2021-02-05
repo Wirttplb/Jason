@@ -40,6 +40,7 @@ public:
 	Bitboard operator>>(int shift) const;
 	Bitboard operator-(const Bitboard& bitboard) const;
 	operator uint64_t() const { return m_Value; };
+	bool operator ==(uint64_t value) const { return m_Value == value; };
 
 	bool operator==(const Bitboard& bitboard) const { return (m_Value == bitboard.m_Value); }; //for hash definition
 

@@ -14,6 +14,8 @@ public:
 	/// <returns>Score (>0 for white advantage, <0 for black), 100.0 is value of a pawn</returns>
 	static double EvaluatePosition(Position& position);
 
+	static bool IsPositionQuiet(const Position& position);
+
 private:
 	static double CountMaterial(const Position& position, bool isWhite);
 
