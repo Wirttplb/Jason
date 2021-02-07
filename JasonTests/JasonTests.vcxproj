@@ -149,6 +149,7 @@
     <ClCompile Include="MoveMakerTests.cpp" />
     <ClCompile Include="MoveSearcherTests.cpp" />
     <ClCompile Include="NotationParserTests.cpp" />
+    <ClCompile Include="PositionEvaluationTests.cpp" />
     <ClCompile Include="PositionTests.cpp" />
     <ClCompile Include="SpeedTest.cpp" />
     <ClCompile Include="TacticsTests.cpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="MoveMakerTests.h" />
     <ClInclude Include="MoveSearcherTests.h" />
     <ClInclude Include="NotationParserTests.h" />
+    <ClInclude Include="PositionEvaluationTests.h" />
     <ClInclude Include="PositionTests.h" />
     <ClInclude Include="SpeedTest.h" />
     <ClInclude Include="TacticsTests.h" />

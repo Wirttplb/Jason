@@ -39,14 +39,11 @@ int main()
     Position position; //starting position
     MoveMaker moveMaker;
     bool isGameOver = false;
-    size_t turnCount = 0;
 
-    int evaluationDepth = 5;
+    int evaluationDepth = 6; //Without quiescence search, evaluation depth should be even!
 
-    while (!isGameOver)//&& turnCount < 200)
+    while (!isGameOver)
     {
-        //turnCount = (position.GetMoves().size() + 1) / 2;
-
         ANWriter::Write(position);
 
         if ((isJasonWhite && position.IsWhiteToPlay()) || (isJasonBlack && !position.IsWhiteToPlay()))

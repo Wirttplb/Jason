@@ -46,6 +46,11 @@ public:
 	{
 		return (piece.m_Square == m_Square) && (piece.m_Type == m_Type);
 	}
+
+	bool operator!=(const Piece& piece) const
+	{
+		return !(*this == piece);
+	}
 };
 
 /// <summary>Description of a move, with all information needed to undo the move</summary>

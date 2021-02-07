@@ -3,7 +3,7 @@
 #include "PositionEvaluation.h"
 #include <string>
 #include <assert.h>
-#include <algorithm> 
+#include <algorithm>
 
 bool MoveMaker::MakeMove(Position& position, int depth)
 {
@@ -26,6 +26,8 @@ std::optional<Move> MoveMaker::FindMove(Position& position, int depth)
 	//m_TranspositionTable.clear();
 	double score = AlphaBetaNegamax(position, depth, depth, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
 	score;
+
+	//std::cout << score;
 
 	return bestMove;
 }
@@ -77,13 +79,6 @@ void MoveMaker::CheckGameOver(Position& position)
 		else
 			position.SetGameStatus(Position::GameStatus::StaleMate);
 	}
-
-	double a = 0.0;
-	if (position.GetBlackKing() == Bitboard(0) || position.GetWhiteKing() == Bitboard(0))
-	{
-		a++;
-		a;
-	}
 }
 
 double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int depth, double alpha, double beta, bool maximizeWhite, bool allowNullMove, std::optional<Move>& bestMove)
@@ -99,11 +94,8 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int dep
 		{
 		case TranspositionTableEntry::Flag::Exact:
 		{
-			//if (initialDepth == depth)
-			//{
 			bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
 			return m_TranspositionTable[transpositionTableKey].m_Score;
-			//}
 		}
 		case TranspositionTableEntry::Flag::LowerBound:
 			alpha = std::max(alpha, m_TranspositionTable[transpositionTableKey].m_Score);
@@ -129,22 +121,22 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int dep
 		return QuiescentSearch(position, quiescentSearchMaxDepth, alpha, beta, maximizeWhite);
 	}
 
-	////Null move heuristic
-	//constexpr int R = 2; //reducedDepthConstant
-	//if (allowNullMove  && depth - 1 - R >= 0)
-	//{
-	//	if (!MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()))
-	//	{
-	//		Move nullMove;
-	//		position.Update(nullMove);
-	//		std::optional<Move> bestMoveDummy; //only returns best move from 0 depth
-	//		const double score = -AlphaBetaNegamax(position, initialDepth, depth - 1 - R, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
-	//		position.Undo(nullMove);
+	//Null move heuristic
+	constexpr int R = 2; //reduced depth constant
+	if (allowNullMove  && depth - 1 - R >= 0)
+	{
+		if (!MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()))
+		{
+			Move nullMove;
+			position.Update(nullMove);
+			std::optional<Move> bestMoveDummy;
+			const double score = -AlphaBetaNegamax(position, initialDepth, depth - 1 - R, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
+			position.Undo(nullMove);
 
-	//		if (score >= beta)
-	//			return score;//cutoff
-	//	}
-	//}
+			if (score >= beta)
+				return score;//cutoff
+		}
+	}
 
 	//Don't search valid moves again if it has been done in last iteration
 	//There should be no collision otherwise childMoves may become invalid after next iterations
@@ -255,16 +247,16 @@ double MoveMaker::QuiescentSearch(Position& position, int depth, double alpha, d
 	if (alpha < standPat)
 		alpha = standPat;
 
-	size_t transpositionTableKey = GetTranspositionTableKey(position);
-	if (m_LegalMovesTable[transpositionTableKey].first != position.GetZobristHash())
+	const size_t tableKey = GetTranspositionTableKey(position);
+	if (m_LegalMovesTable[tableKey].first != position.GetZobristHash())
 	{
-		m_LegalMovesTable[transpositionTableKey].first = position.GetZobristHash();
-		m_LegalMovesTable[transpositionTableKey].second = MoveSearcher::GetLegalMovesFromBitboards(position);
+		m_LegalMovesTable[tableKey].first = position.GetZobristHash();
+		m_LegalMovesTable[tableKey].second = MoveSearcher::GetLegalMovesFromBitboards(position);
 	}
-	std::vector<Move> childMoves = m_LegalMovesTable[transpositionTableKey].second;
+	std::vector<Move> childMoves = m_LegalMovesTable[tableKey].second;
 
 	if (childMoves.empty())
-		return (maximizeWhite ? 1.0 : -1.0) * standPat;
+		return standPat;
 
 	//Sort moves
 	SortMoves(position, childMoves);
@@ -273,7 +265,7 @@ double MoveMaker::QuiescentSearch(Position& position, int depth, double alpha, d
 	for (Move& childMove : childMoves)
 	{
 		position.Update(childMove);
-		if (!PositionEvaluation::IsPositionQuiet(position))//childMove.IsCapture())
+		if (childMove.IsCapture())
 		{
 			const double score = -QuiescentSearch(position, depth - 1, -beta, -alpha, !maximizeWhite);
 

@@ -113,6 +113,11 @@ public:
 	Bitboard& GetBlackKing() { return m_BlackKing; };
 	const Bitboard& GetBlackKing() const { return m_BlackKing; };
 
+	/*Bitboard& GetWhiteUndevelopedPieces() { return m_WhiteUndevelopedPieces; };
+	const Bitboard& GetWhiteUndevelopedPieces() const { return m_WhiteUndevelopedPieces; };
+	Bitboard& GetBlackUndevelopedPieces() { return m_BlackUndevelopedPieces; };
+	const Bitboard& GetBlackUndevelopedPieces() const { return m_BlackUndevelopedPieces; };*/
+
 	/// <summary>
 	/// Returns pieces for given type and their position of side whose turn is to move (if there is one! Can have more than 1)
 	/// </summary>
@@ -164,7 +169,6 @@ private:
 	/// <param name="capturedPiece">Captured piece if any [OUT]</param>
 	void UpdateCapturedPiece(Square square, Move& move);
 
-	//REPLACING list of pieces with bitboards!!
 	Bitboard m_WhitePieces;
 	Bitboard m_WhitePawns;
 	Bitboard m_WhiteKnights;
@@ -172,6 +176,7 @@ private:
 	Bitboard m_WhiteRooks;
 	Bitboard m_WhiteQueens;
 	Bitboard m_WhiteKing;
+	Bitboard m_WhiteUndevelopedPieces; //all pieces except king
 
 	Bitboard m_BlackPieces;
 	Bitboard m_BlackPawns;
@@ -180,6 +185,7 @@ private:
 	Bitboard m_BlackRooks;
 	Bitboard m_BlackQueens;
 	Bitboard m_BlackKing;
+	Bitboard m_BlackUndevelopedPieces;
 
 	std::vector<Piece> m_WhitePiecesList; //Position representation is piece-centric, this might change in the future
 	std::vector<Piece> m_BlackPiecesList;

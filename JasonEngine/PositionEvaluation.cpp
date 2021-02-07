@@ -34,29 +34,8 @@ static constexpr double KingSquaresAttackBonusFactor = 5.0; //Factor to multiply
 
 static constexpr double SamePieceTwicePunishment = -50.0; //Penaly for moving same piece twice in opening
 
-static double SqDistanceBetweenPieces(const Piece& a, const Piece& b)
-{
-	const int ax = a.m_Square % 8;
-	const int ay = a.m_Square / 8;
-	const int bx = a.m_Square % 8;
-	const int by = a.m_Square / 8;
-	return ((ax - bx)  * (ax - bx) + (ay - by) * (ay - by));
-}
-
 double PositionEvaluation::EvaluatePosition(Position& position)
 {
-	std::vector<std::pair<Piece, Piece>> moves = position.GetPieceMoves();
-	if (moves.size() >= 6)
-	{
-		if (moves[0].second == Piece(PieceType::Pawn, d4) &&
-			moves[1].second == Piece(PieceType::Pawn, d5) &&
-			moves[2].second == Piece(PieceType::Pawn, c4) &&
-			moves[3].second == Piece(PieceType::Pawn, e5) &&
-			moves[4].second == Piece(PieceType::Pawn, e5) &&
-			moves[5].second == Piece(PieceType::Pawn, c6))
-			return 0.0;
-	}
-
 	//Check checkmate/stalemate
 	switch (position.GetGameStatus())
 	{
@@ -75,6 +54,13 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 
 	//Check material
 	double score = CountMaterial(position, true) - CountMaterial(position, false);
+
+	//Check development
+	if (position.GetMoves().size() < 25)
+	{
+		score += GetUndevelopedPiecesPunishment(position, true);
+		score -= GetUndevelopedPiecesPunishment(position, false);
+	}
 
 	//Bishop pair bonus
 	if (position.GetWhiteBishops().CountSetBits() >= 2)
@@ -99,7 +85,7 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 	score -= blackRooksOnOpenFiles.first * RookOnOpenFileBonus;
 	score -= blackRooksOnOpenFiles.second * RookOnSemiOpenFileBonus;
 
-	//penalty for moving same pieces twice
+	//Penalty for moving same pieces twice
 	//Removal of this makes tacticsTest fails (tactic1800)..., should investigate!
 	if (position.GetMoves().size() > 3)
 	{
@@ -133,31 +119,31 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 	score -= CountBlockedEorDPawns(position, false) * Blocking_d_or_ePawnPunishment;
 
 	//Castling bonus: castling improves score during opening, importance of castling decays during the game
-	const double castleBonus = CastlingBonus * std::max(0.0, 40.0 - static_cast<double>(position.GetMoves().size()));
+	const double castleBonus = CastlingBonus * std::max(0.0, 40.0 - static_cast<double>(position.GetMoves().size())) * 0.025; //0.025 = 1/40
 	if (position.HasWhiteCastled())
 		score += castleBonus;
 	if (position.HasBlackCastled())
 		score -= castleBonus;
 
-	Bitboard whiteControlledSquares = GetControlledSquares(position, true);
-	Bitboard blackControlledSquares = GetControlledSquares(position, false);
-	score += whiteControlledSquares.CountSetBits() * ControlledSquareBonusFactor;
-	score -= blackControlledSquares.CountSetBits() * ControlledSquareBonusFactor;
+	Bitboard whiteAttackedSquares = GetAttackedSquares(position, true);
+	Bitboard blackAttackedSquares = GetAttackedSquares(position, false);
+	score += whiteAttackedSquares.CountSetBits() * ControlledSquareBonusFactor;
+	score -= blackAttackedSquares.CountSetBits() * ControlledSquareBonusFactor;
 
-	Bitboard attackedSquaresAroundWhiteKing = GetAttackedSquaresAroundKing(position, blackControlledSquares, true);
-	Bitboard attackedSquaresAroundBlackKing = GetAttackedSquaresAroundKing(position, whiteControlledSquares, false);
+	Bitboard attackedSquaresAroundWhiteKing = GetAttackedSquaresAroundKing(position, blackAttackedSquares, true);
+	Bitboard attackedSquaresAroundBlackKing = GetAttackedSquaresAroundKing(position, whiteAttackedSquares, false);
 	score += attackedSquaresAroundBlackKing.CountSetBits() * KingSquaresAttackBonusFactor;
 	score -= attackedSquaresAroundWhiteKing.CountSetBits() * KingSquaresAttackBonusFactor;
 
 	//////////////////////////
 	//Check space behind pawns
-	//King in check for quiescence check..
 
 	return score;
 }
 
 bool PositionEvaluation::IsPositionQuiet(const Position& position)
 {
+	//THIS IS COMPLETELY WRONG! SHOULD CHECK UNDEFENDED PIECES ETC...
 	return (!position.GetMoves().back().IsCapture() &&
 		((position.GetMoves().size() < 2) || !(position.GetMoves().end() - 2)->IsCapture()) &&
 		(position.GetMoves().size() < 3) || !(position.GetMoves().end() - 3)->IsCapture());// &&
@@ -202,6 +188,15 @@ constexpr double PositionEvaluation::GetPieceValue(PieceType type)
 	return value;
 }
 
+double PositionEvaluation::GetUndevelopedPiecesPunishment(const Position& position, bool isWhite)
+{
+	const Bitboard undevelopedKnights = (isWhite ? (position.GetWhiteKnights() & (_b1 | _g1)) : (position.GetBlackKnights() & (_b8 | _g8)));
+	const Bitboard undevelopedBishops = (isWhite ? (position.GetWhiteBishops() & (_c1 | _f1)) : (position.GetBlackBishops() & (_c8 | _f8)));
+	const Bitboard undevelopedRooks = (isWhite ? (position.GetWhiteRooks() & (_a1 | _h1)) : (position.GetBlackRooks() & (_a8 | _h8)));
+	const Bitboard undevelopedQueen = (isWhite ? (position.GetWhiteQueens() & _d1) : (position.GetBlackQueens() & _d8));
+	return -(undevelopedKnights.CountSetBits() * 10.0 + undevelopedBishops.CountSetBits() * 10.0 + undevelopedRooks.CountSetBits() * 5.0 + undevelopedQueen.CountSetBits() * 5.0);
+}
+
 int PositionEvaluation::CountDoubledPawns(const Position& position, bool isWhite)
 {
 	int count = 0;
@@ -221,7 +216,7 @@ int PositionEvaluation::CountCenterPawns(const Position& position, bool isWhite)
 {
 	static const Bitboard whiteCenter = _d4 | _e4;
 	static const Bitboard blackCenter = _d5 | _e5;
-	Bitboard centerPawns = (isWhite ? position.GetWhitePawns() : position.GetBlackPawns()) &
+	const Bitboard centerPawns = (isWhite ? position.GetWhitePawns() : position.GetBlackPawns()) &
 		(isWhite ? whiteCenter : blackCenter);
 
 	return centerPawns.CountSetBits();
@@ -231,7 +226,7 @@ int PositionEvaluation::CountIsolatedPawns(const Position& position, bool isWhit
 {
 	int count = 0;
 	const Bitboard& pawns = isWhite ? position.GetWhitePawns() : position.GetBlackPawns();
-	for (int i = 0; i < 7; i++)
+	for (int i = 0; i <= 7; i++)
 	{
 		Bitboard sideBySideFiles = _files[i]; //up to 3 files
 		if (i > 0)
@@ -239,9 +234,10 @@ int PositionEvaluation::CountIsolatedPawns(const Position& position, bool isWhit
 		if (i < 7)
 			sideBySideFiles |= _files[i + 1];
 
-		Bitboard pawnsOnSideBySideFiles = pawns & sideBySideFiles;
-		int countOnFile = pawnsOnSideBySideFiles.CountSetBits();
-		if (countOnFile == 1)
+		const Bitboard pawnsOnFile = pawns & _files[i];
+		const Bitboard pawnsOnSideBySideFiles = pawns & sideBySideFiles;
+		const int countOnFile = pawnsOnFile.CountSetBits();
+		if (countOnFile == pawnsOnSideBySideFiles.CountSetBits())
 			count += countOnFile;
 	}
 
@@ -255,7 +251,7 @@ double PositionEvaluation::GeAdvancedPawnsBonus(const Position& position, bool i
 
 	for (int i = 4; i < 7; i++)
 	{
-		int r = (isWhite ? i : 7 - i);
+		const int r = (isWhite ? i : 7 - i);
 		bonus += (pawns & _rows[r]).CountSetBits() * (isWhite ? AdvancedPawnBonus[i - 4] : -AdvancedPawnBonus[i - 4]);
 	}
 
@@ -271,14 +267,15 @@ int PositionEvaluation::CountBlockedEorDPawns(const Position& position, bool isW
 {
 	const Bitboard& pawns = isWhite ? position.GetWhitePawns() : position.GetBlackPawns();
 	const Bitboard& pieces = isWhite ? position.GetWhitePieces() : position.GetBlackPieces();
-	const Bitboard& blockedSquares = (isWhite ? WhiteCenterPawns : BlackCenterPawns);
+	const Bitboard& centerPawns = (isWhite ? WhiteCenterPawns : BlackCenterPawns);
 	const Bitboard& blockingSquares = (isWhite ? WhiteBlockingSquares : BlackBlockingSquares);
-
-	const Bitboard blockedPieces = ((blockingSquares & pieces) >> 8) & (blockedSquares & pawns);
-	return blockedPieces.CountSetBits();
+	if (isWhite)
+		return (((blockingSquares & pieces) >> 8) & (centerPawns & pawns)).CountSetBits();
+	else
+		return (((blockingSquares & pieces) << 8) & (centerPawns & pawns)).CountSetBits();
 }
 
-Bitboard PositionEvaluation::GetControlledSquares(Position& position, bool isWhite)
+Bitboard PositionEvaluation::GetAttackedSquares(Position& position, bool isWhite)
 {
 	bool pawnControlledSquares = true;
 	return MoveSearcher::GetPseudoLegalSquaresFromBitboards(position, isWhite, pawnControlledSquares);

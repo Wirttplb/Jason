@@ -3,74 +3,7 @@
 
 int main()
 {
-	const Bitboard a
-	({
-		0, 0, 0, 0, 0, 0, 0, 1,
-		0, 0, 0, 0, 0, 0, 1, 0,
-		0, 0, 0, 0, 0, 1, 0, 0,
-		0, 0, 0, 0, 1, 0, 0, 0,
-		0, 0, 0, 1, 0, 0, 0, 0,
-		0, 0, 1, 0, 0, 0, 0, 0,
-		0, 1, 0, 0, 0, 0, 0, 0,
-		1, 0, 0, 0, 0, 0, 0, 0
-	});
-
-	Bitboard b
-	({
-		0, 1, 1, 1, 1, 1, 1, 1,
-		0, 0, 1, 1, 1, 1, 1, 1,
-		0, 0, 0, 1, 1, 1, 1, 1,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		//1, 1, 1, 1, 1, 1, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		//1, 1, 1, 1, 1, 1, 1, 0,
-		1, 1, 1, 1, 1, 1, 1, 1,
-	});
-
-	//Bitboard flippedA = a.FlipVertically();
-	//Bitboard rotatedA = a.PseudoRotate45Clockwise();
-
-	//Bitboard unRotatedB = b;
-	////unRotatedB.m_Value >>= 1;
-	//unRotatedB = unRotatedB.UndoPseudoRotate45Clockwise();
-	//unRotatedB.m_Value <<= 1;
-	//unRotatedB.m_Value |= (1 & b);
-
-	//std::cout<< unRotatedB.ToString() << std::endl;
-
-	Bitboard j;
-	j.m_Value = 654;
-
-	bool isTrue = !j;
-
-
-	Bitboard c;
-	c.m_Value = 71213169107795968;//blackpawns
-	std::cout<< c << std::endl;
-
-	c.m_Value = 8606776832;//pawns
-	std::cout << c << std::endl;
-
-	//c.m_Value = 2310346626054553664;//2nd diag a8h1
-	//std::cout << c << std::endl;
-
-	Bitboard d
-	({
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		1, 1, 1, 1, 1, 1, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0
-	});
-
-	//Bitboard unrotatedD = d.UndoPseudoRotate45Clockwise();
-	//std::cout << unrotatedD.ToString() << std::endl;
-
-	//a.m_Value = 279172878336;
-	//std::cout << a;
+	Bitboard a;
+	a.m_Value = 12169993881391185999;
+	std::cout << a;
 }

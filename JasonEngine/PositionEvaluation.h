@@ -22,17 +22,22 @@ private:
 	/// <summary> Returns value in points of a given piece </summary>
 	static constexpr double GetPieceValue(PieceType type);
 
+	/// <returns>Punishment based on pieces dwelling on starting squares ; should not be applied during endgame</returns>
+	static double GetUndevelopedPiecesPunishment(const Position& position, bool isWhite);
+
 	static int CountDoubledPawns(const Position& position, bool isWhite);
 	static int CountCenterPawns(const Position& position, bool isWhite);
 	static int CountIsolatedPawns(const Position& position, bool isWhite);
 	static double GeAdvancedPawnsBonus(const Position& position, bool isWhite);
 	static int CountBlockedEorDPawns(const Position& position, bool isWhite);
 
-	static Bitboard GetControlledSquares(Position& position, bool isWhite);
+	static Bitboard GetAttackedSquares(Position& position, bool isWhite);
 
 	/// <param name="attackedSquares">attacked squares by opposing color</param>
 	static Bitboard GetAttackedSquaresAroundKing(const Position& position, const Bitboard& attackedSquares, bool isWhiteKing);
 
 	/// <returns>Return number of rooks on open files and semi open files</returns>
 	static std::pair<int, int> CountRooksOnOpenFiles(const Position& position, bool isWhite);
+
+	friend class PositionEvaluationTests;
 };

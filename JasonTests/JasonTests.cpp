@@ -5,6 +5,7 @@
 #include "ZobristTests.h"
 #include "MoveMakerTests.h"
 #include "MoveSearcherTests.h"
+#include "PositionEvaluationTests.h"
 #include "TacticsTests.h"
 #include "SpeedTest.h"
 
@@ -16,13 +17,14 @@ int main()
     time_t end;
     
     time(&start);
-    //NotationParserTests::Run();
-    //PositionTests::Run();
-    //ZobristTests::Run();
-    //MoveMakerTests::Run();
-    //MoveSearcherTests::Run();
+    NotationParserTests::Run();
+    PositionTests::Run();
+    ZobristTests::Run();
+    MoveMakerTests::Run();
+    MoveSearcherTests::Run();
+    PositionEvaluationTests::Run();
     TacticsTests::Run();
-    //SpeedTest::Run();
+    SpeedTest::Run();
     time(&end);
 
     PrintTestDuration(start, end, "Tests were run in %.2lf seconds");

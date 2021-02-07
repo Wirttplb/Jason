@@ -12,6 +12,7 @@ Position::Position()
 	m_WhiteQueens = _d1;
 	m_WhiteKing= _e1;
 	m_WhitePieces = m_WhitePawns | m_WhiteKnights | m_WhiteBishops | m_WhiteRooks | m_WhiteQueens | m_WhiteKing;
+	//m_WhiteUndevelopedPieces = _1 ^ _e8;
 
 	m_BlackPawns = _7;
 	m_BlackKnights = _b8 | _g8;
@@ -20,6 +21,7 @@ Position::Position()
 	m_BlackQueens = _d8;
 	m_BlackKing = _e8;
 	m_BlackPieces = m_BlackPawns | m_BlackKnights | m_BlackBishops | m_BlackRooks | m_BlackQueens | m_BlackKing;
+	//m_BlackUndevelopedPieces = _8 ^ _e1;
 
 	m_WhitePiecesList.emplace_back(Piece(PieceType::Rook, a1));
 	m_WhitePiecesList.emplace_back(Piece(PieceType::Knight, b1));
@@ -290,6 +292,7 @@ void Position::Update(Move& move)
 		m_IsWhiteToPlay = !m_IsWhiteToPlay;
 		m_ZobristHash ^= ZobristHash::GetBlackToMoveKey();
 		GetMoves().push_back(move);
+		return;
 	}
 
 	//update moved piece
@@ -447,6 +450,14 @@ void Position::Update(Move& move)
 
 void Position::Undo(const Move& move)
 {
+	if (move.IsNullMove())
+	{
+		m_IsWhiteToPlay = !m_IsWhiteToPlay;
+		m_ZobristHash ^= ZobristHash::GetBlackToMoveKey();
+		GetMoves().pop_back();
+		return;
+	}
+
 	//Undo moved piece
 	UndoPiece(move, !m_IsWhiteToPlay);
 

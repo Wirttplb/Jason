@@ -3,7 +3,9 @@
 #include "MoveMaker.h"
 #include "TestsUtility.h"
 
-static void RunPosition(Position& position, int maxMoves, int evaluationDepth)//, bool decreaseDepth = true)
+#include <iostream>
+
+static void RunPosition(Position& position, int maxMoves, int evaluationDepth)
 {
 	int moveCount = 0;
 	bool moveFound = true;
@@ -12,15 +14,22 @@ static void RunPosition(Position& position, int maxMoves, int evaluationDepth)//
 	{
 		moveFound = moveMaker.MakeMove(position, evaluationDepth);
 		moveCount++;
-		//if (decreaseDepth)
-		//	evaluationDepth--; //should not have to go as deep if evaluation is right for first move
 	}
 
 	moveMaker.CheckGameOver(position);
 }
 
+void BlunderDebugTests()
+{
+	static Position bishopTakesPawnBlunder("4kb1r/1p4pp/2n2n2/3p4/2B5/4P3/5P2/6K1 w k - 0 1");
+	RunPosition(bishopTakesPawnBlunder, 1, 6);
+	ASSERT(bishopTakesPawnBlunder.GetMoves()[0].GetTo() != Piece(PieceType::Bishop, d5));
+}
+
 void TacticsTests::Run()
 {
+	BlunderDebugTests();
+
 	time_t start;
 	time_t end;
 	time(&start);
@@ -78,13 +87,13 @@ void TacticsTests::Run()
 	RunPosition(tactic2000, 1, 6);
 	ASSERT(tactic2000.GetMoves()[0].GetTo() == Piece(PieceType::Pawn, a6));
 
-	//The following test is still failing
-	RunPosition(tactic2200, 5, 8);
-	/*ASSERT(tactic2200.GetMoves()[0].GetTo() == Piece(PieceType::Knight, e7));
+	RunPosition(tactic2200, 5, 10);
+	std::vector<std::pair<Piece, Piece>> moves = tactic2200.GetPieceMoves();
+	ASSERT(tactic2200.GetMoves()[0].GetTo() == Piece(PieceType::Knight, e7));
 	ASSERT(tactic2200.GetMoves()[1].GetTo() == Piece(PieceType::King, f4));
 	ASSERT(tactic2200.GetMoves()[2].GetTo() == Piece(PieceType::Pawn, d6));
 	ASSERT(tactic2200.GetMoves()[3].GetTo() == Piece(PieceType::Bishop, b6));
-	ASSERT(tactic2200.GetMoves()[4].GetTo() == Piece(PieceType::Knight, d5));*/
+	ASSERT(tactic2200.GetMoves()[4].GetTo() == Piece(PieceType::Knight, d5));
 
 	time(&end);
 	PrintTestDuration(start, end, "TacticsTest: %.2lf seconds.");
