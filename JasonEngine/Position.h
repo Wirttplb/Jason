@@ -130,6 +130,8 @@ public:
 
 	const std::vector<Move>& GetMoves() const { return m_Moves; };
 	std::vector<Move>& GetMoves() { return m_Moves; };
+	/// <returns>Returns list of moves as pair of pieces (for debugging purposes)</returns>
+	std::vector<std::pair<Piece, Piece>> GetPieceMoves() const;
 
 	uint64_t GetZobristHash() const { return m_ZobristHash; };
 	void SetZobristHash(uint64_t hash) { m_ZobristHash = hash; };

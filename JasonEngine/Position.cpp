@@ -243,6 +243,17 @@ std::vector<Piece> Position::GetPiecesToPlay(PieceType type) const
 	return GetPieces(type, IsWhiteToPlay());
 }
 
+std::vector<std::pair<Piece, Piece>> Position::GetPieceMoves() const
+{
+	std::vector<std::pair<Piece, Piece>> moves;
+	for (const Move& move : m_Moves)
+	{
+		moves.emplace_back(move.GetFrom(), move.GetTo());
+	}
+
+	return moves;
+}
+
 uint64_t Position::ComputeZobristHash() const
 {
 	uint64_t hash = 0;
@@ -273,6 +284,14 @@ uint64_t Position::ComputeZobristHash() const
 
 void Position::Update(Move& move)
 {
+	//null move update
+	if (move.IsNullMove())
+	{
+		m_IsWhiteToPlay = !m_IsWhiteToPlay;
+		m_ZobristHash ^= ZobristHash::GetBlackToMoveKey();
+		GetMoves().push_back(move);
+	}
+
 	//update moved piece
 	UpdatePiece(move, m_IsWhiteToPlay);
 

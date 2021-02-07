@@ -240,6 +240,11 @@ public:
 		return false;
 	}
 
+	inline bool IsNullMove() const
+	{
+		return (m_Move == 0);
+	}
+
 private:
 	uint64_t m_Move = 0;
 };

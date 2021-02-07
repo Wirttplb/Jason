@@ -20,10 +20,11 @@ std::optional<Move> MoveMaker::FindMove(Position& position, int depth)
 	constexpr double alpha = std::numeric_limits<double>::lowest();
 	constexpr double beta = std::numeric_limits<double>::max();
 	std::optional<Move> bestMove;
+	const bool allowNullMove = true;
 
 	//Minimax(position, depth, position.IsWhiteToPlay(), bestMove);
 	//m_TranspositionTable.clear();
-	double score = AlphaBetaNegamax(position, depth, depth, alpha, beta, position.IsWhiteToPlay(), bestMove);
+	double score = AlphaBetaNegamax(position, depth, depth, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
 	score;
 
 	return bestMove;
@@ -85,7 +86,7 @@ void MoveMaker::CheckGameOver(Position& position)
 	}
 }
 
-double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int depth, double alpha, double beta, bool maximizeWhite, std::optional<Move>& bestMove)
+double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int depth, double alpha, double beta, bool maximizeWhite, bool allowNullMove, std::optional<Move>& bestMove)
 {
 	const double originalAlpha = alpha;
 
@@ -122,11 +123,28 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int dep
 		}
 	}
 
-	if (depth == 0)
+	if (depth <= 0)
 	{
 		const int quiescentSearchMaxDepth = 2;
 		return QuiescentSearch(position, quiescentSearchMaxDepth, alpha, beta, maximizeWhite);
 	}
+
+	////Null move heuristic
+	//constexpr int R = 2; //reducedDepthConstant
+	//if (allowNullMove  && depth - 1 - R >= 0)
+	//{
+	//	if (!MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()))
+	//	{
+	//		Move nullMove;
+	//		position.Update(nullMove);
+	//		std::optional<Move> bestMoveDummy; //only returns best move from 0 depth
+	//		const double score = -AlphaBetaNegamax(position, initialDepth, depth - 1 - R, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
+	//		position.Undo(nullMove);
+
+	//		if (score >= beta)
+	//			return score;//cutoff
+	//	}
+	//}
 
 	//Don't search valid moves again if it has been done in last iteration
 	//There should be no collision otherwise childMoves may become invalid after next iterations
@@ -149,7 +167,7 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int dep
 	{
 		position.Update(childMove);
 		std::optional<Move> bestMoveDummy; //only returns best move from 0 depth
-		const double score = -AlphaBetaNegamax(position, initialDepth, depth - 1, -beta, -alpha, !maximizeWhite, bestMoveDummy);
+		const double score = -AlphaBetaNegamax(position, initialDepth, depth - 1, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
 		position.Undo(childMove);
 
 		if (score > value)
@@ -246,7 +264,7 @@ double MoveMaker::QuiescentSearch(Position& position, int depth, double alpha, d
 	std::vector<Move> childMoves = m_LegalMovesTable[transpositionTableKey].second;
 
 	if (childMoves.empty())
-		return (maximizeWhite ? 1.0 : -1.0) * EvaluatePosition(position);
+		return (maximizeWhite ? 1.0 : -1.0) * standPat;
 
 	//Sort moves
 	SortMoves(position, childMoves);
@@ -255,7 +273,7 @@ double MoveMaker::QuiescentSearch(Position& position, int depth, double alpha, d
 	for (Move& childMove : childMoves)
 	{
 		position.Update(childMove);
-		if (childMove.IsCapture())
+		if (!PositionEvaluation::IsPositionQuiet(position))//childMove.IsCapture())
 		{
 			const double score = -QuiescentSearch(position, depth - 1, -beta, -alpha, !maximizeWhite);
 

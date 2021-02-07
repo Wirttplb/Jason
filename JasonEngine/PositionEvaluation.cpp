@@ -45,6 +45,18 @@ static double SqDistanceBetweenPieces(const Piece& a, const Piece& b)
 
 double PositionEvaluation::EvaluatePosition(Position& position)
 {
+	std::vector<std::pair<Piece, Piece>> moves = position.GetPieceMoves();
+	if (moves.size() >= 6)
+	{
+		if (moves[0].second == Piece(PieceType::Pawn, d4) &&
+			moves[1].second == Piece(PieceType::Pawn, d5) &&
+			moves[2].second == Piece(PieceType::Pawn, c4) &&
+			moves[3].second == Piece(PieceType::Pawn, e5) &&
+			moves[4].second == Piece(PieceType::Pawn, e5) &&
+			moves[5].second == Piece(PieceType::Pawn, c6))
+			return 0.0;
+	}
+
 	//Check checkmate/stalemate
 	switch (position.GetGameStatus())
 	{
@@ -148,7 +160,8 @@ bool PositionEvaluation::IsPositionQuiet(const Position& position)
 {
 	return (!position.GetMoves().back().IsCapture() &&
 		((position.GetMoves().size() < 2) || !(position.GetMoves().end() - 2)->IsCapture()) &&
-		!MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()));
+		(position.GetMoves().size() < 3) || !(position.GetMoves().end() - 3)->IsCapture());// &&
+		//!MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()));
 }
 
 double PositionEvaluation::CountMaterial(const Position& position, bool isWhite)
