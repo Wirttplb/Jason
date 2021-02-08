@@ -1,6 +1,5 @@
 #include <iostream>
 #include <conio.h>
-#include "Position.h"
 #include "MoveMaker.h"
 #include "NotationParser.h"
 #include <assert.h>
@@ -39,8 +38,8 @@ int main()
     Position position; //starting position
     MoveMaker moveMaker;
     bool isGameOver = false;
-
     int evaluationDepth = 6; //Without quiescence search, evaluation depth should be even!
+    double score = 0.0; //ignored
 
     while (!isGameOver)
     {
@@ -48,7 +47,7 @@ int main()
 
         if ((isJasonWhite && position.IsWhiteToPlay()) || (isJasonBlack && !position.IsWhiteToPlay()))
         {
-            bool moveFound = moveMaker.MakeMove(position, evaluationDepth);
+            bool moveFound = moveMaker.MakeMove(position, evaluationDepth, score);
             assert(moveFound);
         }
         else

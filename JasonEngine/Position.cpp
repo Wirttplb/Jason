@@ -245,6 +245,23 @@ std::vector<Piece> Position::GetPiecesToPlay(PieceType type) const
 	return GetPieces(type, IsWhiteToPlay());
 }
 
+std::vector<Piece> Position::GetPiecesToPlay() const
+{
+	std::vector<Piece> pieces = GetPiecesToPlay(PieceType::Pawn);
+	std::vector<Piece> knights = GetPiecesToPlay(PieceType::Knight);
+	pieces.insert(pieces.end(), knights.begin(), knights.end());
+	std::vector<Piece> bishops = GetPiecesToPlay(PieceType::Bishop);
+	pieces.insert(pieces.end(), bishops.begin(), bishops.end());
+	std::vector<Piece> rooks = GetPiecesToPlay(PieceType::Rook);
+	pieces.insert(pieces.end(), rooks.begin(), rooks.end());
+	std::vector<Piece> queens = GetPiecesToPlay(PieceType::Queen);
+	pieces.insert(pieces.end(), queens.begin(), queens.end());
+	std::vector<Piece> king = GetPiecesToPlay(PieceType::King);
+	pieces.insert(pieces.end(), king.begin(), king.end());
+
+	return pieces;
+}
+
 std::vector<std::pair<Piece, Piece>> Position::GetPieceMoves() const
 {
 	std::vector<std::pair<Piece, Piece>> moves;

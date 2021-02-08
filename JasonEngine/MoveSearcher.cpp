@@ -1253,6 +1253,18 @@ std::optional<Move> MoveSearcher::GetRandomMove(const Position& position)
 	return move;
 }
 
+std::optional<Move> MoveSearcher::GetRandomMoveFromBitboards(Position& position)
+{
+	std::optional<Move> move;
+	std::vector<Move> allLegalMoves = GetLegalMovesFromBitboards(position);
+	if (allLegalMoves.empty())
+		return move;
+
+	const int rand = std::rand();
+	move = allLegalMoves[rand % allLegalMoves.size()];
+	return move;
+}
+
 const std::vector<Bitboard>& MoveSearcher::GetMoveTable(PieceType type, bool isWhite)
 {
 	switch (type)

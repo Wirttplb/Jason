@@ -274,11 +274,25 @@ std::string NotationParser::TranslateToAlgebraic(const Move& move)
 	return moveString;
 }
 
-std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& position, const std::string& moveString)
+std::string NotationParser::TranslateToUciString(const Move& move)
+{
+	std::string moveString;
+	moveString += TranslateToAlgebraic(static_cast<Square>(move.GetFromSquare()));
+	moveString += TranslateToAlgebraic(static_cast<Square>(move.GetToSquare()));
+	if (move.GetFromType() != move.GetToType())
+		moveString += std::tolower(TranslateToAlgebraic(move.GetToType()).front());
+
+	return moveString;
+}
+
+std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& position, const std::string& moveString, bool isUciString)
 {
 	std::optional<Move> move;
 	if (moveString.size() < 2)
 		return move; //invalid length
+
+	if (isUciString && (moveString.size() < 4 || moveString.size() > 5))
+		return move;
 
 	std::vector<Piece> pieces;
 	//castling is easy to parse
@@ -288,7 +302,7 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 		return position.IsWhiteToPlay() ? WhiteQueenSideCastle : BlackQueenSideCastle;
 
 	//first expected char is symbol
-	pieces = position.GetPiecesToPlay(LetterToPieceType(moveString[0]));
+	pieces = isUciString ? position.GetPiecesToPlay() : position.GetPiecesToPlay(LetterToPieceType(moveString[0]));
 	if (pieces.empty())
 		return move;
 
@@ -350,7 +364,7 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 	}
 	case 4: //capture move or disambiguition or queening
 	{
-		if (pieces.front().m_Type == PieceType::Pawn) //pawn takes (not abbreviated) or queens a8=Q
+		if (pieces.front().m_Type == PieceType::Pawn || isUciString) //pawn takes (not abbreviated) or queens a8=Q or UCI string
 		{
 			if (moveString[1] == 'x')
 			{
@@ -371,6 +385,18 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 				const std::string rowString = moveString.substr(1, 1);
 				toRow = std::stoi(rowString) - 1;
 				toType = LetterToPieceType(moveString[3]);
+			}
+			else //verbose pawn move ("e2e4") or uci string
+			{
+				if (!isalpha(moveString[0]) || !isdigit(moveString[1]) || !isalpha(moveString[2]) || !isdigit(moveString[3]))
+					return move;
+
+				fromFile = LetterToNumber(moveString[0]);
+				std::string rowString = moveString.substr(1, 1);
+				fromRow = std::stoi(rowString) - 1;
+				toFile = LetterToNumber(moveString[2]);
+				rowString = moveString.substr(3, 1);
+				toRow = std::stoi(rowString) - 1;
 			}
 		}
 		else if (moveString[1] == 'x') //piece takes
@@ -407,9 +433,23 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 			return move;
 		break;
 	}
-	case 5: //capture move with disambiguition or double disambiguition (not capture) Nfxg5 or N1xg5 or Nf1g5 OR queening abbreviated bxa=Q
+	case 5: //capture move with disambiguition or double disambiguition (not capture) Nfxg5 or N1xg5 or Nf1g5 OR queening abbreviated bxa=Q or UCI queening
 	{
-		if (moveString[2] == 'x') //capture, single disambiguition
+		if (isUciString)
+		{
+			if (!isalpha(moveString[0]) || !isdigit(moveString[1]) || !isalpha(moveString[2]) || !isdigit(moveString[3]) || !isalpha(moveString[4]))
+				return move;
+
+			fromFile = LetterToNumber(moveString[0]);
+			std::string rowString = moveString.substr(1, 1);
+			fromRow = std::stoi(rowString) - 1;
+			toFile = LetterToNumber(moveString[2]);
+			rowString = moveString.substr(3, 1);
+			toRow = std::stoi(rowString) - 1;
+			toType = LetterToPieceType(std::toupper(moveString[4]));
+			break;
+		}
+		else if (moveString[2] == 'x') //capture, single disambiguition
 		{
 			if (isdigit(moveString[1]))
 			{
@@ -498,6 +538,14 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 		int count = 0;
 		for (const Piece& p : pieces)
 		{
+			if (isUciString)
+			{
+				if (!fromFile.has_value() || !fromRow.has_value())
+					return Move();
+				else if (p.m_Square != Square(*fromFile + 8 * (*fromRow)))
+					continue;
+			}
+
 			bool canReachSquare = false;
 			Position positionCopy = position;
 			const std::vector<Move> legalMoves = MoveSearcher::GetLegalMovesFromBitboards(positionCopy, p.m_Type, p.m_Square, position.IsWhiteToPlay());
@@ -541,8 +589,13 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 		move->SetToSquare(Square(*toFile + 8 * (*toRow)));
 	}
 
-	if (move.has_value())
+	if (move.has_value() && !isUciString || (moveString.size() == 5))
 		move->SetToType(toType);
 
 	return move;
+}
+
+std::optional<Move> NotationParser::TranslateFromUci(const Position& position, const std::string& moveString)
+{
+	return TranslateFromAlgebraic(position, moveString, true);
 }

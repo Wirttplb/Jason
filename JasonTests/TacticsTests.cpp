@@ -10,9 +10,10 @@ static void RunPosition(Position& position, int maxMoves, int evaluationDepth)
 	int moveCount = 0;
 	bool moveFound = true;
 	MoveMaker moveMaker;
+	double score = 0.0; //ignored
 	while (moveFound && moveCount < maxMoves)
 	{
-		moveFound = moveMaker.MakeMove(position, evaluationDepth);
+		moveFound = moveMaker.MakeMove(position, evaluationDepth, score);
 		moveCount++;
 	}
 

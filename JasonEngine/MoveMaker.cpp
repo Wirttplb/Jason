@@ -5,9 +5,9 @@
 #include <assert.h>
 #include <algorithm>
 
-bool MoveMaker::MakeMove(Position& position, int depth)
+bool MoveMaker::MakeMove(Position& position, int depth, double& score)
 {
-	std::optional<Move> bestMove = FindMove(position, depth);
+	std::optional<Move> bestMove = FindMove(position, depth, score);
 
 	if (bestMove.has_value())
 		position.Update(*bestMove);
@@ -15,20 +15,15 @@ bool MoveMaker::MakeMove(Position& position, int depth)
 	return bestMove.has_value();
 }
 
-std::optional<Move> MoveMaker::FindMove(Position& position, int depth)
+std::optional<Move> MoveMaker::FindMove(Position& position, int depth, double& score)
 {
 	constexpr double alpha = std::numeric_limits<double>::lowest();
 	constexpr double beta = std::numeric_limits<double>::max();
 	std::optional<Move> bestMove;
 	const bool allowNullMove = true;
 
-	//Minimax(position, depth, position.IsWhiteToPlay(), bestMove);
-	//m_TranspositionTable.clear();
-	double score = AlphaBetaNegamax(position, depth, depth, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
-	score;
-
-	//std::cout << score;
-
+	score = AlphaBetaNegamax(position, depth, depth, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
+		
 	return bestMove;
 }
 

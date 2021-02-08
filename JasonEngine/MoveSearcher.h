@@ -33,6 +33,7 @@ public:
 
 	/// <summary>Returns a random legal move from a given position (null if stalemate or checkmate)</summary>
 	static std::optional<Move> GetRandomMove(const Position& position);
+	static std::optional<Move> GetRandomMoveFromBitboards(Position& position);
 
 	/// <returns>Move table (accessible squares on empty board) ; for pawns, single step moves</returns>
 	static const std::vector<Bitboard>& GetMoveTable(PieceType type, bool isWhite = true);

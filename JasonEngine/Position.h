@@ -133,6 +133,11 @@ public:
 	/// </summary>
 	std::vector<Piece> GetPiecesToPlay(PieceType type) const;
 
+	/// <summary>
+	/// Returns all pieces side whose turn is to move (if there is one! Can have more than 1) ; slow as pieces are regenerated and not read from a maintained list of pieces
+	/// </summary>
+	std::vector<Piece> GetPiecesToPlay() const;
+
 	const std::vector<Move>& GetMoves() const { return m_Moves; };
 	std::vector<Move>& GetMoves() { return m_Moves; };
 	/// <returns>Returns list of moves as pair of pieces (for debugging purposes)</returns>
