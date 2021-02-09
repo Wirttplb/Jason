@@ -58,6 +58,7 @@ Position::Position()
 	m_BlackPiecesList.emplace_back(Piece(PieceType::Pawn, h7));
 
 	m_ZobristHash = ZobristHash::Init();
+	m_History.insert({ m_ZobristHash, 1 });
 }
 
 Position::Position(const std::string& fen)
@@ -656,6 +657,19 @@ bool Position::CheckBitboardsSanity() const
 	isOk = isOk && ((m_BlackPawns & m_BlackRooks) == Bitboard());
 
 	return isOk;
+}
+
+void Position::AddToHistory(uint64_t key)
+{
+	if (m_History.find(key) != m_History.end())
+		m_History[key]++;
+	else
+		m_History[key] = 1;
+}
+
+int Position::GetHistoryCount()
+{
+	return m_History[m_ZobristHash]; //we don't prevent a crash
 }
 
 void Position::UpdatePiece(const Move& move, bool isWhite)

@@ -48,4 +48,31 @@ void MoveMakerTests::Run()
 	ASSERT(moves[1] == move1);
 	ASSERT(moves[2] == move7);
 	ASSERT((moves[3] == move3) || (moves[3] == move4));
+
+	//Draw by repetition
+	position = Position("5k2/Q7/5K2/8/8/2n5/8/8 b - - 0 1");
+	Move move(PieceType::King, f8, e8);
+	bool success = moveMaker.MakeMove(position, move);
+	move = Move(PieceType::King, f6, e6);
+	success = moveMaker.MakeMove(position, move);
+	move = Move(PieceType::King, e8, f8);
+	success = moveMaker.MakeMove(position, move);
+	move = Move(PieceType::King, e6, f6);
+	success = moveMaker.MakeMove(position, move);
+	move = Move(PieceType::King, f8, e8);
+	success = moveMaker.MakeMove(position, move);
+	move = Move(PieceType::King, f6, e6);
+	success = moveMaker.MakeMove(position, move);
+	move = Move(PieceType::King, e8, f8);
+	success = moveMaker.MakeMove(position, move);
+	move = Move(PieceType::King, e6, f6);
+	success = moveMaker.MakeMove(position, move);
+	move = Move(PieceType::King, f8, e8);
+	success = moveMaker.MakeMove(position, move);
+	move = Move(PieceType::King, f6, e6);
+	success = moveMaker.MakeMove(position, move);
+	double score = 0.0;
+	success = moveMaker.MakeMove(position, 6, score); //only one move draws and avoids mate in 1
+	ASSERT(position.GetMoves().back().GetTo().m_Square == f8);
+	ASSERT(abs(score - 0.0) < 0.0000001);
 }

@@ -74,6 +74,12 @@ public:
 		return (GetFrom() == move.GetFrom()) && (GetTo() == move.GetTo()); //m_Move == move.m_Move;
 	}
 
+	/// <remark>Slow operator, only for tests</remark>
+	bool operator!=(const Move& move) const
+	{
+		return !(*this == move);
+	}
+
 	/// <summary>bits 0 to 5 = From square</summary>
 	inline Square GetFromSquare() const { return static_cast<Square>(m_Move & 0x3f); };
 	/// <summary>bits 6 to 11 = To square</summary>

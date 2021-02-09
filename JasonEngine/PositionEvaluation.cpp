@@ -39,7 +39,7 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 	//Check checkmate/stalemate
 	switch (position.GetGameStatus())
 	{
-		case Position::GameStatus::StaleMate:
+		case Position::GameStatus::Draw:
 			return 0.0;
 		case Position::GameStatus::CheckMate:
 		{

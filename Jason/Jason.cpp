@@ -80,7 +80,7 @@ int main()
 
     switch (position.GetGameStatus())
     {
-        case Position::GameStatus::StaleMate:
+        case Position::GameStatus::Draw:
             std::cout << "1/2 - 1/2\n\n\n";
             break;
         case Position::GameStatus::CheckMate:

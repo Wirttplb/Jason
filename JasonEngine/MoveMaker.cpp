@@ -10,7 +10,10 @@ bool MoveMaker::MakeMove(Position& position, int depth, double& score)
 	std::optional<Move> bestMove = FindMove(position, depth, score);
 
 	if (bestMove.has_value())
+	{
 		position.Update(*bestMove);
+		position.AddToHistory(position.GetZobristHash());
+	}
 
 	return bestMove.has_value();
 }
@@ -46,15 +49,16 @@ bool MoveMaker::MakeMove(Position& position, Move& move)
 		return false;
 
 	position.Update(move);
+	position.AddToHistory(position.GetZobristHash());
 	return true;
 }
 
 void MoveMaker::CheckGameOver(Position& position)
 {
-	//check for insufficient material
-	if (position.IsInsufficientMaterialFromBitboards())
+	//check insufficient material or repetition
+	if (position.IsInsufficientMaterialFromBitboards() || (position.GetHistoryCount() >= 2))
 	{
-		position.SetGameStatus(Position::GameStatus::StaleMate);
+		position.SetGameStatus(Position::GameStatus::Draw);
 		return;
 	}
 
@@ -72,12 +76,16 @@ void MoveMaker::CheckGameOver(Position& position)
 		if (MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()))
 			position.SetGameStatus(Position::GameStatus::CheckMate);
 		else
-			position.SetGameStatus(Position::GameStatus::StaleMate);
+			position.SetGameStatus(Position::GameStatus::Draw);
 	}
 }
 
 double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int depth, double alpha, double beta, bool maximizeWhite, bool allowNullMove, std::optional<Move>& bestMove)
 {
+	//Check draw by repetition
+	if (depth != initialDepth && position.GetHistoryCount() >= 2)
+		return 0.0;
+	
 	const double originalAlpha = alpha;
 
 	//Transposition table lookup
@@ -309,8 +317,6 @@ void MoveMaker::SortMoves(const Position& position, std::vector<Move>& moves)
 		}
 	}
 }
-
-static constexpr std::array<PieceType, 5> PieceTypesSorted = { PieceType::Queen, PieceType::Rook, PieceType::Bishop, PieceType::Knight, PieceType::Pawn};
 
 bool MoveMaker::MovesSorter(const Position& position, const Move& move1, const Move& move2)
 {

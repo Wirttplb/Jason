@@ -127,8 +127,9 @@ int main()
 
 			const std::string moveString = NotationParser::TranslateToUciString(position.GetMoves().back());
 			std::cout << "bestmove " << moveString << std::endl;
-			std::cout << "score " << static_cast<int>(score) << std::endl;
+			std::cout << "info score cp " << static_cast<int>(score) << std::endl;
 			WriteToFile("bestmove " + moveString);
+			WriteToFile("info score cp " + std::to_string(score));
 		}
 		else if (line == "stop")
 		{

@@ -6,6 +6,7 @@
 #include <vector>
 #include <optional>
 #include <string>
+#include <unordered_map>
 
 /// <summary>
 /// Description of a move
@@ -38,7 +39,7 @@ public:
 	{
 		Running,
 		CheckMate,
-		StaleMate
+		Draw
 	};
 
 	bool IsWhiteToPlay() const { return m_IsWhiteToPlay; };
@@ -165,6 +166,9 @@ public:
 
 	void SetMaintainPiecesList(bool value) { m_MaintainPiecesList = value; };
 
+	void AddToHistory(uint64_t key);
+	int GetHistoryCount();
+
 private:
 
 	void UpdatePiece(const Move& move, bool isWhite);
@@ -210,6 +214,7 @@ private:
 	std::vector<Move> m_Moves; //list of moves made to reach the position
 
 	uint64_t m_ZobristHash = 0;
+	std::unordered_map<uint64_t, int> m_History; //history of previously visited positions (with number of times), for draws by repetition
 };
 
 template<>
