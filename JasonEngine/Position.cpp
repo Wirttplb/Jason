@@ -58,7 +58,7 @@ Position::Position()
 	m_BlackPiecesList.emplace_back(Piece(PieceType::Pawn, h7));
 
 	m_ZobristHash = ZobristHash::Init();
-	m_History.insert({ m_ZobristHash, 1 });
+	CommitToHistory();
 }
 
 Position::Position(const std::string& fen)
@@ -655,10 +655,7 @@ bool Position::CheckBitboardsSanity() const
 
 void Position::CommitToHistory(uint64_t key)
 {
-	if (m_History.find(key) != m_History.end())
-		m_History[key]++;
-	else
-		m_History[key] = 1;
+	m_History[key & 0x3FFF]++;
 }
 
 void Position::CommitToHistory()
@@ -668,14 +665,12 @@ void Position::CommitToHistory()
 
 void Position::UncommitToHistory(uint64_t key)
 {
-	m_History[key] -= 1; //we don't prevent a crash
-	if (m_History[key] == 0)
-		m_History.erase(key);
+	m_History[key & 0x3FFF]--;
 }
 
 int Position::GetHistoryCount()
 {
-	return m_History[m_ZobristHash]; //we don't prevent a crash
+	return m_History[m_ZobristHash & 0x3FFF]; //we don't prevent a crash
 }
 
 void Position::UpdatePiece(const Move& move, bool isWhite)

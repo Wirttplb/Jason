@@ -144,9 +144,9 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 bool PositionEvaluation::IsPositionQuiet(const Position& position)
 {
 	//THIS IS COMPLETELY WRONG! SHOULD CHECK UNDEFENDED PIECES ETC...
-	return (!position.GetMoves().back().IsCapture() &&
-		((position.GetMoves().size() < 2) || !(position.GetMoves().end() - 2)->IsCapture()) &&
-		(position.GetMoves().size() < 3) || !(position.GetMoves().end() - 3)->IsCapture());// &&
+	//return (!position.GetMoves().back().IsCapture() &&
+	//	((position.GetMoves().size() < 2) || !(position.GetMoves().end() - 2)->IsCapture()) &&
+	//	(position.GetMoves().size() < 3) || !(position.GetMoves().end() - 3)->IsCapture());// &&
 		//!MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()));
 }
 

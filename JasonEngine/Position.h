@@ -221,7 +221,11 @@ private:
 	std::vector<Move> m_Moves; //list of moves made to reach the position
 
 	uint64_t m_ZobristHash = 0;
-	std::unordered_map<uint64_t, int> m_History; //history of previously visited positions (with number of times), for draws by repetition
+
+	/// <summary>history of previously visited positions (with number of times), for draws by repetition ; we use a dedicated hash table
+	/// https://www.chessprogramming.org/Repetitions#Repetition_of_Positions
+	/// Key is lower 14 bits of position hash</summary>
+	std::array<uint8_t, 16384> m_History = {};
 };
 
 template<>
