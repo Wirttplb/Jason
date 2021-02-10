@@ -223,4 +223,29 @@ void ZobristTests::Run()
 	queeningPosition.Undo(b);
 	queeningPosition.Undo(a);
 	ASSERT(backupPosition.GetZobristHash() == queeningPosition.GetZobristHash());
+
+	//null move
+	newPosition = Position();
+	Move move1(PieceType::Pawn, e2, e4);
+	newPosition.Update(move1);
+	Move move2;
+	move2.SetNullMove();
+	newPosition.Update(move2);
+	std::optional<Move> move3 = MoveSearcher::GetRandomMoveFromBitboards(newPosition);
+	newPosition.Update(*move3);
+	std::optional<Move> move4 = MoveSearcher::GetRandomMoveFromBitboards(newPosition);
+	newPosition.Update(*move4);
+	Move move5;
+	move5.SetNullMove();
+	newPosition.Update(move5);
+	std::optional<Move> move6 = MoveSearcher::GetRandomMoveFromBitboards(newPosition);
+	newPosition.Update(*move6);
+	newPosition.Undo(*move6);
+	newPosition.Undo(move5);
+	newPosition.Undo(*move4);
+	newPosition.Undo(*move3);
+	newPosition.Undo(move2);
+	newPosition.Undo(move1);
+	ASSERT(newPosition.GetZobristHash() == startingPosition.GetZobristHash());
+	count++;
 }

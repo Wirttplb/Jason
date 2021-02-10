@@ -307,6 +307,7 @@ void Position::Update(Move& move)
 	//null move update
 	if (move.IsNullMove())
 	{
+		UpdateEnPassantSquare(move);
 		m_IsWhiteToPlay = !m_IsWhiteToPlay;
 		m_ZobristHash ^= ZobristHash::GetBlackToMoveKey();
 		GetMoves().push_back(move);
@@ -363,13 +364,8 @@ void Position::Update(Move& move)
 		}
 	}
 
-	//set or reset en passant square
-	if (m_EnPassantSquare.has_value())
-		move.SetEnPassantBackup(*m_EnPassantSquare); //backup en passant square
-	if (move.IsTwoStepsPawn())
-		SetEnPassantSquare(static_cast<Square>(move.GetFromSquare() + (IsWhiteToPlay() ? 8 : -8)));
-	else
-		ResetEnPassantSquare();
+	//Set or reset en passant square
+	UpdateEnPassantSquare(move);
 
 	//Move rook if castle, update flags
 	if (move.IsCastling())
@@ -462,14 +458,18 @@ void Position::Update(Move& move)
 
 	m_IsWhiteToPlay = !m_IsWhiteToPlay;
 	m_ZobristHash ^= ZobristHash::GetBlackToMoveKey();
+	CommitToHistory();
 
 	GetMoves().push_back(move);
 }
 
 void Position::Undo(const Move& move)
 {
+	UncommitToHistory(m_ZobristHash);
+
 	if (move.IsNullMove())
 	{
+		UndoEnPassantSquare(move);
 		m_IsWhiteToPlay = !m_IsWhiteToPlay;
 		m_ZobristHash ^= ZobristHash::GetBlackToMoveKey();
 		GetMoves().pop_back();
@@ -505,13 +505,7 @@ void Position::Undo(const Move& move)
 	}
 
 	//Undo en passant square
-	if (move.HasEnPassantBackup())
-	{
-		Square enPassantSquare = static_cast<Square>(move.GetEnPassantBackupFile() + (m_IsWhiteToPlay ? 16 : 40));
-		SetEnPassantSquare(enPassantSquare);
-	}
-	else
-		ResetEnPassantSquare();
+	UndoEnPassantSquare(move);
 
 	//undo moved rook for castles
 	if (move.IsCastling())
@@ -659,12 +653,24 @@ bool Position::CheckBitboardsSanity() const
 	return isOk;
 }
 
-void Position::AddToHistory(uint64_t key)
+void Position::CommitToHistory(uint64_t key)
 {
 	if (m_History.find(key) != m_History.end())
 		m_History[key]++;
 	else
 		m_History[key] = 1;
+}
+
+void Position::CommitToHistory()
+{
+	CommitToHistory(m_ZobristHash);
+}
+
+void Position::UncommitToHistory(uint64_t key)
+{
+	m_History[key] -= 1; //we don't prevent a crash
+	if (m_History[key] == 0)
+		m_History.erase(key);
 }
 
 int Position::GetHistoryCount()
@@ -759,4 +765,25 @@ void Position::UpdateCapturedPiece(Square squareIdx, Move& move)
 		m_ZobristHash ^= ZobristHash::GetKey(PieceType::King, squareIdx, !m_IsWhiteToPlay);
 		return;
 	}	
+}
+
+void Position::UpdateEnPassantSquare(Move& move)
+{
+	if (m_EnPassantSquare.has_value())
+		move.SetEnPassantBackup(*m_EnPassantSquare); //backup en passant square
+	if (move.IsTwoStepsPawn())
+		SetEnPassantSquare(static_cast<Square>(move.GetFromSquare() + (IsWhiteToPlay() ? 8 : -8)));
+	else
+		ResetEnPassantSquare();
+}
+
+void Position::UndoEnPassantSquare(const Move& move)
+{
+	if (move.HasEnPassantBackup())
+	{
+		Square enPassantSquare = static_cast<Square>(move.GetEnPassantBackupFile() + (m_IsWhiteToPlay ? 16 : 40));
+		SetEnPassantSquare(enPassantSquare);
+	}
+	else
+		ResetEnPassantSquare();
 }

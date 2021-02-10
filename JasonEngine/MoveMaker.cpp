@@ -10,10 +10,7 @@ bool MoveMaker::MakeMove(Position& position, int depth, double& score)
 	std::optional<Move> bestMove = FindMove(position, depth, score);
 
 	if (bestMove.has_value())
-	{
 		position.Update(*bestMove);
-		position.AddToHistory(position.GetZobristHash());
-	}
 
 	return bestMove.has_value();
 }
@@ -25,7 +22,7 @@ std::optional<Move> MoveMaker::FindMove(Position& position, int depth, double& s
 	std::optional<Move> bestMove;
 	const bool allowNullMove = true;
 
-	score = AlphaBetaNegamax(position, depth, depth, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
+	score = (position.IsWhiteToPlay() ? 1.0 : -1.0) * AlphaBetaNegamax(position, depth, depth, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
 		
 	return bestMove;
 }
@@ -49,14 +46,13 @@ bool MoveMaker::MakeMove(Position& position, Move& move)
 		return false;
 
 	position.Update(move);
-	position.AddToHistory(position.GetZobristHash());
 	return true;
 }
 
 void MoveMaker::CheckGameOver(Position& position)
 {
 	//check insufficient material or repetition
-	if (position.IsInsufficientMaterialFromBitboards() || (position.GetHistoryCount() >= 2))
+	if (position.IsInsufficientMaterialFromBitboards() || (position.GetHistoryCount() >= 3))
 	{
 		position.SetGameStatus(Position::GameStatus::Draw);
 		return;
@@ -82,10 +78,6 @@ void MoveMaker::CheckGameOver(Position& position)
 
 double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int depth, double alpha, double beta, bool maximizeWhite, bool allowNullMove, std::optional<Move>& bestMove)
 {
-	//Check draw by repetition
-	if (depth != initialDepth && position.GetHistoryCount() >= 2)
-		return 0.0;
-	
 	const double originalAlpha = alpha;
 
 	//Transposition table lookup
@@ -97,8 +89,14 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int dep
 		{
 		case TranspositionTableEntry::Flag::Exact:
 		{
-			bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
-			return m_TranspositionTable[transpositionTableKey].m_Score;
+			//Repetition would affect the score, can't use it directly
+			if (position.GetHistoryCount() < 2)
+			{
+				bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
+				return m_TranspositionTable[transpositionTableKey].m_Score;
+			}
+
+			break;
 		}
 		case TranspositionTableEntry::Flag::LowerBound:
 			alpha = std::max(alpha, m_TranspositionTable[transpositionTableKey].m_Score);
@@ -111,10 +109,16 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int dep
 			break;
 		}
 
-		if (alpha >= beta)
+		if (m_TranspositionTable[transpositionTableKey].m_Flag != TranspositionTableEntry::Flag::Exact)
 		{
-			bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
-			return m_TranspositionTable[transpositionTableKey].m_Score;
+			if (alpha >= beta)
+			{
+				if (position.GetHistoryCount() < 2)
+				{
+					bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
+					return m_TranspositionTable[transpositionTableKey].m_Score;
+				}
+			}
 		}
 	}
 
@@ -131,6 +135,7 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int dep
 		if (!MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()))
 		{
 			Move nullMove;
+			nullMove.SetNullMove();
 			position.Update(nullMove);
 			std::optional<Move> bestMoveDummy;
 			const double score = -AlphaBetaNegamax(position, initialDepth, depth - 1 - R, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);

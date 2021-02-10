@@ -330,6 +330,9 @@ static void _GetPseudoLegalMovesFromBitboards(int fromSquare)
 
 std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position)
 {
+	if (position.GetHistoryCount() >= 3)
+		return {}; //draw by repetition
+
 	std::vector<Move> allLegalMoves;
 	allLegalMoves.reserve(40); //40 legal moves on average
 
@@ -965,7 +968,7 @@ bool MoveSearcher::IsMoveBlocked(const Piece& blockingPiece, const Piece& piece,
 		constexpr std::array<bool, 2> checkRow = { false, true };
 		for (bool row : checkRow)
 		{
-			const size_t i = (!row) * 1; //must be 0 for row (X
+			const size_t i = (!row) * 1; //must be 0 for row (X)
 			const size_t j = row * 1; //must be 1 for row (Y)
 
 			//j = const => we check row
@@ -1082,7 +1085,6 @@ size_t MoveSearcher::Perft(Position& position, int depth)
 	for (Move& move : moves)
 	{
 		position.Update(move);
-		//if (!IsKingInCheckFromBitboards(position, !position.IsWhiteToPlay())) //BUG in GetPseudoLegalMovesFromBitboards...
 		count += Perft(position, depth - 1);
 		position.Undo(move);
 	}
@@ -1100,12 +1102,9 @@ std::unordered_set<uint64_t> MoveSearcher::UniquePerft(Position& position, int d
 	for (Move& legalMove : legalMoves)
 	{
 		position.Update(legalMove);
-		//if (!IsKingInCheckFromBitboards(position, !position.IsWhiteToPlay()))
-		//{
 		std::unordered_set<uint64_t> terminalNodes = UniquePerft(position, depth - 1);
-		uniqueNodes.insert(terminalNodes.begin(), terminalNodes.end());
-		//}
 		position.Undo(legalMove);
+		uniqueNodes.insert(terminalNodes.begin(), terminalNodes.end());
 	}
 
 	return uniqueNodes;

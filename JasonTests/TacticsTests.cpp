@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-static void RunPosition(Position& position, int maxMoves, int evaluationDepth)
+static double RunPosition(Position& position, int maxMoves, int evaluationDepth)
 {
 	int moveCount = 0;
 	bool moveFound = true;
@@ -18,6 +18,7 @@ static void RunPosition(Position& position, int maxMoves, int evaluationDepth)
 	}
 
 	moveMaker.CheckGameOver(position);
+	return score;
 }
 
 void BlunderDebugTests()
@@ -35,7 +36,8 @@ void TacticsTests::Run()
 	time_t end;
 	time(&start);
 
-	static Position queenMate("4k3/8/1Q2K3/8/8/8/8/8 w - - 0 1");
+	static Position queenMate("6K1/8/5qk1/8/8/8/8/8 b - - 0 1");
+	static Position queenMate2("4k3/8/1Q2K3/8/8/8/8/8 w - - 0 1");
 	static Position staircaseMate("4k3 / R7 / 1Q6 / 8 / 8 / 8 / 8 / 4K3 w - -0 1");
 	static Position staircaseMate2("4k3/8/1Q6/8/8/8/8/R3K3 w - - 0 1");
 	static Position pinKnightFork("8/2R2pkp/6p1/6N1/3P1r2/7P/1r4P1/7K w - - 0 1");
@@ -48,8 +50,13 @@ void TacticsTests::Run()
 	static Position tactic2000("1k1r4/p1pnb3/1nQ1p3/P7/3P4/4PN2/1P2KPq1/RN6 w - - 0 1");
 	static Position tactic2200("8/p7/2N2p2/1P1Ppkpp/2K5/5P1P/5b2/8 w - - 0 46");
 
-	RunPosition(queenMate, 1, 2);
+	double score = RunPosition(queenMate, 1, 1);
 	ASSERT(queenMate.GetGameStatus() == Position::GameStatus::CheckMate);
+	ASSERT(score < -9999.9);
+
+	score = RunPosition(queenMate2, 1, 2);
+	ASSERT(queenMate2.GetGameStatus() == Position::GameStatus::CheckMate);
+	ASSERT(score > 9999.9);
 
 	RunPosition(staircaseMate, 1, 2);
 	ASSERT(staircaseMate.GetGameStatus() == Position::GameStatus::CheckMate);

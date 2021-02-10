@@ -166,7 +166,9 @@ public:
 
 	void SetMaintainPiecesList(bool value) { m_MaintainPiecesList = value; };
 
-	void AddToHistory(uint64_t key);
+	void CommitToHistory(uint64_t key);
+	void CommitToHistory();
+	void UncommitToHistory(uint64_t key);
 	int GetHistoryCount();
 
 private:
@@ -177,6 +179,11 @@ private:
 
 	/// <param name="capturedPiece">Captured piece if any [OUT]</param>
 	void UpdateCapturedPiece(Square square, Move& move);
+
+	/// <summary>Update en passant and backup current square</summary>
+	void UpdateEnPassantSquare(Move& move);
+	/// <summary>Undo en passant and restore en passant backup</summary>
+	void UndoEnPassantSquare(const Move& move);
 
 	Bitboard m_WhitePieces;
 	Bitboard m_WhitePawns;

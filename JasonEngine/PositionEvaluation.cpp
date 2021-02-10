@@ -14,7 +14,7 @@ static constexpr double CastlingBonus = 50.0;
 static constexpr double CenterPawnBonus = 40.0;
 static constexpr double DoubledPawnPunishment = -20.0; //40 for a pair
 static constexpr double IsolatedPawnPunishment = -40.0;
-static constexpr std::array<double, 3> AdvancedPawnBonus = {30.0, 50.0, 60.0}; //on rows 5, 6, 7
+static constexpr std::array<double, 3> AdvancedPawnBonus = {30.0, 50.0, 60.0}; //on rows 5, 6, 7 or 4, 3, 2
 
 static constexpr double KnightEndgamePunishment = -10.0;
 static constexpr double BishopEndgamePunishment = 10.0;
@@ -28,7 +28,7 @@ static constexpr double KnightPawnBonus = 2.0; //Knights better with lots of paw
 static constexpr double BishopPawnPunishment = -2.0; //Bishops worse with lots of pawns
 static constexpr double RookPawnPunishment = -2.0; //Rooks worse with lots of pawns
 
-static constexpr double ControlledSquareBonusFactor = 0.3;
+static constexpr double AttackedSquareBonusFactor = 0.3;
 static constexpr double CenterAttackedBonusFactor = 1.0; //Factor to multiply with how many center squares are attacked by own pieces
 static constexpr double KingSquaresAttackBonusFactor = 5.0; //Factor to multiply with how many squares around enemy king that are attacked by own pieces
 
@@ -86,7 +86,7 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 	score -= blackRooksOnOpenFiles.second * RookOnSemiOpenFileBonus;
 
 	//Penalty for moving same pieces twice
-	//Removal of this makes tacticsTest fails (tactic1800)..., should investigate!
+	//Removal of this makes tacticsTest fails (tactic2200)... should investigate!
 	if (position.GetMoves().size() > 3)
 	{
 		const int lastIdx = static_cast<int>(position.GetMoves().size()) - 1;
@@ -127,8 +127,8 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 
 	Bitboard whiteAttackedSquares = GetAttackedSquares(position, true);
 	Bitboard blackAttackedSquares = GetAttackedSquares(position, false);
-	score += whiteAttackedSquares.CountSetBits() * ControlledSquareBonusFactor;
-	score -= blackAttackedSquares.CountSetBits() * ControlledSquareBonusFactor;
+	score += whiteAttackedSquares.CountSetBits() * AttackedSquareBonusFactor;
+	score -= blackAttackedSquares.CountSetBits() * AttackedSquareBonusFactor;
 
 	Bitboard attackedSquaresAroundWhiteKing = GetAttackedSquaresAroundKing(position, blackAttackedSquares, true);
 	Bitboard attackedSquaresAroundBlackKing = GetAttackedSquaresAroundKing(position, whiteAttackedSquares, false);

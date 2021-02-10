@@ -251,9 +251,16 @@ public:
 		return false;
 	}
 
+	/// <summary>Null move is last bit</summary>
 	inline bool IsNullMove() const
 	{
-		return (m_Move == 0);
+		return (m_Move & 0x8000000000000000);
+		//return (m_Move == 0);
+	}
+
+	inline void SetNullMove()
+	{
+		m_Move = 0x8000000000000000;
 	}
 
 private:

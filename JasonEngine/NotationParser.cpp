@@ -188,7 +188,7 @@ void NotationParser::TranslateFEN(const std::string& fen, Position& position)
 		position.GetWhiteRooks() | position.GetWhiteQueens() | position.GetWhiteKing();
 
 	position.SetZobristHash(position.ComputeZobristHash());
-	position.AddToHistory(position.GetZobristHash());
+	position.CommitToHistory();
 }
 
 std::string NotationParser::TranslateToAlgebraic(PieceType type)
