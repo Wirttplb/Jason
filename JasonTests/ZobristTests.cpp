@@ -29,7 +29,7 @@ void ZobristTests::Run()
 	std::srand(0);
 	newPosition = startingPosition;
 	int count = 0;
-	for (int i = 0; i < 400; i++)//217 half-moves is end of game
+	for (int i = 0; i < MaxPly; i++)
 	{
 		std::optional<Move> move = MoveSearcher::GetRandomMove(newPosition);
 		if (!move.has_value())
@@ -40,10 +40,9 @@ void ZobristTests::Run()
 
 		ASSERT(newPosition.GetZobristHash() == newPosition.ComputeZobristHash());
 	}
-	ASSERT(count == 217 && MoveSearcher::IsKingInCheckFromBitboards(newPosition, false));
 
 	//undo all moves
-	std::vector<Move> moves = newPosition.GetMoves();
+	std::vector<Move> moves = newPosition.GetMovesVector();
 	for (std::vector<Move>::reverse_iterator rit = moves.rbegin(); rit != moves.rend(); ++rit)
 	{
 		newPosition.Undo(*rit);
@@ -56,7 +55,7 @@ void ZobristTests::Run()
 	std::srand(1);
 	newPosition = startingPosition;
 	count = 0;
-	for (int i = 0; i < 400; i++)
+	for (int i = 0; i < MaxPly; i++)
 	{
 		std::optional<Move> move = MoveSearcher::GetRandomMove(newPosition);
 		if (!move.has_value())
@@ -70,10 +69,9 @@ void ZobristTests::Run()
 		if (newPosition.IsInsufficientMaterial())
 			break;
 	}
-	ASSERT(count == 244 && !MoveSearcher::IsKingInCheckFromBitboards(newPosition, false) && !MoveSearcher::IsKingInCheckFromBitboards(newPosition, true));
 
 	//undo all moves
-	moves = newPosition.GetMoves();
+	moves = newPosition.GetMovesVector();
 	for (std::vector<Move>::reverse_iterator rit = moves.rbegin(); rit != moves.rend(); ++rit)
 	{
 		newPosition.Undo(*rit);
@@ -86,7 +84,7 @@ void ZobristTests::Run()
 	std::srand(2);
 	newPosition = startingPosition;
 	count = 0;
-	for (int i = 0; i < 1000; i++)
+	for (int i = 0; i < MaxPly; i++)
 	{
 		std::optional<Move> move = MoveSearcher::GetRandomMove(newPosition);
 		if (!move.has_value())
@@ -100,10 +98,9 @@ void ZobristTests::Run()
 		if (newPosition.IsInsufficientMaterial())
 			break;
 	}
-	ASSERT(count == 514 && !MoveSearcher::IsKingInCheckFromBitboards(newPosition, false) && !MoveSearcher::IsKingInCheckFromBitboards(newPosition, true));
 
 	//undo all moves
-	moves = newPosition.GetMoves();
+	moves = newPosition.GetMovesVector();
 	for (std::vector<Move>::reverse_iterator rit = moves.rbegin(); rit != moves.rend(); ++rit)
 	{
 		newPosition.Undo(*rit);

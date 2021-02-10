@@ -139,8 +139,12 @@ public:
 	/// </summary>
 	std::vector<Piece> GetPiecesToPlay() const;
 
-	const std::vector<Move>& GetMoves() const { return m_Moves; };
-	std::vector<Move>& GetMoves() { return m_Moves; };
+	const std::array<Move, MaxMoves>& GetMoves() const { return m_Moves; };
+	std::array<Move, MaxMoves>& GetMoves() { return m_Moves; };
+	size_t GetNumberOfMoves() const { return m_MovesIdx; };
+	/// <summary>Slow conversion to vector, for testing purposes</summary>
+	std::vector<Move> GetMovesVector() const;
+
 	/// <returns>Returns list of moves as pair of pieces (for debugging purposes)</returns>
 	std::vector<std::pair<Piece, Piece>> GetPieceMoves() const;
 
@@ -218,7 +222,8 @@ private:
 
 	std::optional<Square> m_EnPassantSquare; //if last move is two step from pawn, the square behind the pawn that moved
 
-	std::vector<Move> m_Moves; //list of moves made to reach the position
+	std::array<Move, MaxPly> m_Moves; //list of moves made to reach the position ; array for optimization
+	size_t m_MovesIdx = 0; //index of next move in list
 
 	uint64_t m_ZobristHash = 0;
 

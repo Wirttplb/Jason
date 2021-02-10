@@ -17,14 +17,14 @@ int main()
     time_t end;
     
     time(&start);
-    //NotationParserTests::Run();
-    //PositionTests::Run();
-    //ZobristTests::Run();
-    //MoveMakerTests::Run();
+    NotationParserTests::Run();
+    PositionTests::Run();
+    ZobristTests::Run();
+    MoveMakerTests::Run();
     MoveSearcherTests::Run();
-    //PositionEvaluationTests::Run();
-    //TacticsTests::Run();
-    //SpeedTest::Run();
+    PositionEvaluationTests::Run();
+    TacticsTests::Run();
+    SpeedTest::Run();
     time(&end);
 
     PrintTestDuration(start, end, "Tests were run in %.2lf seconds");

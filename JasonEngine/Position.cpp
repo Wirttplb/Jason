@@ -263,6 +263,13 @@ std::vector<Piece> Position::GetPiecesToPlay() const
 	return pieces;
 }
 
+std::vector<Move> Position::GetMovesVector() const
+{
+	std::vector<Move> moves;
+	moves.insert(moves.end(), m_Moves.begin(), m_Moves.begin() + m_MovesIdx);
+	return moves;
+}
+
 std::vector<std::pair<Piece, Piece>> Position::GetPieceMoves() const
 {
 	std::vector<std::pair<Piece, Piece>> moves;
@@ -310,7 +317,8 @@ void Position::Update(Move& move)
 		UpdateEnPassantSquare(move);
 		m_IsWhiteToPlay = !m_IsWhiteToPlay;
 		m_ZobristHash ^= ZobristHash::GetBlackToMoveKey();
-		GetMoves().push_back(move);
+		m_Moves[m_MovesIdx] = move;
+		m_MovesIdx++;
 		return;
 	}
 
@@ -460,7 +468,8 @@ void Position::Update(Move& move)
 	m_ZobristHash ^= ZobristHash::GetBlackToMoveKey();
 	CommitToHistory();
 
-	GetMoves().push_back(move);
+	m_Moves[m_MovesIdx] = move;
+	m_MovesIdx++;
 }
 
 void Position::Undo(const Move& move)
@@ -472,7 +481,7 @@ void Position::Undo(const Move& move)
 		UndoEnPassantSquare(move);
 		m_IsWhiteToPlay = !m_IsWhiteToPlay;
 		m_ZobristHash ^= ZobristHash::GetBlackToMoveKey();
-		GetMoves().pop_back();
+		m_MovesIdx--;
 		return;
 	}
 
@@ -565,7 +574,7 @@ void Position::Undo(const Move& move)
 			m_HasBlackCastled = false;
 	}
 
-	GetMoves().pop_back();
+	m_MovesIdx--;
 
 	m_IsWhiteToPlay = !m_IsWhiteToPlay;
 	m_ZobristHash ^= ZobristHash::GetBlackToMoveKey();
