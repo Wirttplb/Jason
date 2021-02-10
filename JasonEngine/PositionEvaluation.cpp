@@ -45,7 +45,7 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 		{
 			double score = position.IsWhiteToPlay() ? -Mate : Mate;
 			//add correction so M1 > M2 etc
-			score += (position.IsWhiteToPlay() ? 1.0 : -1.0) * static_cast<int>(position.GetNumberOfMoves());
+			score += (position.IsWhiteToPlay() ? 1.0 : -1.0) * static_cast<int>(position.GetMoves().size());
 			return score;
 		}
 		default:
@@ -56,7 +56,7 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 	double score = CountMaterial(position, true) - CountMaterial(position, false);
 
 	//Check development
-	if (position.GetNumberOfMoves() < 25)
+	if (position.GetMoves().size() < 25)
 	{
 		score += GetUndevelopedPiecesPunishment(position, true);
 		score -= GetUndevelopedPiecesPunishment(position, false);
@@ -87,9 +87,9 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 
 	//Penalty for moving same pieces twice
 	//Removal of this makes tacticsTest fails (tactic2200)... should investigate!
-	if (position.GetNumberOfMoves() > 3)
+	if (position.GetMoves().size() > 3)
 	{
-		const int lastIdx = static_cast<int>(position.GetNumberOfMoves()) - 1;
+		const int lastIdx = static_cast<int>(position.GetMoves().size()) - 1;
 		if (position.GetMoves()[lastIdx].GetFromSquare() == position.GetMoves()[lastIdx - 2].GetToSquare())
 			score += (position.IsWhiteToPlay() ? SamePieceTwicePunishment : -SamePieceTwicePunishment);
 	}
@@ -119,7 +119,7 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 	score -= CountBlockedEorDPawns(position, false) * Blocking_d_or_ePawnPunishment;
 
 	//Castling bonus: castling improves score during opening, importance of castling decays during the game
-	const double castleBonus = CastlingBonus * std::max(0.0, 40.0 - static_cast<double>(position.GetNumberOfMoves())) * 0.025; //0.025 = 1/40
+	const double castleBonus = CastlingBonus * std::max(0.0, 40.0 - static_cast<double>(position.GetMoves().size())) * 0.025; //0.025 = 1/40
 	if (position.HasWhiteCastled())
 		score += castleBonus;
 	if (position.HasBlackCastled())

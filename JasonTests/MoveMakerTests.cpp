@@ -67,7 +67,7 @@ void MoveMakerTests::Run()
 	success = moveMaker.MakeMove(position, move);
 	double score = 0.0;
 	success = moveMaker.MakeMove(position, 2, score); //only one move draws and avoids mate in 1
-	ASSERT(position.GetMovesVector().back().GetTo().m_Square == f8);
+	ASSERT(position.GetMoves().back().GetTo().m_Square == f8);
 	ASSERT(abs(score - 0.0) < 0.0000001);
 
 	position = Position("3n2K1/6q1/6k1/8/8/8/8/8 w - - 0 1"); //This is a checkmate
@@ -79,14 +79,14 @@ void MoveMakerTests::Run()
 	move = Move(PieceType::King, a8, g8);
 	position.Update(move);
 	success = moveMaker.MakeMove(position, 3, score); //should avoid Qg7# as it "draws"
-	ASSERT(position.GetMovesVector().back().GetTo().m_Square != g7);
+	ASSERT(position.GetMoves().back().GetTo().m_Square != g7);
 
 	const Position position2("5Q2/7k/8/8/8/8/8/K5R1 w - - 0 1");
 	position = Position("7k/5P2/8/8/8/8/8/K5R1 w - - 0 1");
 	position.CommitToHistory(position2.GetZobristHash()); //commit twice
 	position.CommitToHistory(position2.GetZobristHash());
 	success = moveMaker.MakeMove(position, 3, score); //should avoid f8=Q as it "draws"
-	ASSERT(position.GetMovesVector().back().GetTo().m_Square != f8);
+	ASSERT(position.GetMoves().back().GetTo().m_Square != f8);
 
 	//Same with an available transposition table entry whose best move should be discarded
 	position = Position("7k/5P2/8/8/8/8/8/K5R1 w - - 0 1");
@@ -101,5 +101,5 @@ void MoveMakerTests::Run()
 	moveMaker.m_TranspositionTable[transpositionTableKey].m_BestMove = Move(PieceType::Pawn, PieceType::Queen, f7, f8);
 	moveMaker.m_TranspositionTable[transpositionTableKey].m_Flag = TranspositionTableEntry::Flag::Exact;
 	success = moveMaker.MakeMove(position, 3, score);
-	ASSERT(position.GetMovesVector().back().GetTo().m_Square != f8);
+	ASSERT(position.GetMoves().back().GetTo().m_Square != f8);
 }

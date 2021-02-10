@@ -42,8 +42,8 @@ void ZobristTests::Run()
 	}
 
 	//undo all moves
-	std::vector<Move> moves = newPosition.GetMovesVector();
-	for (std::vector<Move>::reverse_iterator rit = moves.rbegin(); rit != moves.rend(); ++rit)
+	MoveList moves = newPosition.GetMoves();
+	for (std::array<Move, MaxPly>::const_reverse_iterator rit = moves.rbegin(); rit != moves.rend(); ++rit)
 	{
 		newPosition.Undo(*rit);
 
@@ -71,8 +71,8 @@ void ZobristTests::Run()
 	}
 
 	//undo all moves
-	moves = newPosition.GetMovesVector();
-	for (std::vector<Move>::reverse_iterator rit = moves.rbegin(); rit != moves.rend(); ++rit)
+	moves = newPosition.GetMoves();
+	for (std::array<Move, MaxPly>::const_reverse_iterator rit = moves.rbegin(); rit != moves.rend(); ++rit)
 	{
 		newPosition.Undo(*rit);
 
@@ -100,8 +100,8 @@ void ZobristTests::Run()
 	}
 
 	//undo all moves
-	moves = newPosition.GetMovesVector();
-	for (std::vector<Move>::reverse_iterator rit = moves.rbegin(); rit != moves.rend(); ++rit)
+	moves = newPosition.GetMoves();
+	for (std::array<Move, MaxPly>::const_reverse_iterator rit = moves.rbegin(); rit != moves.rend(); ++rit)
 	{
 		newPosition.Undo(*rit);
 

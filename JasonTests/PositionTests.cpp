@@ -26,8 +26,8 @@ void PositionTests::Run()
 	position.Update(move);
 	ASSERT(position.GetZobristHash() == position.ComputeZobristHash());
 
-	std::vector<Move> moves = position.GetMovesVector();
-	for (std::vector<Move>::reverse_iterator rit = moves.rbegin(); rit != moves.rend(); ++rit)
+	MoveList moves = position.GetMoves();
+	for (MoveList<MaxPly>::const_reverse_iterator rit = moves.rbegin(); rit != moves.rend(); ++rit)
 	{
 		position.Undo(*rit);
 

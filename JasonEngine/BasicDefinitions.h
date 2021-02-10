@@ -270,6 +270,69 @@ private:
 	uint64_t m_Move = 0;
 };
 
+/// <summary>Move list for move generation output and move history storage</summary>
+template<size_t N>
+class MoveList
+{
+public:
+	const Move& operator[](size_t i) const
+	{
+		return m_Moves[i];
+	}
+
+	void push_back(const Move& move)
+	{
+		m_Moves[m_Size] = move;
+		m_Size++;
+	}
+
+	void pop_back()
+	{
+		m_Size--;
+	}
+
+	size_t size() const
+	{
+		return m_Size;
+	}
+
+	bool empty() const
+	{
+		return m_Size == 0;
+	}
+
+	const Move& back() const
+	{
+		return m_Moves[m_Size - 1];
+	}
+
+	typedef typename std::array<Move, N>::const_iterator const_iterator;
+	const_iterator begin() const
+	{
+		return m_Moves.begin();
+	}
+
+	const_iterator end() const
+	{
+		return m_Moves.begin() + m_Size;
+	}
+
+	typedef typename std::array<Move, N>::const_reverse_iterator const_reverse_iterator;
+	const_reverse_iterator rbegin() const
+	{
+		return m_Moves.rend() - m_Size;
+	}
+
+	const_reverse_iterator rend() const
+	{
+		return m_Moves.rend();
+	}
+
+private:
+	std::array<Move, N> m_Moves;
+	size_t m_Size = 0;
+};
+
 static const Move WhiteKingSideCastle(PieceType::King, e1, g1);
 static const Move WhiteQueenSideCastle(PieceType::King, e1, c1);
 static const Move BlackKingSideCastle(PieceType::King, e8, g8);

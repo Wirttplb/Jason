@@ -14,7 +14,7 @@ public:
 		std::ofstream myfile;
 		myfile.open("D:\\work\\Jason\\Jason\\Debug\\ANTest.txt");
 
-		std::vector<Move> moves = position.GetMovesVector();
+		MoveList moves = position.GetMoves();
 		for (const Move& move : moves)
 		{
 			myfile << NotationParser::TranslateToAlgebraic(move) << " ";

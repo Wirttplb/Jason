@@ -14,7 +14,7 @@ static void MoveCursorUp()
 
 static void PrintLastMove(const Position& position)
 {
-    std::vector<Move> moves = position.GetMovesVector();
+    MoveList moves = position.GetMoves();
     if (moves.empty())
     {
         assert(position.GetMoves().empty());
