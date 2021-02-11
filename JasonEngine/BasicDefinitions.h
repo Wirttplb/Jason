@@ -4,6 +4,7 @@
 
 constexpr size_t MaxMoves = 256;
 constexpr size_t MaxPly = 256;
+constexpr size_t PerftMaxDepth = 7;
 
 /// <summary> Simple enum for square indices </summary>
 /// <remark> x = s % 8, y = s / 8 ; +-1 to move along x, +-8 to move along y </remark>
@@ -70,6 +71,11 @@ public:
 	{
 		m_Move = static_cast<uint64_t>((from & 0x3f) | ((to & 0x3f) << 6) | ((static_cast<int>(fromType) & 0x7) << 12) | ((static_cast<int>(toType) & 0x7) << 15));
 	};
+
+	void Reset()
+	{
+		m_Move = 0;
+	}
 
 	/// <remark>Slow operator, only for tests</remark>
 	bool operator==(const Move& move) const
@@ -283,12 +289,6 @@ public:
 		m_Size = list.size();
 	}
 
-	//template <typename... T>
-	//MoveList(T... ts) : m_Moves{ ts... }
-	//{
-	//	m_Size = ts.size();
-	//}
-
 	const Move& operator[](size_t i) const
 	{
 		return m_Moves[i];
@@ -310,9 +310,19 @@ public:
 		m_Size--;
 	}
 
+	void resize(size_t n)
+	{
+		m_Size = n;
+	}
+
 	size_t size() const
 	{
 		return m_Size;
+	}
+
+	void clear()
+	{
+		m_Size = 0;
 	}
 
 	bool empty() const
@@ -375,7 +385,7 @@ public:
 		m_Size += std::distance(first, last);
 	}
 
-private:
+//private:
 	std::array<Move, N> m_Moves;
 	size_t m_Size = 0;
 };

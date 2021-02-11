@@ -8,26 +8,30 @@ public:
 	/// <returns>All legal moves for every piece for a given position, a move being the positions before and after of a piece (and type because of queening)</returns>
 	static void GetLegalMovesFromBitboards(Position& position, MoveList<MaxMoves>& allLegalMoves);
 
-	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
-	static std::vector<Move> GetLegalMovesFromBitboards(Position& position, PieceType type, Square square, bool isWhitePiece);
+	/// <summary>Returns legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</summary>
+	/// <param name="append">true to append and keep</param>
+	/// <param name="legalMoves">move list where new moves will be appended</param>
+	static void GetLegalMovesFromBitboards(Position& position, PieceType type, Square square, bool isWhitePiece, MoveList<MaxMoves>& legalMoves);
 
 	/// <summary>Returns Bitboard of accessible pseudo-legal squares, used for controlled squares enumeration</summary>
 	/// <param name="pawnAttackSquares">if true will return only pawn attack squares without checking enemy presence ("controlled squares")</param>
 	static Bitboard GetPseudoLegalSquaresFromBitboards(Position& position, bool isWhite, bool pawnControlledSquares);
-	static std::vector<Move> GetPseudoLegalMovesFromBitboards(Position& position);
 	
 	/// <returns>All pseudo legal moves to-squares for pieces of type whose position is described by bitboard</returns>
 	/// <param name="pawnAttackSquares">if true will return only pawn attack squares without checking enemy presence ("controlled squares")</param>
 	static Bitboard GetPseudoLegalBitboardMoves(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece, bool pawnControlledSquares);
 	
-	/// <returns>All pseudo legal moves for pieces of type whose position is described by bitboard</returns>
-	static std::vector<Move> GetPseudoLegalMovesFromBitboards(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece);
+	/// <summary>Get all pseudo legal moves for pieces of type whose position is described by bitboard</summary>
+	/// <param name="legalMoves">mves list where new pseudo legal moves will be appended</param>
+	static void GetPseudoLegalMovesFromBitboards(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece, MoveList<MaxMoves>& legalMoves);
 
 	/// <summary>Returns number of nodes at given depth</summary>
-	static size_t Perft(Position& position, int depth);
+	/// <param name = "moveLists">move lists (1 for each depth), should be statically allocated</param>
+	static size_t Perft(Position& position, int depth, std::array<MoveList<MaxMoves>, PerftMaxDepth>& moveLists);
 
 	/// <summary>Returns set of unique zobrist keys at given depth (unique positions)</summary>
-	static std::unordered_set<uint64_t> UniquePerft(Position& position, int depth);
+	/// <param name = "moveLists">move lists (1 for each depth), should be statically allocated</param>
+	static std::unordered_set<uint64_t> UniquePerft(Position& position, int depth, std::array<MoveList<MaxMoves>, PerftMaxDepth>& moveLists);
 
 	static bool IsKingInCheckFromBitboards(const Position& position, bool isWhiteKing);
 

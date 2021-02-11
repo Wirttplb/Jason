@@ -5,11 +5,11 @@
 #include "TestsUtility.h"
 #include "NotationParser.h"
 
+static MoveMaker moveMaker;
 static void RunPosition(Position& position, int maxMoves, int evaluationDepth)
 {
 	int moveCount = 0;
 	bool moveFound = true;
-	MoveMaker moveMaker;
 	double score = 0.0; //ignored
 	while (moveFound && moveCount < maxMoves)
 	{
