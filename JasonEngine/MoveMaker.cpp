@@ -317,7 +317,7 @@ double MoveMaker::QuiescentSearch(Position& position, int ply, double alpha, dou
 double MoveMaker::EvaluatePosition(Position& position, int ply)
 {
 	MoveMaker::CheckGameOver(position, ply);
-	const double score = PositionEvaluation::EvaluatePosition(position);
+	const double score = PositionEvaluation::EvaluatePosition(position, ply);
 	position.SetGameStatus(Position::GameStatus::Running);
 	return score;
 }
@@ -346,7 +346,18 @@ void MoveMaker::SortMoves(const Position& position, int ply, MoveList<MaxMoves>&
 
 bool MoveMaker::MovesSorter(const Position& position, int ply, const Move& move1, const Move& move2)
 {
-	//Most Valuable Victim - Least Valuable Aggressor heuristic
+	//Check capture of last moved piece
+	if (!position.GetMoves().empty())
+	{
+		const bool isMove1Recapture = move1.GetToSquare() == position.GetMoves().back().GetToSquare();
+		const bool isMove2Recapture = move2.GetToSquare() == position.GetMoves().back().GetToSquare();
+		if (isMove1Recapture && !isMove2Recapture)
+			return true;
+		else if (isMove1Recapture && isMove2Recapture)
+			return move1.GetFromType() < move2.GetFromType(); //LVA
+	}
+
+	//Check all other captures with Most Valuable Victim - Least Valuable Aggressor heuristic
 	Bitboard toSquare1(move1.GetToSquare());
 	Bitboard toSquare2(move2.GetToSquare());
 	const Bitboard& enemyPieces = (position.IsWhiteToPlay() ? position.GetBlackPieces() : position.GetWhitePieces());

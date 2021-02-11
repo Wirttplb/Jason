@@ -35,7 +35,7 @@ static constexpr double KingSquaresAttackBonusFactor = 5.0; //Factor to multiply
 
 static constexpr double SamePieceTwicePunishment = -50.0; //Penaly for moving same piece twice in opening
 
-double PositionEvaluation::EvaluatePosition(Position& position)
+double PositionEvaluation::EvaluatePosition(Position& position, int ply)
 {
 	//Check checkmate/stalemate
 	switch (position.GetGameStatus())
@@ -46,7 +46,7 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 		{
 			double score = position.IsWhiteToPlay() ? -Mate : Mate;
 			//add correction so M1 > M2 etc
-			score += (position.IsWhiteToPlay() ? 1.0 : -1.0) * static_cast<int>(position.GetMoves().size());
+			score += (position.IsWhiteToPlay() ? 1.0 : -1.0) * ply;
 			return score;
 		}
 		default:
@@ -156,6 +156,15 @@ bool PositionEvaluation::IsPositionQuiet(const Position& position)
 	//	(position.GetMoves().size() < 3) || !(position.GetMoves().end() - 3)->IsCapture());// &&
 		//!MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()));
 	return false;
+}
+
+std::optional<int> PositionEvaluation::GetMovesToMate(double score)
+{
+	std::optional<int> count;
+	const double diff = (Mate - abs(score));
+	if (diff < MaxPly)
+		count = static_cast<int>(ceil(diff / 2.0));
+	return count;
 }
 
 double PositionEvaluation::CountMaterial(const Position& position, bool isWhite)

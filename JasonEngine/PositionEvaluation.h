@@ -12,9 +12,12 @@ public:
 	/// Evaluate a position at depth 0, tactics won't be taken into account
 	/// </summary>
 	/// <returns>Score (>0 for white advantage, <0 for black), 100.0 is value of a pawn</returns>
-	static double EvaluatePosition(Position& position);
+	static double EvaluatePosition(Position& position, int ply);
 
 	static bool IsPositionQuiet(const Position& position);
+
+	/// <returns>Number of moves (not plies) to mate</returns>
+	static std::optional<int> GetMovesToMate(double score);
 
 private:
 	static double CountMaterial(const Position& position, bool isWhite);

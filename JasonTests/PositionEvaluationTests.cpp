@@ -2,8 +2,35 @@
 #include "PositionEvaluation.h"
 #include "TestsUtility.h"
 
+void TestMovesToMate()
+{
+	std::optional<int> movesToMate;
+	movesToMate = PositionEvaluation::GetMovesToMate(1000000);
+	ASSERT(*movesToMate == 0);
+
+	movesToMate = PositionEvaluation::GetMovesToMate(999999);
+	ASSERT(*movesToMate == 1);
+
+	movesToMate = PositionEvaluation::GetMovesToMate(999998);
+	ASSERT(*movesToMate == 1);
+
+	movesToMate = PositionEvaluation::GetMovesToMate(999997);
+	ASSERT(*movesToMate == 2);
+
+	movesToMate = PositionEvaluation::GetMovesToMate(999996);
+	ASSERT(*movesToMate == 2);
+
+	movesToMate = PositionEvaluation::GetMovesToMate(999995);
+	ASSERT(*movesToMate == 3);
+
+	movesToMate = PositionEvaluation::GetMovesToMate(12345);
+	ASSERT(!movesToMate.has_value());
+}
+
 void PositionEvaluationTests::Run()
 {
+	TestMovesToMate();
+
 	static Position position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	ASSERT(PositionEvaluation::CountDoubledPawns(position, true) == 0);
 	ASSERT(PositionEvaluation::CountDoubledPawns(position, false) == 0);

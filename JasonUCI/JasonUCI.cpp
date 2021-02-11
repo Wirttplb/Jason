@@ -102,7 +102,6 @@ int main()
 					else
 					{
 						std::cout << "invalid move string!" << std::endl;
-						WriteToFile("noinvalid move string error");
 						return 1;
 					}
 				}
@@ -121,15 +120,17 @@ int main()
 			if (!moveFound)
 			{
 				std::cout << "no move found, game has already ended!" << std::endl;
-				WriteToFile("no move found error");
 				return 1;
 			}
 
 			const std::string moveString = NotationParser::TranslateToUciString(position.GetMoves().back());
 			std::cout << "bestmove " << moveString << std::endl;
-			std::cout << "info score cp " << static_cast<int>(score) << std::endl;
-			WriteToFile("bestmove " + moveString);
-			WriteToFile("info score cp " + std::to_string(score));
+
+			std::cout << "info score cp " << static_cast<int>(score);
+			std::optional<int> mateCount = PositionEvaluation::GetMovesToMate(score);
+			if (mateCount.has_value())
+				std::cout << " mate " << *mateCount;
+			std::cout << std::endl;
 		}
 		else if (line == "stop")
 		{
