@@ -183,55 +183,6 @@ static Bitboard GenerateRookAttacks(int fromSquare, const Bitboard& occupancy)
 	return rowAttacks | fileAttacks;
 }
 
-static constexpr std::array<Bitboard, 8> GenerateFilesOnRightOf()
-{
-	std::array<Bitboard, 8> result;
-	for (int f = 0; f < 8; f++)
-	{
-		result[f] = GetFilesOnRight(f);
-	}
-
-	return result;
-}
-
-static constexpr std::array<Bitboard, 8> GenerateFilesOnLeftOf()
-{
-	std::array<Bitboard, 8> result;
-	for (int f = 0; f < 8; f++)
-	{
-		result[f] = GetFilesOnLeft(f);
-	}
-
-	return result;
-}
-
-static constexpr std::array<Bitboard, 8> GenerateRowsUnderOf()
-{
-	std::array<Bitboard, 8> result;
-	for (int r = 0; r < 8; r++)
-	{
-		result[r] = GetRowsUnder(r);
-	}
-
-	return result;
-}
-
-static constexpr std::array<Bitboard, 8> GenerateRowsAboveOf()
-{
-	std::array<Bitboard, 8> result;
-	for (int r = 0; r < 8; r++)
-	{
-		result[r] = GetRowsAbove(r);
-	}
-
-	return result;
-}
-
-static const std::array<Bitboard, 8> FilesOnRight = GenerateFilesOnRightOf();
-static const std::array<Bitboard, 8> FilesOnLeft = GenerateFilesOnLeftOf();
-static const std::array<Bitboard, 8> RowsUnder = GenerateRowsUnderOf();
-static const std::array<Bitboard, 8> RowsAbove = GenerateRowsAboveOf();
-
 /// <summary> Generates bishop attacks from square index and occupancy </summary>
 static Bitboard GenerateBishopAttacks(int fromSquare, const Bitboard& occupancy)
 {

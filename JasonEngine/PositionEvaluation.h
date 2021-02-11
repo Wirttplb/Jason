@@ -28,6 +28,7 @@ private:
 	static int CountDoubledPawns(const Position& position, bool isWhite);
 	static int CountCenterPawns(const Position& position, bool isWhite);
 	static int CountIsolatedPawns(const Position& position, bool isWhite);
+	static int CountBackwardsPawns(const Position& position, bool isWhite);
 	static double GeAdvancedPawnsBonus(const Position& position, bool isWhite);
 	static int CountBlockedEorDPawns(const Position& position, bool isWhite);
 

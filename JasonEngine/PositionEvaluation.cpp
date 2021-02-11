@@ -14,6 +14,7 @@ static constexpr double CastlingBonus = 50.0;
 static constexpr double CenterPawnBonus = 40.0;
 static constexpr double DoubledPawnPunishment = -20.0; //40 for a pair
 static constexpr double IsolatedPawnPunishment = -40.0;
+static constexpr double BackwardsPawnPunishment = -20.0;
 static constexpr std::array<double, 3> AdvancedPawnBonus = {30.0, 50.0, 60.0}; //on rows 5, 6, 7 or 4, 3, 2
 
 static constexpr double KnightEndgamePunishment = -10.0;
@@ -107,8 +108,14 @@ double PositionEvaluation::EvaluatePosition(Position& position)
 	//Isolated pawn punishment
 	int whiteIsolatedPawns = CountIsolatedPawns(position, true);
 	int blackIsolatedPawns = CountIsolatedPawns(position, false);
-	score += static_cast<double>(whiteDoubledPawns) * IsolatedPawnPunishment;
-	score -= static_cast<double>(blackDoubledPawns) * IsolatedPawnPunishment;
+	score += static_cast<double>(whiteIsolatedPawns) * IsolatedPawnPunishment;
+	score -= static_cast<double>(blackIsolatedPawns) * IsolatedPawnPunishment;
+
+	//Backwards pawn punishment
+	int whiteBackwardsPawns = CountBackwardsPawns(position, true);
+	int blackBackwardsPawns = CountBackwardsPawns(position, false);
+	score += static_cast<double>(whiteBackwardsPawns) * BackwardsPawnPunishment;
+	score -= static_cast<double>(blackBackwardsPawns) * BackwardsPawnPunishment;
 
 	//Advanced pawns bonus
 	score += GeAdvancedPawnsBonus(position, true);
@@ -240,6 +247,41 @@ int PositionEvaluation::CountIsolatedPawns(const Position& position, bool isWhit
 		const int countOnFile = pawnsOnFile.CountSetBits();
 		if (countOnFile == pawnsOnSideBySideFiles.CountSetBits())
 			count += countOnFile;
+	}
+
+	return count;
+}
+
+int PositionEvaluation::CountBackwardsPawns(const Position& position, bool isWhite)
+{
+	int count = 0;
+	const Bitboard& pawns = isWhite ? position.GetWhitePawns() : position.GetBlackPawns();
+	const Bitboard& enemyPawns = isWhite ? position.GetBlackPawns() : position.GetWhitePawns();
+	for (int i = 0; i <= 7; i++)
+	{
+		const Bitboard pawnsOnSemiOpenFile = pawns & (((enemyPawns & _files[i]) > 0) ? Bitboard() : _files[i]);
+		//check absence of friend pawns behind and on the sides
+		Bitboard sideFiles;
+		if (i > 0)
+			sideFiles |= _files[i - 1];
+		if (i < 7)
+			sideFiles |= _files[i + 1];
+
+		//loop over set bits
+		uint64_t bitset = pawnsOnSemiOpenFile;
+		while (bitset != 0)
+		{
+			const uint64_t t = bitset & (~bitset + 1);
+			const int idx = static_cast<int>(_tzcnt_u64(bitset));
+			const int row = idx >> 3;// or / 8
+
+			Bitboard rowsBehind = (isWhite ? RowsUnder[row] : RowsAbove[row]);
+			Bitboard pawnsBehind = (pawns & sideFiles & rowsBehind);
+			if (!pawnsBehind)
+				count++;
+
+			bitset ^= t;
+		}
 	}
 
 	return count;
