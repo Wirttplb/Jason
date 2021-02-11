@@ -35,42 +35,50 @@ void SpeedTest::Run()
 	time_t end;
 
 	time(&start);
-	RunPosition(position1, 1, 7); //should take < 10s
+	RunPosition(position1, 1, 7);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest1: %.2lf seconds.");
+	ASSERT(difftime(end, start) < 10.0);
 
 	time(&start);
-	RunPosition(position2, 1, 6); //should take < 10s
+	RunPosition(position2, 1, 6);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest2: %.2lf seconds.");
+	ASSERT(difftime(end, start) < 25.0);
 
 	time(&start);
-	RunPosition(position3, 1, 6); //should take < 20
+	RunPosition(position3, 1, 6);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest3: %.2lf seconds.");
+	ASSERT(difftime(end, start) < 15.0);
 
 	time(&start);
-	RunPosition(position4, 1, 7); //should take < 10s
+	RunPosition(position4, 1, 7);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest4: %.2lf seconds.");
+	ASSERT(difftime(end, start) < 15.0);
 
 	time(&start);
-	RunPosition(position5, 1, 7); //should take < 15s
+	RunPosition(position5, 1, 7);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest5: %.2lf seconds.");
+	ASSERT(difftime(end, start) < 10.0);
 
 	time(&start);
-	RunPosition(position6, 1, 8); //should take < 15s
+	RunPosition(position6, 1, 8);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest6: %.2lf seconds.");
+	ASSERT(difftime(end, start) < 3.0);
 
 	time(&start);
-	RunPosition(position7, 1, 14); //should take < 15s
+	RunPosition(position7, 1, 14);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest7: %.2lf seconds.");
+	ASSERT(difftime(end, start) < 3.0);
 
 	time(&start);
-	RunPosition(position8, 1, 10); //should take < 5s
+	RunPosition(position8, 1, 10);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest8: %.2lf seconds.");
+	ASSERT(difftime(end, start) < 3.0);
 }

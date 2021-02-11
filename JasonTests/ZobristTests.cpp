@@ -244,5 +244,4 @@ void ZobristTests::Run()
 	newPosition.Undo(move2);
 	newPosition.Undo(move1);
 	ASSERT(newPosition.GetZobristHash() == startingPosition.GetZobristHash());
-	count++;
 }

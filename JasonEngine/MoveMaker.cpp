@@ -21,6 +21,7 @@ std::optional<Move> MoveMaker::FindMove(Position& position, int depth, double& s
 	constexpr double beta = std::numeric_limits<double>::max();
 	std::optional<Move> bestMove;
 	const bool allowNullMove = true;
+	m_KillerMoves = {};
 
 	score = (position.IsWhiteToPlay() ? 1.0 : -1.0) * AlphaBetaNegamax(position, depth, 0, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
 		
@@ -168,7 +169,7 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, doubl
 		return (maximizeWhite ? 1.0 : -1.0) * EvaluatePosition(position, ply);
 
 	//Sort moves
-	SortMoves(position, childMoves);
+	SortMoves(position, ply, childMoves);
 
 	//Search child nodes
 	double value = std::numeric_limits<double>::lowest();
@@ -188,7 +189,16 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, doubl
 		alpha = std::max(alpha, value);
 
 		if (alpha >= beta)
+		{
+			//Store killer move
+			if (!childMove.IsCapture())
+			{
+				std::rotate(m_KillerMoves[ply].begin(), m_KillerMoves[ply].end() - 1, m_KillerMoves[ply].end());
+				m_KillerMoves[ply][0] = childMove;
+			}
+
 			break;//cutoff
+		}
 	}
 
 	//Transposition Table Store
@@ -280,7 +290,7 @@ double MoveMaker::QuiescentSearch(Position& position, int ply, double alpha, dou
 		return standPat;
 
 	//Sort moves
-	SortMoves(position, childMoves);
+	SortMoves(position, ply, childMoves);
 
 	//Search child capture nodes
 	for (Move& childMove : childMoves)
@@ -312,11 +322,9 @@ double MoveMaker::EvaluatePosition(Position& position, int ply)
 	return score;
 }
 
-void MoveMaker::SortMoves(const Position& position, MoveList<MaxMoves>& moves)
+void MoveMaker::SortMoves(const Position& position, int ply, MoveList<MaxMoves>& moves)
 {
-	std::sort(moves.begin(), moves.end(), [&position](const Move& move1, const Move& move2)->bool { return MovesSorter(position, move1, move2); });
-	
-	//Killer Moves heuristic to add...
+	std::sort(moves.begin(), moves.end(), [&position, &ply, this](const Move& move1, const Move& move2)->bool { return MovesSorter(position, ply, move1, move2); });
 
 	//Best move from previous iteration is picked as best guess
 	const size_t transpositionTableKey = GetTranspositionTableKey(position);
@@ -336,7 +344,7 @@ void MoveMaker::SortMoves(const Position& position, MoveList<MaxMoves>& moves)
 	}
 }
 
-bool MoveMaker::MovesSorter(const Position& position, const Move& move1, const Move& move2)
+bool MoveMaker::MovesSorter(const Position& position, int ply, const Move& move1, const Move& move2)
 {
 	//Most Valuable Victim - Least Valuable Aggressor heuristic
 	Bitboard toSquare1(move1.GetToSquare());
@@ -357,6 +365,12 @@ bool MoveMaker::MovesSorter(const Position& position, const Move& move1, const M
 		else if (toSquare2 & enemyPieces)
 			return false;
 	}
+
+	//Killer Moves
+	const bool isMove1Killer = std::find(m_KillerMoves[ply].begin(), m_KillerMoves[ply].end(), move1) != m_KillerMoves[ply].end();
+	const bool isMove2Killer = std::find(m_KillerMoves[ply].begin(), m_KillerMoves[ply].end(), move2) != m_KillerMoves[ply].end();
+	if (isMove1Killer && !isMove2Killer)
+		return true;
 
 	return false;
 }

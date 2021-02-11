@@ -6,9 +6,7 @@
 #include "BasicDefinitions.h"
 
 
-/// <summary>
-/// Bitboard representation, Little endian rank-file (LERF)
-/// </summary>
+/// <summary>Bitboard representation, Little endian rank-file (LERF)</summary>
 /// 
 /// Compass Rose for square indices:
 /// noWe         north         noEa
@@ -291,7 +289,7 @@ inline int Bitboard::CountSetBits() const
 {
 	// https://en.wikipedia.org/wiki/Hamming_weight
 	// This is better when most bits in x are 0
-	// This is algorithm works the same for all data sizes.
+	// This algorithm works the same for all data sizes.
 	// This algorithm uses 3 arithmetic operations and 1 comparison/branch per "1" bit in x.
 	int count;
 	uint64_t x = m_Value;
@@ -305,7 +303,7 @@ inline int Bitboard::CountSetBits() const
 
 inline int Bitboard::GetSquare() const
 {
-	return static_cast<int>(_tzcnt_u64(m_Value));// __builtin_ctzll(m_Value);
+	return static_cast<int>(_tzcnt_u64(m_Value));
 }
 
 static constexpr Bitboard _a1(Square::a1);
@@ -726,7 +724,7 @@ static constexpr std::array<Bitboard, 8> GenerateRowsAboveOf()
 	return result;
 }
 
-static const std::array<Bitboard, 8> FilesOnRight = GenerateFilesOnRightOf();
-static const std::array<Bitboard, 8> FilesOnLeft = GenerateFilesOnLeftOf();
-static const std::array<Bitboard, 8> RowsUnder = GenerateRowsUnderOf();
-static const std::array<Bitboard, 8> RowsAbove = GenerateRowsAboveOf();
+static constexpr std::array<Bitboard, 8> FilesOnRight = GenerateFilesOnRightOf();
+static constexpr std::array<Bitboard, 8> FilesOnLeft = GenerateFilesOnLeftOf();
+static constexpr std::array<Bitboard, 8> RowsUnder = GenerateRowsUnderOf();
+static constexpr std::array<Bitboard, 8> RowsAbove = GenerateRowsAboveOf();

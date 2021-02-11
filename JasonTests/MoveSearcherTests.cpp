@@ -431,4 +431,5 @@ void MoveSearcherTests::Run()
 	time_t end;
 	time(&end);
 	PrintTestDuration(start, end, "MoveSearcherTests: %.2lf seconds.");
+	ASSERT(difftime(end, start) < 100.0);
 }

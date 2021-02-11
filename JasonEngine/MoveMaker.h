@@ -26,8 +26,8 @@ public:
 	void CheckGameOver(Position& position, int ply = -1);
 
 protected: //protected for testing
-	static bool MovesSorter(const Position& position, const Move& move1, const Move& move2);
-	void SortMoves(const Position& position, MoveList<MaxMoves>& moves);
+	bool MovesSorter(const Position& position, int ply, const Move& move1, const Move& move2);
+	void SortMoves(const Position& position, int ply, MoveList<MaxMoves>& moves);
 
 	/// <summary>Transposition table entry</summary>
 	struct TranspositionTableEntry
@@ -73,6 +73,8 @@ private:
 	double EvaluatePosition(Position& position, int ply = -1);
 
 	//std::array<std::pair<uint64_t, const MoveList<MaxMoves>*>, 1000> m_LegalMovesTable; //table of legal moves generation results, key is Zobrist hash % size
+
+	std::array<std::array<Move, NbOfKillerMoves>, MaxPly> m_KillerMoves = {};
 
 	///<summary>Generated lists of moves should be statically allocated, we use one such MoveList per search depth</summary>
 	std::array<MoveList<MaxMoves>, MaxPly> m_MoveLists = {};

@@ -105,4 +105,5 @@ void TacticsTests::Run()
 
 	time(&end);
 	PrintTestDuration(start, end, "TacticsTest: %.2lf seconds.");
+	ASSERT(difftime(end, start) < 15.0);
 }

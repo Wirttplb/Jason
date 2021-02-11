@@ -4,6 +4,7 @@
 
 constexpr size_t MaxMoves = 256;
 constexpr size_t MaxPly = 256;
+constexpr size_t NbOfKillerMoves = 2;
 constexpr size_t PerftMaxDepth = 7;
 
 /// <summary> Simple enum for square indices </summary>
@@ -80,7 +81,7 @@ public:
 	/// <remark>Slow operator, only for tests</remark>
 	bool operator==(const Move& move) const
 	{
-		return (GetFrom() == move.GetFrom()) && (GetTo() == move.GetTo()); //m_Move == move.m_Move;
+		return (GetFrom() == move.GetFrom()) && (GetTo() == move.GetTo()); //Can't use m_Move == move.m_Move yet; because of unkown captures 
 	}
 
 	/// <remark>Slow operator, only for tests</remark>
