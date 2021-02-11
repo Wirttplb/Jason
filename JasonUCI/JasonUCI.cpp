@@ -55,7 +55,7 @@ int main()
 	Position position;
 	MoveMaker moveMaker;
 	bool isGameOver = false;
-	int evaluationDepth = 6;
+	int evaluationDepth = 8;
 	double score = 0.0;
 
 	while (std::getline(std::cin, line))
@@ -109,12 +109,12 @@ int main()
 		}
 		else if (line.substr(0, 2) == "go")
 		{
-			size_t depthIdx = line.find("depth");
+			/*size_t depthIdx = line.find("depth");
 			if (depthIdx != std::string::npos)
 			{
 				depthIdx += 6;
 				evaluationDepth = std::stoi(GetFirstWord(line.substr(depthIdx, std::string::npos)));
-			}
+			}*/
 
 			const bool moveFound = moveMaker.MakeMove(position, evaluationDepth, score);
 			if (!moveFound)

@@ -13,9 +13,9 @@
 ///           +7 + 8 + 9
 ///             \  |  /
 ///    west - 1 < -0 -> + 1    east
-///	            /  |  \
-///	         - 9 - 8 - 7
-///	soWe         south         soEa
+///             /  |  \
+///          - 9 - 8 - 7
+/// soWe         south         soEa
 /// 
 class Bitboard
 {
@@ -388,7 +388,7 @@ static constexpr Bitboard _a
 	1, 0, 0, 0, 0, 0, 0, 0,
 	1, 0, 0, 0, 0, 0, 0, 0,
 	1, 0, 0, 0, 0, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard _b
 ({
@@ -400,7 +400,7 @@ static constexpr Bitboard _b
 	0, 1, 0, 0, 0, 0, 0, 0,
 	0, 1, 0, 0, 0, 0, 0, 0,
 	0, 1, 0, 0, 0, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard _c
 ({
@@ -412,7 +412,7 @@ static constexpr Bitboard _c
 	0, 0, 1, 0, 0, 0, 0, 0,
 	0, 0, 1, 0, 0, 0, 0, 0,
 	0, 0, 1, 0, 0, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard _d
 ({
@@ -424,7 +424,7 @@ static constexpr Bitboard _d
 	0, 0, 0, 1, 0, 0, 0, 0,
 	0, 0, 0, 1, 0, 0, 0, 0,
 	0, 0, 0, 1, 0, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard _e
 ({
@@ -436,7 +436,7 @@ static constexpr Bitboard _e
 	0, 0, 0, 0, 1, 0, 0, 0,
 	0, 0, 0, 0, 1, 0, 0, 0,
 	0, 0, 0, 0, 1, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard _f
 ({
@@ -448,7 +448,7 @@ static constexpr Bitboard _f
 	0, 0, 0, 0, 0, 1, 0, 0,
 	0, 0, 0, 0, 0, 1, 0, 0,
 	0, 0, 0, 0, 0, 1, 0, 0
-	});
+});
 
 static constexpr Bitboard _g
 ({
@@ -460,7 +460,7 @@ static constexpr Bitboard _g
 	0, 0, 0, 0, 0, 0, 1, 0,
 	0, 0, 0, 0, 0, 0, 1, 0,
 	0, 0, 0, 0, 0, 0, 1, 0
-	});
+});
 
 static constexpr Bitboard _h
 ({
@@ -472,7 +472,7 @@ static constexpr Bitboard _h
 	0, 0, 0, 0, 0, 0, 0, 1,
 	0, 0, 0, 0, 0, 0, 0, 1,
 	0, 0, 0, 0, 0, 0, 0, 1
-	});
+});
 
 static constexpr Bitboard _8
 ({
@@ -484,7 +484,7 @@ static constexpr Bitboard _8
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard _7
 ({
@@ -496,7 +496,7 @@ static constexpr Bitboard _7
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard _6
 ({
@@ -508,7 +508,7 @@ static constexpr Bitboard _6
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard _5
 ({
@@ -520,7 +520,7 @@ static constexpr Bitboard _5
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard _4
 ({
@@ -532,7 +532,7 @@ static constexpr Bitboard _4
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard _3
 ({
@@ -544,7 +544,7 @@ static constexpr Bitboard _3
 	1, 1, 1, 1, 1, 1, 1, 1,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard _2
 ({
@@ -556,7 +556,7 @@ static constexpr Bitboard _2
 	0, 0, 0, 0, 0, 0, 0, 0,
 	1, 1, 1, 1, 1, 1, 1, 1,
 	0, 0, 0, 0, 0, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard _1
 ({
@@ -568,7 +568,7 @@ static constexpr Bitboard _1
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	1, 1, 1, 1, 1, 1, 1, 1
-	});
+});
 
 static constexpr Bitboard LightSquares
 ({
@@ -580,7 +580,7 @@ static constexpr Bitboard LightSquares
 	0, 1, 0, 1, 0, 1, 0, 1,
 	1, 0, 1, 0, 1, 0, 1, 0,
 	0, 1, 0, 1, 0, 1, 0, 1
-	});
+});
 
 static constexpr Bitboard DarkSquares
 ({
@@ -592,7 +592,7 @@ static constexpr Bitboard DarkSquares
 	1, 0, 1, 0, 1, 0, 1, 0,
 	0, 1, 0, 1, 0, 1, 0, 1,
 	1, 0, 1, 0, 1, 0, 1, 0
-	});
+});
 
 static constexpr Bitboard a1h8
 ({
@@ -604,7 +604,7 @@ static constexpr Bitboard a1h8
 	0, 0, 1, 0, 0, 0, 0, 0,
 	0, 1, 0, 0, 0, 0, 0, 0,
 	1, 0, 0, 0, 0, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard b1h7
 ({
@@ -616,7 +616,7 @@ static constexpr Bitboard b1h7
 	0, 0, 0, 1, 0, 0, 0, 0,
 	0, 0, 1, 0, 0, 0, 0, 0,
 	0, 1, 0, 0, 0, 0, 0, 0
-	});
+});
 
 static constexpr Bitboard c1h6
 ({
@@ -628,11 +628,10 @@ static constexpr Bitboard c1h6
 	0, 0, 0, 0, 1, 0, 0, 0,
 	0, 0, 0, 1, 0, 0, 0, 0,
 	0, 0, 1, 0, 0, 0, 0, 0
-	});
+});
 
 static constexpr std::array<Bitboard, 8> _rows = { _1, _2, _3, _4, _5, _6, _7, _8 };
 static constexpr std::array<Bitboard, 8> _files = { _a, _b, _c, _d, _e, _f, _g, _h };
-static constexpr Bitboard _bcdefg = _b & _c & _d & _e & _f & _g;
 
 ///<remark>Includes the r row</summary>
 static constexpr Bitboard GetRowsAbove(int r)
