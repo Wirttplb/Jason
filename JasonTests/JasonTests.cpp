@@ -20,8 +20,8 @@ int main()
     NotationParserTests::Run();
     PositionTests::Run();
     ZobristTests::Run();
-    //MoveMakerTests::Run();
-    //MoveSearcherTests::Run();
+    MoveMakerTests::Run();
+    MoveSearcherTests::Run();
     PositionEvaluationTests::Run();
     TacticsTests::Run();
     SpeedTest::Run();

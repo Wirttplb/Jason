@@ -535,12 +535,6 @@ void MoveSearcher::GetLegalMovesFromBitboards(Position& position, PieceType type
 
 		legalMoves.resize(queeningMovesIdx);
 	}
-
-	std::vector<Square> toSquares;
-	for (const Move& move : legalMoves)
-	{
-		toSquares.push_back(move.GetToSquare());
-	}
 }
 
 Bitboard MoveSearcher::GetPseudoLegalBitboardMoves(const Position& position, PieceType type, const Bitboard& bitboard, bool isWhitePiece, bool pawnAttackSquares)
