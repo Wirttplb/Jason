@@ -78,7 +78,8 @@ static void TestIllegalCastles()
 {
 	//legal castles
 	Position position("4k3/8/8/8/8/8/8/R3K2R w KQ - 0 1");
-	std::vector<Move> moves = MoveSearcher::GetLegalMovesFromBitboards(position);
+	MoveList<MaxMoves> moves;
+	MoveSearcher::GetLegalMovesFromBitboards(position, moves);
 	int castles = 0;
 	for (const Move& m : moves)
 	{
@@ -90,7 +91,7 @@ static void TestIllegalCastles()
 
 	//pawn controls square
 	position = Position("4k3/8/8/8/8/8/2p3p1/R3K2R w KQ - 0 1");
-	moves = MoveSearcher::GetLegalMovesFromBitboards(position);
+	MoveSearcher::GetLegalMovesFromBitboards(position, moves);
 	castles = 0;
 	for (const Move& m : moves)
 	{
@@ -102,7 +103,7 @@ static void TestIllegalCastles()
 
 	//king in check
 	position = Position("4k3/4r3/8/8/8/8/8/R3K2R w KQ - 0 1");
-	moves = MoveSearcher::GetLegalMovesFromBitboards(position);
+	MoveSearcher::GetLegalMovesFromBitboards(position, moves);
 	castles = 0;
 	for (const Move& m : moves)
 	{
@@ -114,7 +115,7 @@ static void TestIllegalCastles()
 
 	//enemy piece blocks
 	position = Position("4k3/8/8/8/8/8/8/R1n1K1nR w KQ - 0 1");
-	moves = MoveSearcher::GetLegalMovesFromBitboards(position);
+	MoveSearcher::GetLegalMovesFromBitboards(position, moves);
 	castles = 0;
 	for (const Move& m : moves)
 	{
@@ -126,7 +127,7 @@ static void TestIllegalCastles()
 
 	//enemy piece blocks #2
 	position = Position("4k3/8/8/8/8/8/8/R2nKn1R w KQ - 0 1");
-	moves = MoveSearcher::GetLegalMovesFromBitboards(position);
+	MoveSearcher::GetLegalMovesFromBitboards(position, moves);
 	castles = 0;
 	for (const Move& m : moves)
 	{
@@ -138,7 +139,7 @@ static void TestIllegalCastles()
 
 	//enemy piece blocks #3
 	position = Position("4k3/8/8/8/8/6n1/8/Rn2K2R w KQ - 0 1");
-	moves = MoveSearcher::GetLegalMovesFromBitboards(position);
+	MoveSearcher::GetLegalMovesFromBitboards(position, moves);
 	castles = 0;
 	for (const Move& m : moves)
 	{
@@ -150,7 +151,7 @@ static void TestIllegalCastles()
 
 	//friend piece blocks
 	position = Position("4k3/8/8/8/8/8/8/R1N1KN1R w KQ - 0 1");
-	moves = MoveSearcher::GetLegalMovesFromBitboards(position);
+	MoveSearcher::GetLegalMovesFromBitboards(position, moves);
 	castles = 0;
 	for (const Move& m : moves)
 	{

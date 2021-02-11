@@ -328,13 +328,11 @@ static void _GetPseudoLegalMovesFromBitboards(int fromSquare)
 		std::make_move_iterator(newMoves.end()));
 }
 
-std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position)
+void MoveSearcher::GetLegalMovesFromBitboards(Position& position, MoveList<MaxMoves>& allLegalMoves)
 {
+	allLegalMoves = {};
 	if (position.GetHistoryCount() >= 3)
-		return {}; //draw by repetition
-
-	std::vector<Move> allLegalMoves;
-	allLegalMoves.reserve(40); //40 legal moves on average
+		return; //draw by repetition
 
 	const Bitboard& pawns = position.IsWhiteToPlay() ? position.GetWhitePawns() : position.GetBlackPawns();
 	const Bitboard& knights = position.IsWhiteToPlay() ? position.GetWhiteKnights() : position.GetBlackKnights();
@@ -393,7 +391,7 @@ std::vector<Move> MoveSearcher::GetLegalMovesFromBitboards(Position& position)
 		std::make_move_iterator(__moves.begin()),
 		std::make_move_iterator(__moves.end()));
 
-	return allLegalMoves;
+	return;
 }
 
 static bool _isWhite = false;
@@ -1080,7 +1078,8 @@ size_t MoveSearcher::Perft(Position& position, int depth)
 		return 1;
 
 	size_t count = 0;
-	std::vector<Move> moves = GetLegalMovesFromBitboards(position);
+	MoveList<MaxMoves> moves;
+	GetLegalMovesFromBitboards(position, moves);
 
 	for (Move& move : moves)
 	{
@@ -1098,7 +1097,8 @@ std::unordered_set<uint64_t> MoveSearcher::UniquePerft(Position& position, int d
 		return { position.GetZobristHash() };
 
 	std::unordered_set<uint64_t> uniqueNodes;
-	std::vector<Move> legalMoves = GetLegalMovesFromBitboards(position);
+	MoveList<MaxMoves> legalMoves;
+	GetLegalMovesFromBitboards(position, legalMoves);
 	for (Move& legalMove : legalMoves)
 	{
 		position.Update(legalMove);
@@ -1255,7 +1255,8 @@ std::optional<Move> MoveSearcher::GetRandomMove(const Position& position)
 std::optional<Move> MoveSearcher::GetRandomMoveFromBitboards(Position& position)
 {
 	std::optional<Move> move;
-	std::vector<Move> allLegalMoves = GetLegalMovesFromBitboards(position);
+	MoveList<MaxMoves> allLegalMoves;
+	GetLegalMovesFromBitboards(position, allLegalMoves);
 	if (allLegalMoves.empty())
 		return move;
 

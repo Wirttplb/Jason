@@ -63,10 +63,10 @@ void MoveMaker::CheckGameOver(Position& position)
 	if (m_LegalMovesTable[tableKey].first != position.GetZobristHash())
 	{
 		m_LegalMovesTable[tableKey].first = position.GetZobristHash();
-		m_LegalMovesTable[tableKey].second = MoveSearcher::GetLegalMovesFromBitboards(position);
+		MoveSearcher::GetLegalMovesFromBitboards(position, m_LegalMovesTable[tableKey].second);
 	}
 
-	std::vector<Move> allLegalMoves = m_LegalMovesTable[tableKey].second;
+	const MoveList<MaxMoves>& allLegalMoves = m_LegalMovesTable[tableKey].second;
 	if (allLegalMoves.empty())
 	{
 		if (MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()))
@@ -151,9 +151,9 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int initialDepth, int dep
 	if (m_LegalMovesTable[transpositionTableKey].first != position.GetZobristHash())
 	{
 		m_LegalMovesTable[transpositionTableKey].first = position.GetZobristHash();
-		m_LegalMovesTable[transpositionTableKey].second = MoveSearcher::GetLegalMovesFromBitboards(position);
+		MoveSearcher::GetLegalMovesFromBitboards(position, m_LegalMovesTable[transpositionTableKey].second);
 	}
-	std::vector<Move> childMoves = m_LegalMovesTable[transpositionTableKey].second;
+	MoveList<MaxMoves> childMoves = m_LegalMovesTable[transpositionTableKey].second;
 
 	if (childMoves.empty())
 		return (maximizeWhite ? 1.0 : -1.0) * EvaluatePosition(position);
@@ -202,7 +202,8 @@ double MoveMaker::Minimax(Position& position, int depth, bool maximizeWhite, std
 	if (depth == 0)
 		return EvaluatePosition(position);
 
-	std::vector<Move> childMoves = MoveSearcher::GetLegalMovesFromBitboards(position);
+	MoveList<MaxMoves> childMoves;
+	MoveSearcher::GetLegalMovesFromBitboards(position, childMoves);
 	if (childMoves.empty())
 		return EvaluatePosition(position);
 
@@ -259,9 +260,9 @@ double MoveMaker::QuiescentSearch(Position& position, int depth, double alpha, d
 	if (m_LegalMovesTable[tableKey].first != position.GetZobristHash())
 	{
 		m_LegalMovesTable[tableKey].first = position.GetZobristHash();
-		m_LegalMovesTable[tableKey].second = MoveSearcher::GetLegalMovesFromBitboards(position);
+		MoveSearcher::GetLegalMovesFromBitboards(position, m_LegalMovesTable[tableKey].second);
 	}
-	std::vector<Move> childMoves = m_LegalMovesTable[tableKey].second;
+	MoveList<MaxMoves> childMoves = m_LegalMovesTable[tableKey].second;
 
 	if (childMoves.empty())
 		return standPat;
@@ -299,7 +300,7 @@ double MoveMaker::EvaluatePosition(Position& position)
 	return score;
 }
 
-void MoveMaker::SortMoves(const Position& position, std::vector<Move>& moves)
+void MoveMaker::SortMoves(const Position& position, MoveList<MaxMoves>& moves)
 {
 	std::sort(moves.begin(), moves.end(), [&position](const Move& move1, const Move& move2)->bool { return MovesSorter(position, move1, move2); });
 	
@@ -310,7 +311,7 @@ void MoveMaker::SortMoves(const Position& position, std::vector<Move>& moves)
 	if (m_TranspositionTable[transpositionTableKey].m_ZobristHash == position.GetZobristHash())
 	{
 		const Move& previousBest = m_TranspositionTable[transpositionTableKey].m_BestMove;
-		std::vector<Move>::iterator searchIt = std::find(moves.begin(), moves.end(), previousBest);
+		MoveList<MaxMoves>::const_iterator searchIt = std::find(moves.begin(), moves.end(), previousBest);
 		if (searchIt != moves.end())
 		{
 			const size_t searchIdx = searchIt - moves.begin();

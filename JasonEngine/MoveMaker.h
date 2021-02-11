@@ -26,7 +26,7 @@ public:
 
 protected: //protected for testing
 	static bool MovesSorter(const Position& position, const Move& move1, const Move& move2);
-	void SortMoves(const Position& position, std::vector<Move>& moves);
+	void SortMoves(const Position& position, MoveList<MaxMoves>& moves);
 
 	/// <summary>Transposition table entry</summary>
 	struct TranspositionTableEntry
@@ -72,5 +72,8 @@ private:
 	/// <returns>Score (>0 for white advantage, <0 for black), 100.0 is value of a pawn</returns>
 	double EvaluatePosition(Position& position);
 
-	std::array<std::pair<uint64_t, std::vector<Move>>, 1000> m_LegalMovesTable; //table of legal moves generation results, key is Zobrist hash % size
+	std::array<std::pair<uint64_t, MoveList<MaxMoves>>, 1000> m_LegalMovesTable; //table of legal moves generation results, key is Zobrist hash % size
+
+	///<summary>Generated lists of moves should be statically allocated, we use one such MoveList per search depth</summary>
+	//std::array<MoveList<MaxMoves>, MaxPly> m_MoveLists = {};
 };

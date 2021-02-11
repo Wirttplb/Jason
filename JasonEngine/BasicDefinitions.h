@@ -275,7 +275,26 @@ template<size_t N>
 class MoveList
 {
 public:
+	MoveList() = default;
+
+	MoveList(std::initializer_list<Move> list)
+	{
+		std::copy(list.begin(), list.end(), m_Moves.data());
+		m_Size = list.size();
+	}
+
+	//template <typename... T>
+	//MoveList(T... ts) : m_Moves{ ts... }
+	//{
+	//	m_Size = ts.size();
+	//}
+
 	const Move& operator[](size_t i) const
+	{
+		return m_Moves[i];
+	}
+
+	Move& operator[](size_t i)
 	{
 		return m_Moves[i];
 	}
@@ -301,6 +320,16 @@ public:
 		return m_Size == 0;
 	}
 
+	const Move& front() const
+	{
+		return m_Moves[0];
+	}
+
+	Move& front()
+	{
+		return m_Moves[0];
+	}
+
 	const Move& back() const
 	{
 		return m_Moves[m_Size - 1];
@@ -317,6 +346,17 @@ public:
 		return m_Moves.begin() + m_Size;
 	}
 
+	typedef typename std::array<Move, N>::iterator iterator;
+	iterator begin()
+	{
+		return m_Moves.begin();
+	}
+
+	iterator end()
+	{
+		return m_Moves.begin() + m_Size;
+	}
+
 	typedef typename std::array<Move, N>::const_reverse_iterator const_reverse_iterator;
 	const_reverse_iterator rbegin() const
 	{
@@ -326,6 +366,13 @@ public:
 	const_reverse_iterator rend() const
 	{
 		return m_Moves.rend();
+	}
+
+	template <class InputIterator>
+	void insert(iterator position, InputIterator first, InputIterator last)
+	{
+		std::copy(first, last, position);
+		m_Size += std::distance(first, last);
 	}
 
 private:

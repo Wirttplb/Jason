@@ -34,7 +34,7 @@ void MoveMakerTests::Run()
 	Move move6(PieceType::King, e1, d2);
 	Move move7(PieceType::Pawn, c3, d4);
 	Move move8(PieceType::Queen, c7, e7);
-	std::vector<Move> moves = { move5, move3, move1, move8, move6, move2, move4, move7 };
+	MoveList<MaxMoves> moves{ move5, move3, move1, move8, move6, move2, move4, move7 };
 	MoveMakerTests moveMaker;
 	moveMaker.SortMoves(position, moves);
 	ASSERT(moves[0] == move1);

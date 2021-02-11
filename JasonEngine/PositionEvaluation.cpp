@@ -148,6 +148,7 @@ bool PositionEvaluation::IsPositionQuiet(const Position& position)
 	//	((position.GetMoves().size() < 2) || !(position.GetMoves().end() - 2)->IsCapture()) &&
 	//	(position.GetMoves().size() < 3) || !(position.GetMoves().end() - 3)->IsCapture());// &&
 		//!MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()));
+	return false;
 }
 
 double PositionEvaluation::CountMaterial(const Position& position, bool isWhite)

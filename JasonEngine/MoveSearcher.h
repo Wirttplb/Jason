@@ -6,7 +6,7 @@ class MoveSearcher
 {
 public:
 	/// <returns>All legal moves for every piece for a given position, a move being the positions before and after of a piece (and type because of queening)</returns>
-	static std::vector<Move> GetLegalMovesFromBitboards(Position& position);
+	static void GetLegalMovesFromBitboards(Position& position, MoveList<MaxMoves>& allLegalMoves);
 
 	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
 	static std::vector<Move> GetLegalMovesFromBitboards(Position& position, PieceType type, Square square, bool isWhitePiece);
