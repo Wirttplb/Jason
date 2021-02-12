@@ -110,24 +110,6 @@ void MoveMakerTests::RunPrivate()
 	success = moveMaker.MakeMove(position, 4, score); //will not avoid f8=Q because pawn move is irreversible, can't draw
 	ASSERT(position.GetMoves().back().GetTo().m_Square == f8);
 
-	//test undo backup flags
-	//position = Position("1K2Qnk1/5ppp/5ppp/2B5/1P6/P7/8/8 w - - 0 1");
-	//move = Move(PieceType::Bishop, c5, f8);
-	//position.Update(move);
-	//move2 = Move(PieceType::King, g8, h8);
-	//position.Update(move2);
-	//move3 = Move(PieceType::Queen, a4, e8);
-	//position.Update(move3);
-	//move4 = Move();
-	//move4.SetNullMove();
-	//position.Update(move4);
-	//int PliesFromNull = position.m_PliesFromLastNullMove;
-	//int PliesFromIrreversible = position.m_PliesFromLastIrreversibleMove;
-	//position.Undo(move4);
-	//position.Undo(move3);
-	//position.Undo(move2);
-	//position.Undo(move);
-
 	position = Position("1K2Qnk1/5ppp/5ppp/2B5/1P6/P7/8/8 w - - 0 1");
 	move = Move(PieceType::Queen, e8, a4);
 	position.Update(move);

@@ -12,7 +12,6 @@ Position::Position()
 	m_WhiteQueens = _d1;
 	m_WhiteKing= _e1;
 	m_WhitePieces = m_WhitePawns | m_WhiteKnights | m_WhiteBishops | m_WhiteRooks | m_WhiteQueens | m_WhiteKing;
-	//m_WhiteUndevelopedPieces = _1 ^ _e8;
 
 	m_BlackPawns = _7;
 	m_BlackKnights = _b8 | _g8;
@@ -21,7 +20,6 @@ Position::Position()
 	m_BlackQueens = _d8;
 	m_BlackKing = _e8;
 	m_BlackPieces = m_BlackPawns | m_BlackKnights | m_BlackBishops | m_BlackRooks | m_BlackQueens | m_BlackKing;
-	//m_BlackUndevelopedPieces = _8 ^ _e1;
 
 	m_WhitePiecesList.emplace_back(Piece(PieceType::Rook, a1));
 	m_WhitePiecesList.emplace_back(Piece(PieceType::Knight, b1));
@@ -478,7 +476,7 @@ void Position::Update(Move& move)
 
 void Position::Undo(const Move& move)
 {
-	//restore misc backup 
+	//Restore misc backup 
 	m_PliesFromLastIrreversibleMove = move.GetPliesFromLastIrreversibleMoveBackup();
 	m_PliesFromLastNullMove = move.GetPliesFromLastNullMoveBackup();
 
@@ -668,39 +666,16 @@ bool Position::CheckBitboardsSanity() const
 	return isOk;
 }
 
-//void Position::CommitToHistory(uint64_t key)
-//{
-//	m_History[key & 0x3FFF]++;
-//}
-//
-//void Position::CommitToHistory()
-//{
-//	CommitToHistory(m_ZobristHash);
-//}
-//
-//void Position::UncommitToHistory(uint64_t key)
-//{
-//	m_History[key & 0x3FFF]--;
-//}
-//
-//int Position::GetHistoryCount()
-//{
-//	return m_History[m_ZobristHash & 0x3FFF]; //we don't prevent a crash
-//}
-
-const std::array<uint64_t, MaxPly>& Position::GetHistory() const
-{
-	return m_History;
-}
-
 void Position::CommitToHistory()
 {
+	assert(m_Moves.size() < m_History.size());
 	m_History[m_Moves.size()] = m_ZobristHash;
 }
 
 void Position::SetRepetitionInfo()
 {
 	const int currentIdx = static_cast<int>(m_Moves.size());
+	assert(currentIdx < m_RepetitionCount.size());
 	m_RepetitionCount[currentIdx] = 0;
 	int end = std::min(m_PliesFromLastIrreversibleMove, m_PliesFromLastNullMove);
 	if (end >= 4)
@@ -711,60 +686,22 @@ void Position::SetRepetitionInfo()
 			previousIdx -= 2;
 			if (m_History[previousIdx] == m_History[currentIdx])
 			{
-				m_RepetitionCount[currentIdx] = m_RepetitionCount[previousIdx] ? 2 : 1; //negative for 3 repetitions, positive for 2
+				m_RepetitionCount[currentIdx] = m_RepetitionCount[previousIdx] ? 2 : 1;
 				break;
 			}
 		}
 	}
 }
 
-bool Position::IsRepetitionDraw() const//int ply) const
+bool Position::IsRepetitionDraw() const
 {
-	//Check 50 moves rule
-	//if (m_PliesFromLastIrreversibleMove > 99 && (!checkers() || MoveList<LEGAL>(*this).size()))
-	//	return true;
-
-	// Return a draw score if a position repeats once earlier but strictly
-	// after the root, or repeats twice before or at the root.
-	return m_RepetitionCount[m_Moves.size()] == 2;// && (m_RepetitionInfo[m_Moves.size()] < ply);
-
-
-	////if (st->rule50 > 99 && (!checkers() || MoveList<LEGAL>(*this).size()))
-	////	return true;
-
-	//const int end = std::min(m_PliesFromLastIrreversibleMove, m_PliesFromLastNullMove);
-
-	//if (end < 4)
-	//	return false;
-
-	////StateInfo* stp = st->previous->previous;
-
-	//int currentIdx = m_Moves.size();
-	//int previousIdx = m_Moves.size() - 2;
-	////uint64_t currentKey = m_History[m_Moves.size()];
-	////uint64_t previousKey = m_History[m_Moves.size()];
-	//int count = 0;
-
-	//for (int i = 4; i <= end; i += 2)
-	//{
-	//	previousIdx -= 2;
-	//	//stp = stp->previous->previous;
-
-	//	// At root position ply is 1, so return a draw score if a position
-	//	// repeats once earlier but after or at the root, or repeats twice
-	//	// strictly before the root.
-	//	/*if (stp->key == st->key
-	//		&& ++cnt + (ply - i > 0) == 2)
-	//		return true;*/
-	//	if ((m_History[previousIdx] == m_History[currentIdx]) && ((++count + (ply - i > 0)) == 2))
-	//		return true;
-	//}
-
-	//return false;
+	assert(m_Moves.size() < m_RepetitionCount.size());
+	return (m_RepetitionCount[m_Moves.size()] == 2);
 }
 
 bool Position::IsRepetition() const
 {
+	assert(m_Moves.size() < m_RepetitionCount.size());
 	return (m_RepetitionCount[m_Moves.size()] > 0);
 }
 

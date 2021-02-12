@@ -276,7 +276,7 @@ void MoveSearcher::GetLegalMovesFromBitboards(Position& position, MoveList<MaxMo
 {
 	allLegalMoves.clear();
 	if (position.IsRepetitionDraw())
-		return; //draw by repetition
+		return;
 
 	const Bitboard& pawns = position.IsWhiteToPlay() ? position.GetWhitePawns() : position.GetBlackPawns();
 	const Bitboard& knights = position.IsWhiteToPlay() ? position.GetWhiteKnights() : position.GetBlackKnights();

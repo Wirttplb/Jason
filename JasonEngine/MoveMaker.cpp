@@ -54,7 +54,7 @@ bool MoveMaker::MakeMove(Position& position, Move& move)
 void MoveMaker::CheckGameOver(Position& position, int ply)
 {
 	//check insufficient material or repetition
-	if (position.IsRepetitionDraw() || position.IsInsufficientMaterialFromBitboards())
+	if (position.IsInsufficientMaterialFromBitboards() || position.IsRepetitionDraw())
 	{
 		position.SetGameStatus(Position::GameStatus::Draw);
 		return;
@@ -155,10 +155,6 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, doubl
 	double value = std::numeric_limits<double>::lowest();
 	for (Move& childMove : childMoves)
 	{
-		double b = 0;
-		if (childMove.GetTo() == Piece(PieceType::Queen, e8))
-			double a = b; b++;
-
 		position.Update(childMove);
 		std::optional<Move> bestMoveDummy; //only returns best move from 0 depth
 		const double score = -AlphaBetaNegamax(position, depth - 1, ply + 1, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);

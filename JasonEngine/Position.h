@@ -167,12 +167,6 @@ public:
 
 	void SetMaintainPiecesList(bool value) { m_MaintainPiecesList = value; };
 
-	//void CommitToHistory(uint64_t key);
-	//void CommitToHistory();
-	//void UncommitToHistory(uint64_t key);
-	//int GetHistoryCount();
-
-	const std::array<uint64_t, MaxPly>& GetHistory() const;
 	void CommitToHistory();
 
 	void SetRepetitionInfo();
@@ -201,7 +195,6 @@ private:
 	Bitboard m_WhiteRooks;
 	Bitboard m_WhiteQueens;
 	Bitboard m_WhiteKing;
-	Bitboard m_WhiteUndevelopedPieces; //all pieces except king
 
 	Bitboard m_BlackPieces;
 	Bitboard m_BlackPawns;
@@ -210,7 +203,6 @@ private:
 	Bitboard m_BlackRooks;
 	Bitboard m_BlackQueens;
 	Bitboard m_BlackKing;
-	Bitboard m_BlackUndevelopedPieces;
 
 	std::vector<Piece> m_WhitePiecesList; //Position representation is piece-centric, this might change in the future
 	std::vector<Piece> m_BlackPiecesList;
@@ -231,8 +223,8 @@ private:
 	int m_PliesFromLastNullMove = 0; //nb of plies since last null move
 	int m_PliesFromLastIrreversibleMove = 0; //nb of plies since last irreversible move
 
-	std::array<uint64_t, MaxPly> m_History = {}; //history of previously visited positions ; current index is m_Moves.size()
-	std::array<int, MaxPly> m_RepetitionCount = {}; //repetition count : 0, 1 or 2 (2 == repetition draw)
+	std::array<uint64_t, MaxPly + 1> m_History = {}; //history of previously visited positions ; current index is m_Moves.size()
+	std::array<int, MaxPly + 1> m_RepetitionCount = {}; //repetition count : 0, 1 or 2 (2 == repetition draw)
 
 	uint64_t m_ZobristHash = 0;
 
