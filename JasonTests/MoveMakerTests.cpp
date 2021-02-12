@@ -72,40 +72,102 @@ void MoveMakerTests::RunPrivate()
 	move = Move(PieceType::King, e6, f6);
 	success = moveMaker.MakeMove(position, move);
 	double score = 0.0;
-	success = moveMaker.MakeMove(position, 2, score); //only one move draws and avoids mate in 1
+	success = moveMaker.MakeMove(position, 3, score); //only one move draws and avoids mate in 1
 	ASSERT(position.GetMoves().back().GetTo().m_Square == f8);
 	ASSERT(abs(score - 0.0) < 0.0000001);
 
-	position = Position("3n2K1/6q1/6k1/8/8/8/8/8 w - - 0 1"); //This is a checkmate
-	position.CommitToHistory(); //sets count to 2
-	move = Move(PieceType::King, g8, a8); //illegal move, but just to get out of the checkmate
+	position = Position("8/6Qk/8/8/8/8/8/K5R1 b - - 1 1");
+	move = Move(PieceType::King, h7, h8);
 	position.Update(move);
-	move = Move(PieceType::Queen, g7, f6);
-	success = moveMaker.MakeMove(position, move);
-	move = Move(PieceType::King, a8, g8);
+	move = Move(PieceType::Queen, g7, f8); //mate, we reverse it for this test
 	position.Update(move);
-	success = moveMaker.MakeMove(position, 3, score); //should avoid Qg7# as it "draws"
-	ASSERT(position.GetMoves().back().GetTo().m_Square != g7);
-
-	const Position position2("5Q2/7k/8/8/8/8/8/K5R1 w - - 0 1");
-	position = Position("7k/5P2/8/8/8/8/8/K5R1 w - - 0 1");
-	position.CommitToHistory(position2.GetZobristHash()); //commit twice
-	position.CommitToHistory(position2.GetZobristHash());
-	success = moveMaker.MakeMove(position, 3, score); //should avoid f8=Q as it "draws"
+	move = Move(PieceType::King, h8, h7);
+	position.Update(move);
+	move = Move(PieceType::Queen, f8, g7);
+	position.Update(move);
+	move = Move(PieceType::King, h7, h8);
+	position.Update(move);
+	move = Move(PieceType::Queen, g7, f8);
+	position.Update(move);
+	move = Move(PieceType::King, h8, h7);
+	position.Update(move);
+	success = moveMaker.MakeMove(position, 4, score); //should avoid f8=Q as it "draws"
 	ASSERT(position.GetMoves().back().GetTo().m_Square != f8);
+
+	position = Position("5Q2/7k/8/8/8/8/8/K5R1 w - - 1 1");
+	move = Move(PieceType::Queen, f8, f7);
+	position.Update(move);
+	move = Move(PieceType::King, h7, h8);
+	position.Update(move);
+	move = Move(PieceType::Queen, f7, f8);
+	position.Update(move);
+	move = Move(PieceType::King, h8, h7);
+	position.Update(move);
+	move = Move(PieceType::Queen, PieceType::Pawn, f8, f7);
+	position.Update(move);
+	move = Move(PieceType::King, h7, h8);
+	position.Update(move);
+	success = moveMaker.MakeMove(position, 4, score); //will not avoid f8=Q because pawn move is irreversible, can't draw
+	ASSERT(position.GetMoves().back().GetTo().m_Square == f8);
+
+	//test undo backup flags
+	//position = Position("1K2Qnk1/5ppp/5ppp/2B5/1P6/P7/8/8 w - - 0 1");
+	//move = Move(PieceType::Bishop, c5, f8);
+	//position.Update(move);
+	//move2 = Move(PieceType::King, g8, h8);
+	//position.Update(move2);
+	//move3 = Move(PieceType::Queen, a4, e8);
+	//position.Update(move3);
+	//move4 = Move();
+	//move4.SetNullMove();
+	//position.Update(move4);
+	//int PliesFromNull = position.m_PliesFromLastNullMove;
+	//int PliesFromIrreversible = position.m_PliesFromLastIrreversibleMove;
+	//position.Undo(move4);
+	//position.Undo(move3);
+	//position.Undo(move2);
+	//position.Undo(move);
+
+	position = Position("1K2Qnk1/5ppp/5ppp/2B5/1P6/P7/8/8 w - - 0 1");
+	move = Move(PieceType::Queen, e8, a4);
+	position.Update(move);
+	move = Move(PieceType::Knight, f8, e6);
+	position.Update(move);
+	Position positionCopy = position;
+	move = Move(PieceType::Queen, a4, e8);
+	position.Update(move);
+	move = Move(PieceType::Knight, e6, f8);
+	position.Update(move);
+	move = Move(PieceType::Queen, e8, a4);
+	position.Update(move);
+	move = Move(PieceType::Knight, f8, e6);
+	position.Update(move);
+	Position positionCopy2 = position;
+	Position positionCopy3 = position;
+	success = moveMaker.MakeMove(position, 4, score); //will avoid the best move Qe8 (M2) because only valid move for black "draws"
+	ASSERT(position.GetMoves().back().GetTo() != Piece(PieceType::Queen, e8));
+	moveMaker.m_TranspositionTable = {};
+	success = moveMaker.MakeMove(positionCopy, 4, score); //will do the best move Qe8 (M2), no draw
+	ASSERT(positionCopy.GetMoves().back().GetTo() == Piece(PieceType::Queen, e8));
 
 	//Same with an available transposition table entry whose best move should be discarded
-	position = Position("7k/5P2/8/8/8/8/8/K5R1 w - - 0 1");
-	position.CommitToHistory(position.GetZobristHash()); //The correct test would ommit this additional commit...
-	move = Move(PieceType::Pawn, PieceType::Queen, f7, f8);
-	position.CommitToHistory(position2.GetZobristHash());
-	position.CommitToHistory(position2.GetZobristHash());
-	const size_t transpositionTableKey = moveMaker.GetTranspositionTableKey(position);
-	moveMaker.m_TranspositionTable[transpositionTableKey].m_ZobristHash = position.GetZobristHash();
+	moveMaker.m_TranspositionTable = {};
+	const size_t transpositionTableKey = moveMaker.GetTranspositionTableKey(positionCopy2);
+	moveMaker.m_TranspositionTable[transpositionTableKey].m_ZobristHash = positionCopy2.GetZobristHash();
 	moveMaker.m_TranspositionTable[transpositionTableKey].m_Score = 10000;
-	moveMaker.m_TranspositionTable[transpositionTableKey].m_Depth = 3;
-	moveMaker.m_TranspositionTable[transpositionTableKey].m_BestMove = Move(PieceType::Pawn, PieceType::Queen, f7, f8);
+	moveMaker.m_TranspositionTable[transpositionTableKey].m_Depth = 4;
+	moveMaker.m_TranspositionTable[transpositionTableKey].m_BestMove = Move(PieceType::Queen, a4, e8);
 	moveMaker.m_TranspositionTable[transpositionTableKey].m_Flag = TranspositionTableEntry::Flag::Exact;
-	success = moveMaker.MakeMove(position, 3, score);
-	ASSERT(position.GetMoves().back().GetTo().m_Square != f8);
+	success = moveMaker.MakeMove(positionCopy2, 4, score);
+	ASSERT(positionCopy2.GetMoves().back().GetTo() != Piece(PieceType::Queen, e8));
+
+	//Same with null moves in between => count is reset, no draw ; best move is allowed
+	moveMaker.m_TranspositionTable = {};
+	move = Move();
+	move.SetNullMove();
+	positionCopy3.Update(move);
+	positionCopy3.Update(move);
+	success = moveMaker.MakeMove(positionCopy3, 4, score);
+	Piece to = positionCopy3.GetMoves().back().GetTo();
+	ASSERT(positionCopy3.GetMoves().back().GetTo() == Piece(PieceType::Queen, e8));
 }

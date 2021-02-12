@@ -275,7 +275,7 @@ static void _GetLegalMovesFromBitboards(int fromSquare)
 void MoveSearcher::GetLegalMovesFromBitboards(Position& position, MoveList<MaxMoves>& allLegalMoves)
 {
 	allLegalMoves.clear();
-	if (position.GetHistoryCount() >= 3)
+	if (position.IsRepetitionDraw())
 		return; //draw by repetition
 
 	const Bitboard& pawns = position.IsWhiteToPlay() ? position.GetWhitePawns() : position.GetBlackPawns();

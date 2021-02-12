@@ -238,6 +238,30 @@ public:
 		m_Move |= static_cast<uint64_t>(value ? 1 : 0) << 35;
 	}
 
+	/// <summary>bits 36 to 43</summary>
+	inline int GetPliesFromLastNullMoveBackup() const
+	{
+		return ((m_Move >> 36) & 0b11111111);
+	}
+
+	/// <summary>bits 44 to 51</summary>
+	inline int GetPliesFromLastIrreversibleMoveBackup() const
+	{
+		return ((m_Move >> 44) & 0b11111111);
+	}
+
+	inline void SetPliesFromLastNullMoveBackup(int value)
+	{
+		m_Move &= ~0x7F800000000;
+		m_Move |= static_cast<uint64_t>(value) << 36;
+	}
+
+	inline void SetPliesFromLastIrreversibleMoveBackup(int value)
+	{
+		m_Move &= ~0x7F80000000000;
+		m_Move |= static_cast<uint64_t>(value) << 44;
+	}
+
 	inline bool IsCastling() const
 	{
 		return (GetFromType() == PieceType::King) &&
@@ -265,7 +289,6 @@ public:
 	inline bool IsNullMove() const
 	{
 		return (m_Move & 0x8000000000000000);
-		//return (m_Move == 0);
 	}
 
 	inline void SetNullMove()
@@ -386,7 +409,7 @@ public:
 		m_Size += std::distance(first, last);
 	}
 
-//private:
+private:
 	std::array<Move, N> m_Moves;
 	size_t m_Size = 0;
 };

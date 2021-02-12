@@ -17,11 +17,11 @@ int main()
     time_t end;
     
     time(&start);
-    NotationParserTests::Run();
+    /*NotationParserTests::Run();
     PositionTests::Run();
-    ZobristTests::Run();
+    ZobristTests::Run();*/
     MoveMakerTests::Run();
-    //MoveSearcherTests::Run();
+    MoveSearcherTests::Run();
     PositionEvaluationTests::Run();
     TacticsTests::Run();
     SpeedTest::Run();

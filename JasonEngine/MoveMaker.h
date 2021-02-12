@@ -72,6 +72,7 @@ private:
 	/// <param=name"ply">ply number to retrieve generated move list in m_MoveLists ; moves will be regenerated if < 0</param>
 	double EvaluatePosition(Position& position, int ply = -1);
 
+	//THIS TABLE SHOULD BE USED FOR PRINCIPAL VARIATION //ITERATIVE DEEPENING
 	//std::array<std::pair<uint64_t, const MoveList<MaxMoves>*>, 1000> m_LegalMovesTable; //table of legal moves generation results, key is Zobrist hash % size
 
 	std::array<std::array<Move, NbOfKillerMoves>, MaxPly> m_KillerMoves = {};

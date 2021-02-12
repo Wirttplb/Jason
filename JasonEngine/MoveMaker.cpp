@@ -20,7 +20,7 @@ std::optional<Move> MoveMaker::FindMove(Position& position, int depth, double& s
 	constexpr double alpha = std::numeric_limits<double>::lowest();
 	constexpr double beta = std::numeric_limits<double>::max();
 	std::optional<Move> bestMove;
-	const bool allowNullMove = true;
+	const bool allowNullMove = false;
 	m_KillerMoves = {};
 
 	score = (position.IsWhiteToPlay() ? 1.0 : -1.0) * AlphaBetaNegamax(position, depth, 0, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
@@ -54,19 +54,11 @@ bool MoveMaker::MakeMove(Position& position, Move& move)
 void MoveMaker::CheckGameOver(Position& position, int ply)
 {
 	//check insufficient material or repetition
-	if (position.IsInsufficientMaterialFromBitboards() || (position.GetHistoryCount() >= 3))
+	if (position.IsRepetitionDraw() || position.IsInsufficientMaterialFromBitboards())
 	{
 		position.SetGameStatus(Position::GameStatus::Draw);
 		return;
 	}
-
-	//Get and check legal moves > 0
-	/*const size_t tableKey = MoveMaker::GetTranspositionTableKey(position);
-	if (m_LegalMovesTable[tableKey].first != position.GetZobristHash())
-	{
-		m_LegalMovesTable[tableKey].first = position.GetZobristHash();
-		MoveSearcher::GetLegalMovesFromBitboards(position, m_LegalMovesTable[tableKey].second);
-	}*/
 
 	if (ply < 0)
 		MoveSearcher::GetLegalMovesFromBitboards(position, m_MoveLists[ply]);
@@ -74,7 +66,6 @@ void MoveMaker::CheckGameOver(Position& position, int ply)
 	MoveList<MaxMoves>& childMoves = m_MoveLists[ply];
 	MoveSearcher::GetLegalMovesFromBitboards(position, childMoves);
 
-	//const MoveList<MaxMoves>& allLegalMoves = m_LegalMovesTable[tableKey].second;
 	if (childMoves.empty())
 	{
 		if (MoveSearcher::IsKingInCheckFromBitboards(position, position.IsWhiteToPlay()))
@@ -98,7 +89,7 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, doubl
 		case TranspositionTableEntry::Flag::Exact:
 		{
 			//Repetition would affect the score, can't use it directly
-			if (position.GetHistoryCount() < 2)
+			if (!position.IsRepetition())
 			{
 				bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
 				return m_TranspositionTable[transpositionTableKey].m_Score;
@@ -121,7 +112,7 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, doubl
 		{
 			if (alpha >= beta)
 			{
-				if (position.GetHistoryCount() < 2)
+				if (!position.IsRepetition())
 				{
 					bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
 					return m_TranspositionTable[transpositionTableKey].m_Score;
@@ -151,17 +142,6 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, doubl
 		}
 	}
 
-	//Don't search valid moves again if it has been done in last iteration
-	//There should be no collision otherwise childMoves may become invalid after next iterations
-	//if (m_LegalMovesTable[transpositionTableKey].first != position.GetZobristHash())
-	//{
-	//	m_LegalMovesTable[transpositionTableKey].first = position.GetZobristHash();
-	//	MoveSearcher::GetLegalMovesFromBitboards(position, m_MoveLists[depth]);
-	//	m_LegalMovesTable[transpositionTableKey].second = &m_MoveLists[depth];
-	//	//MoveSearcher::GetLegalMovesFromBitboards(position, m_LegalMovesTable[transpositionTableKey].second);
-	//}
-	//m_LegalMovesTable[transpositionTableKey].second;
-
 	MoveList<MaxMoves>& childMoves = m_MoveLists[ply];
 	MoveSearcher::GetLegalMovesFromBitboards(position, childMoves);
 
@@ -175,6 +155,10 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, doubl
 	double value = std::numeric_limits<double>::lowest();
 	for (Move& childMove : childMoves)
 	{
+		double b = 0;
+		if (childMove.GetTo() == Piece(PieceType::Queen, e8))
+			double a = b; b++;
+
 		position.Update(childMove);
 		std::optional<Move> bestMoveDummy; //only returns best move from 0 depth
 		const double score = -AlphaBetaNegamax(position, depth - 1, ply + 1, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
@@ -275,14 +259,6 @@ double MoveMaker::QuiescentSearch(Position& position, int ply, double alpha, dou
 	if (alpha < standPat)
 		alpha = standPat;
 
-	/*const size_t tableKey = GetTranspositionTableKey(position);
-	if (m_LegalMovesTable[tableKey].first != position.GetZobristHash())
-	{
-		m_LegalMovesTable[tableKey].first = position.GetZobristHash();
-		MoveSearcher::GetLegalMovesFromBitboards(position, m_LegalMovesTable[tableKey].second);
-	}*/
-	//MoveList<MaxMoves> childMoves = m_LegalMovesTable[tableKey].second;
-
 	MoveList<MaxMoves>& childMoves = m_MoveLists[ply];
 	MoveSearcher::GetLegalMovesFromBitboards(position, childMoves);
 
@@ -346,6 +322,14 @@ void MoveMaker::SortMoves(const Position& position, int ply, MoveList<MaxMoves>&
 
 bool MoveMaker::MovesSorter(const Position& position, int ply, const Move& move1, const Move& move2)
 {
+	//Killer Moves
+	const bool isMove1Killer = std::find(m_KillerMoves[ply].begin(), m_KillerMoves[ply].end(), move1) != m_KillerMoves[ply].end();
+	const bool isMove2Killer = std::find(m_KillerMoves[ply].begin(), m_KillerMoves[ply].end(), move2) != m_KillerMoves[ply].end();
+	if (isMove1Killer && !isMove2Killer)
+		return true;
+	else if (!isMove1Killer && isMove2Killer)
+		return false;
+
 	//Check capture of last moved piece
 	if (!position.GetMoves().empty())
 	{
@@ -353,6 +337,8 @@ bool MoveMaker::MovesSorter(const Position& position, int ply, const Move& move1
 		const bool isMove2Recapture = move2.GetToSquare() == position.GetMoves().back().GetToSquare();
 		if (isMove1Recapture && !isMove2Recapture)
 			return true;
+		else if (!isMove1Recapture && isMove2Recapture)
+			return false;
 		else if (isMove1Recapture && isMove2Recapture)
 			return move1.GetFromType() < move2.GetFromType(); //LVA
 	}
@@ -376,12 +362,6 @@ bool MoveMaker::MovesSorter(const Position& position, int ply, const Move& move1
 		else if (toSquare2 & enemyPieces)
 			return false;
 	}
-
-	//Killer Moves
-	const bool isMove1Killer = std::find(m_KillerMoves[ply].begin(), m_KillerMoves[ply].end(), move1) != m_KillerMoves[ply].end();
-	const bool isMove2Killer = std::find(m_KillerMoves[ply].begin(), m_KillerMoves[ply].end(), move2) != m_KillerMoves[ply].end();
-	if (isMove1Killer && !isMove2Killer)
-		return true;
 
 	return false;
 }
