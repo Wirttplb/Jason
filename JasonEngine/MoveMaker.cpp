@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <algorithm>
 
-bool MoveMaker::MakeMove(Position& position, int depth, double& score)
+bool MoveMaker::MakeMove(Position& position, int depth, int& score)
 {
 	std::optional<Move> bestMove = FindMove(position, depth, score);
 
@@ -15,16 +15,26 @@ bool MoveMaker::MakeMove(Position& position, int depth, double& score)
 	return bestMove.has_value();
 }
 
-std::optional<Move> MoveMaker::FindMove(Position& position, int depth, double& score)
+std::optional<Move> MoveMaker::FindMove(Position& position, int depth, int& score)
 {
-	constexpr double alpha = std::numeric_limits<double>::lowest();
-	constexpr double beta = std::numeric_limits<double>::max();
+	constexpr int alpha = -Mate;
+	constexpr int beta = Mate;
 	std::optional<Move> bestMove;
 	const bool allowNullMove = false;
 	m_KillerMoves = {};
 
-	score = (position.IsWhiteToPlay() ? 1.0 : -1.0) * AlphaBetaNegamax(position, depth, 0, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
+	//Iterative deepening
+	for (int currentDepth = 1; currentDepth <= depth; currentDepth++)// && !outOfTime(); distance++);
+	{
+		score = AlphaBetaNegamax(position, currentDepth, 0, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
+		//break if mate found
+		if (score > 10000)
+			break;
+	}
+
+	//score = AlphaBetaNegamax(position, depth, 0, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
 		
+	score *= (position.IsWhiteToPlay() ? 1 : -1);
 	return bestMove;
 }
 
@@ -61,7 +71,10 @@ void MoveMaker::CheckGameOver(Position& position, int ply)
 	}
 
 	if (ply < 0)
+	{
+		ply = 0;
 		MoveSearcher::GetLegalMovesFromBitboards(position, m_MoveLists[ply]);
+	}
 
 	MoveList<MaxMoves>& childMoves = m_MoveLists[ply];
 	MoveSearcher::GetLegalMovesFromBitboards(position, childMoves);
@@ -75,48 +88,41 @@ void MoveMaker::CheckGameOver(Position& position, int ply)
 	}
 }
 
-double MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, double alpha, double beta, bool maximizeWhite, bool allowNullMove, std::optional<Move>& bestMove)
+int MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, int alpha, int beta, bool maximizeWhite, bool allowNullMove, std::optional<Move>& bestMove)
 {
-	const double originalAlpha = alpha;
+	const int originalAlpha = alpha;
 
 	//Transposition table lookup
-	size_t transpositionTableKey = GetTranspositionTableKey(position);
-	if ((m_TranspositionTable[transpositionTableKey].m_ZobristHash == position.GetZobristHash()) &&
-		(m_TranspositionTable[transpositionTableKey].m_Depth >= depth))
+	const size_t transpositionTableKey = GetTranspositionTableKey(position);
+	if (!position.IsRepetition()) //Repetition would affect the score, can't use TT
 	{
-		switch (m_TranspositionTable[transpositionTableKey].m_Flag)
+		
+		if ((m_TranspositionTable[transpositionTableKey].m_ZobristHash == position.GetZobristHash()) &&
+			(m_TranspositionTable[transpositionTableKey].m_Depth >= depth))
 		{
-		case TranspositionTableEntry::Flag::Exact:
-		{
-			//Repetition would affect the score, can't use it directly
-			if (!position.IsRepetition())
+			switch (m_TranspositionTable[transpositionTableKey].m_Flag)
+			{
+			case TranspositionTableEntry::Flag::Exact:
 			{
 				bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
 				return m_TranspositionTable[transpositionTableKey].m_Score;
+				break;
+			}
+			case TranspositionTableEntry::Flag::LowerBound:
+				alpha = std::max(alpha, static_cast<int>(m_TranspositionTable[transpositionTableKey].m_Score));
+				break;
+			case TranspositionTableEntry::Flag::UpperBound:
+				beta = std::min(beta, static_cast<int>(m_TranspositionTable[transpositionTableKey].m_Score));
+				break;
+			default:
+				assert(false);
+				break;
 			}
 
-			break;
-		}
-		case TranspositionTableEntry::Flag::LowerBound:
-			alpha = std::max(alpha, m_TranspositionTable[transpositionTableKey].m_Score);
-			break;
-		case TranspositionTableEntry::Flag::UpperBound:
-			beta = std::min(beta, m_TranspositionTable[transpositionTableKey].m_Score);
-			break;
-		default:
-			assert(false);
-			break;
-		}
-
-		if (m_TranspositionTable[transpositionTableKey].m_Flag != TranspositionTableEntry::Flag::Exact)
-		{
 			if (alpha >= beta)
 			{
-				if (!position.IsRepetition())
-				{
-					bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
-					return m_TranspositionTable[transpositionTableKey].m_Score;
-				}
+				bestMove = m_TranspositionTable[transpositionTableKey].m_BestMove;
+				return m_TranspositionTable[transpositionTableKey].m_Score;
 			}
 		}
 	}
@@ -134,7 +140,7 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, doubl
 			nullMove.SetNullMove();
 			position.Update(nullMove);
 			std::optional<Move> bestMoveDummy;
-			const double score = -AlphaBetaNegamax(position, depth - 1 - R, ply + 1 ,-beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
+			const int score = -AlphaBetaNegamax(position, depth - 1 - R, ply + 1 ,-beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
 			position.Undo(nullMove);
 
 			if (score >= beta)
@@ -146,18 +152,18 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, doubl
 	MoveSearcher::GetLegalMovesFromBitboards(position, childMoves);
 
 	if (childMoves.empty())
-		return (maximizeWhite ? 1.0 : -1.0) * EvaluatePosition(position, ply);
+		return (maximizeWhite ? 1 : -1) * EvaluatePosition(position, ply);
 
 	//Sort moves
 	SortMoves(position, ply, childMoves);
 
 	//Search child nodes
-	double value = std::numeric_limits<double>::lowest();
+	int value = std::numeric_limits<int>::lowest();
 	for (Move& childMove : childMoves)
 	{
 		position.Update(childMove);
 		std::optional<Move> bestMoveDummy; //only returns best move from 0 depth
-		const double score = -AlphaBetaNegamax(position, depth - 1, ply + 1, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
+		const int score = -AlphaBetaNegamax(position, depth - 1, ply + 1, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
 		position.Undo(childMove);
 
 		if (score > value)
@@ -183,6 +189,7 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, doubl
 
 	//Transposition Table Store
 	m_TranspositionTable[transpositionTableKey].m_ZobristHash = position.GetZobristHash();
+	assert(abs(value) <= Mate);
 	m_TranspositionTable[transpositionTableKey].m_Score = value;
 	m_TranspositionTable[transpositionTableKey].m_Depth = depth;
 	m_TranspositionTable[transpositionTableKey].m_BestMove = *bestMove;
@@ -196,7 +203,7 @@ double MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, doubl
 	return value;
 }
 
-double MoveMaker::Minimax(Position& position, int depth, bool maximizeWhite, std::optional<Move>& bestMove)
+int MoveMaker::Minimax(Position& position, int depth, bool maximizeWhite, std::optional<Move>& bestMove)
 {
 	if (depth == 0)
 		return EvaluatePosition(position);
@@ -206,15 +213,15 @@ double MoveMaker::Minimax(Position& position, int depth, bool maximizeWhite, std
 	if (childMoves.empty())
 		return EvaluatePosition(position);
 
-	double value = 0.0;
+	int value = 0;
 	if (maximizeWhite)
 	{
-		value = std::numeric_limits<double>::lowest();
+		value = std::numeric_limits<int>::lowest();
 		for (Move& childMove : childMoves)
 		{
 			position.Update(childMove);
 			std::optional<Move> dummyBestMove;
-			const double score = Minimax(position, depth - 1, false, dummyBestMove);
+			const int score = Minimax(position, depth - 1, false, dummyBestMove);
 			position.Undo(childMove);
 
 			if (score > value)
@@ -228,12 +235,12 @@ double MoveMaker::Minimax(Position& position, int depth, bool maximizeWhite, std
 	}
 	else
 	{
-		value = std::numeric_limits<double>::max();
+		value = std::numeric_limits<int>::max();
 		for (Move& childMove : childMoves)
 		{
 			position.Update(childMove);
 			std::optional<Move> dummyBestMove;
-			const double score = std::min(value, Minimax(position, depth - 1, true, dummyBestMove));
+			const int score = std::min(value, Minimax(position, depth - 1, true, dummyBestMove));
 			position.Undo(childMove);
 
 			if (score < value)
@@ -247,9 +254,9 @@ double MoveMaker::Minimax(Position& position, int depth, bool maximizeWhite, std
 	}
 }
 
-double MoveMaker::QuiescentSearch(Position& position, int ply, double alpha, double beta, bool maximizeWhite)
+int MoveMaker::QuiescentSearch(Position& position, int ply, int alpha, int beta, bool maximizeWhite)
 {
-	const double standPat = (maximizeWhite ? 1.0 : -1.0) * EvaluatePosition(position, ply);
+	const int standPat = (maximizeWhite ? 1 : -1) * EvaluatePosition(position, ply);
 	if (standPat >= beta)
 		return beta;
 	if (alpha < standPat)
@@ -270,7 +277,7 @@ double MoveMaker::QuiescentSearch(Position& position, int ply, double alpha, dou
 		position.Update(childMove);
 		if (childMove.IsCapture())
 		{
-			const double score = -QuiescentSearch(position, ply + 1, -beta, -alpha, !maximizeWhite);
+			const int score = -QuiescentSearch(position, ply + 1, -beta, -alpha, !maximizeWhite);
 
 			if (score >= beta)
 			{
@@ -286,10 +293,10 @@ double MoveMaker::QuiescentSearch(Position& position, int ply, double alpha, dou
 	return alpha;
 }
 
-double MoveMaker::EvaluatePosition(Position& position, int ply)
+int MoveMaker::EvaluatePosition(Position& position, int ply)
 {
 	MoveMaker::CheckGameOver(position, ply);
-	const double score = PositionEvaluation::EvaluatePosition(position, ply);
+	const int score = PositionEvaluation::EvaluatePosition(position, ply);
 	position.SetGameStatus(Position::GameStatus::Running);
 	return score;
 }

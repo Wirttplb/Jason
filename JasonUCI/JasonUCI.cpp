@@ -55,8 +55,8 @@ int main()
 	Position position;
 	MoveMaker moveMaker;
 	bool isGameOver = false;
-	int evaluationDepth = 8;
-	double score = 0.0;
+	int evaluationDepth = 7;
+	int score = 0;
 
 	while (std::getline(std::cin, line))
 	{

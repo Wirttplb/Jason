@@ -71,7 +71,7 @@ void MoveMakerTests::RunPrivate()
 	success = moveMaker.MakeMove(position, move);
 	move = Move(PieceType::King, e6, f6);
 	success = moveMaker.MakeMove(position, move);
-	double score = 0.0;
+	int score = 0;
 	success = moveMaker.MakeMove(position, 3, score); //only one move draws and avoids mate in 1
 	ASSERT(position.GetMoves().back().GetTo().m_Square == f8);
 	ASSERT(abs(score - 0.0) < 0.0000001);

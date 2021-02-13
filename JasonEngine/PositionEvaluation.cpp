@@ -6,47 +6,45 @@
 #include <assert.h>
 
 /// <summary>Absolute score for a mate</summary>
-static constexpr double Mate = 1000000;
+static constexpr int BishopPairBonus = 15;
+static constexpr int CastlingBonus = 50;
 
-static constexpr double BishopPairBonus = 15.0;
-static constexpr double CastlingBonus = 50.0;
+static constexpr int CenterPawnBonus = 40;
+static constexpr int DoubledPawnPunishment = -20; //40 for a pair
+static constexpr int IsolatedPawnPunishment = -40;
+static constexpr int BackwardsPawnPunishment = -20;
+static constexpr std::array<int, 3> AdvancedPawnBonus = {30, 50, 60}; //on rows 5, 6, 7 or 4, 3, 2
 
-static constexpr double CenterPawnBonus = 40.0;
-static constexpr double DoubledPawnPunishment = -20.0; //40 for a pair
-static constexpr double IsolatedPawnPunishment = -40.0;
-static constexpr double BackwardsPawnPunishment = -20.0;
-static constexpr std::array<double, 3> AdvancedPawnBonus = {30.0, 50.0, 60.0}; //on rows 5, 6, 7 or 4, 3, 2
+static constexpr int KnightEndgamePunishment = -10;
+static constexpr int BishopEndgamePunishment = 10;
 
-static constexpr double KnightEndgamePunishment = -10.0;
-static constexpr double BishopEndgamePunishment = 10.0;
+static constexpr int RookOnSemiOpenFileBonus = 20;
+static constexpr int RookOnOpenFileBonus = 30;
 
-static constexpr double RookOnSemiOpenFileBonus = 20.0;
-static constexpr double RookOnOpenFileBonus = 30.0;
+static constexpr int Blocking_d_or_ePawnPunishment = -40; //Punishment for blocking unmoved pawns on d and e files
 
-static constexpr double Blocking_d_or_ePawnPunishment = -40.0; //Punishment for blocking unmoved pawns on d and e files
+static constexpr int KnightPawnBonus = 2; //Knights better with lots of pawns
+static constexpr int BishopPawnPunishment = -2; //Bishops worse with lots of pawns
+static constexpr int RookPawnPunishment = -2; //Rooks worse with lots of pawns
 
-static constexpr double KnightPawnBonus = 2.0; //Knights better with lots of pawns
-static constexpr double BishopPawnPunishment = -2.0; //Bishops worse with lots of pawns
-static constexpr double RookPawnPunishment = -2.0; //Rooks worse with lots of pawns
+static constexpr int AttackedSquareBonusFactor = 0;
+static constexpr int CenterAttackedBonusFactor = 1; //Factor to multiply with how many center squares are attacked by own pieces
+static constexpr int KingSquaresAttackBonusFactor = 5; //Factor to multiply with how many squares around enemy king that are attacked by own pieces
 
-static constexpr double AttackedSquareBonusFactor = 0.3;
-static constexpr double CenterAttackedBonusFactor = 1.0; //Factor to multiply with how many center squares are attacked by own pieces
-static constexpr double KingSquaresAttackBonusFactor = 5.0; //Factor to multiply with how many squares around enemy king that are attacked by own pieces
+static constexpr int SamePieceTwicePunishment = -50; //Penaly for moving same piece twice in opening
 
-static constexpr double SamePieceTwicePunishment = -50.0; //Penaly for moving same piece twice in opening
-
-double PositionEvaluation::EvaluatePosition(Position& position, int ply)
+int PositionEvaluation::EvaluatePosition(Position& position, int ply)
 {
 	//Check checkmate/stalemate
 	switch (position.GetGameStatus())
 	{
 		case Position::GameStatus::Draw:
-			return 0.0;
+			return 0;
 		case Position::GameStatus::CheckMate:
 		{
-			double score = position.IsWhiteToPlay() ? -Mate : Mate;
+			int score = position.IsWhiteToPlay() ? -Mate : Mate;
 			//add correction so M1 > M2 etc
-			score += (position.IsWhiteToPlay() ? 1.0 : -1.0) * ply;
+			score += (position.IsWhiteToPlay() ? 1 : -1) * ply;
 			return score;
 		}
 		default:
@@ -54,7 +52,7 @@ double PositionEvaluation::EvaluatePosition(Position& position, int ply)
 	}
 
 	//Check material
-	double score = CountMaterial(position, true) - CountMaterial(position, false);
+	int score = CountMaterial(position, true) - CountMaterial(position, false);
 
 	//Check development
 	if (position.GetMoves().size() < 25)
@@ -102,20 +100,20 @@ double PositionEvaluation::EvaluatePosition(Position& position, int ply)
 	//Double pawn punishment
 	int whiteDoubledPawns = CountDoubledPawns(position, true);
 	int blackDoubledPawns = CountDoubledPawns(position, false);
-	score += static_cast<double>(whiteDoubledPawns) * DoubledPawnPunishment;
-	score -= static_cast<double>(blackDoubledPawns) * DoubledPawnPunishment;
+	score += static_cast<int>(whiteDoubledPawns) * DoubledPawnPunishment;
+	score -= static_cast<int>(blackDoubledPawns) * DoubledPawnPunishment;
 
 	//Isolated pawn punishment
 	int whiteIsolatedPawns = CountIsolatedPawns(position, true);
 	int blackIsolatedPawns = CountIsolatedPawns(position, false);
-	score += static_cast<double>(whiteIsolatedPawns) * IsolatedPawnPunishment;
-	score -= static_cast<double>(blackIsolatedPawns) * IsolatedPawnPunishment;
+	score += static_cast<int>(whiteIsolatedPawns) * IsolatedPawnPunishment;
+	score -= static_cast<int>(blackIsolatedPawns) * IsolatedPawnPunishment;
 
 	//Backwards pawn punishment
 	int whiteBackwardsPawns = CountBackwardsPawns(position, true);
 	int blackBackwardsPawns = CountBackwardsPawns(position, false);
-	score += static_cast<double>(whiteBackwardsPawns) * BackwardsPawnPunishment;
-	score -= static_cast<double>(blackBackwardsPawns) * BackwardsPawnPunishment;
+	score += static_cast<int>(whiteBackwardsPawns) * BackwardsPawnPunishment;
+	score -= static_cast<int>(blackBackwardsPawns) * BackwardsPawnPunishment;
 
 	//Advanced pawns bonus
 	score += GeAdvancedPawnsBonus(position, true);
@@ -126,7 +124,7 @@ double PositionEvaluation::EvaluatePosition(Position& position, int ply)
 	score -= CountBlockedEorDPawns(position, false) * Blocking_d_or_ePawnPunishment;
 
 	//Castling bonus: castling improves score during opening, importance of castling decays during the game
-	const double castleBonus = CastlingBonus * std::max(0.0, 40.0 - static_cast<double>(position.GetMoves().size())) * 0.025; //0.025 = 1/40
+	const int castleBonus = CastlingBonus * std::max(0, 40 - static_cast<int>(position.GetMoves().size())) * 025; //025 = 1/40
 	if (position.HasWhiteCastled())
 		score += castleBonus;
 	if (position.HasBlackCastled())
@@ -158,18 +156,18 @@ bool PositionEvaluation::IsPositionQuiet(const Position& position)
 	return false;
 }
 
-std::optional<int> PositionEvaluation::GetMovesToMate(double score)
+std::optional<int> PositionEvaluation::GetMovesToMate(int score)
 {
 	std::optional<int> count;
 	const double diff = (Mate - abs(score));
 	if (diff < MaxPly)
-		count = static_cast<int>(ceil(diff / 2.0));
+		count = static_cast<int>(ceil(diff / 2));
 	return count;
 }
 
-double PositionEvaluation::CountMaterial(const Position& position, bool isWhite)
+int PositionEvaluation::CountMaterial(const Position& position, bool isWhite)
 {
-	double material = 0.0;
+	int material = 0;
 	material += GetPieceValue(PieceType::Pawn) * (isWhite ? position.GetWhitePawns().CountSetBits() : position.GetBlackPawns().CountSetBits());
 	material += GetPieceValue(PieceType::Knight) * (isWhite ? position.GetWhiteKnights().CountSetBits() : position.GetBlackKnights().CountSetBits());
 	material += GetPieceValue(PieceType::Bishop) * (isWhite ? position.GetWhiteBishops().CountSetBits() : position.GetBlackBishops().CountSetBits());
@@ -178,25 +176,25 @@ double PositionEvaluation::CountMaterial(const Position& position, bool isWhite)
 	return material;
 }
 
-constexpr double PositionEvaluation::GetPieceValue(PieceType type)
+constexpr int PositionEvaluation::GetPieceValue(PieceType type)
 {
-	double value = 0.0;
+	int value = 0;
 	switch (type)
 	{
 	case PieceType::Queen:
-		value = 900.0;
+		value = 900;
 		break;
 	case PieceType::Rook:
-		value = 490.0;
+		value = 490;
 		break;
 	case PieceType::Bishop:
-		value = 320.0;
+		value = 320;
 		break;
 	case PieceType::Knight:
-		value = 290.0;
+		value = 290;
 		break;
 	case PieceType::Pawn:
-		value = 100.0;
+		value = 100;
 		break;
 	default:
 		break;
@@ -205,13 +203,13 @@ constexpr double PositionEvaluation::GetPieceValue(PieceType type)
 	return value;
 }
 
-double PositionEvaluation::GetUndevelopedPiecesPunishment(const Position& position, bool isWhite)
+int PositionEvaluation::GetUndevelopedPiecesPunishment(const Position& position, bool isWhite)
 {
 	const Bitboard undevelopedKnights = (isWhite ? (position.GetWhiteKnights() & (_b1 | _g1)) : (position.GetBlackKnights() & (_b8 | _g8)));
 	const Bitboard undevelopedBishops = (isWhite ? (position.GetWhiteBishops() & (_c1 | _f1)) : (position.GetBlackBishops() & (_c8 | _f8)));
 	const Bitboard undevelopedRooks = (isWhite ? (position.GetWhiteRooks() & (_a1 | _h1)) : (position.GetBlackRooks() & (_a8 | _h8)));
 	const Bitboard undevelopedQueen = (isWhite ? (position.GetWhiteQueens() & _d1) : (position.GetBlackQueens() & _d8));
-	return -(undevelopedKnights.CountSetBits() * 10.0 + undevelopedBishops.CountSetBits() * 10.0 + undevelopedRooks.CountSetBits() * 5.0 + undevelopedQueen.CountSetBits() * 5.0);
+	return -(undevelopedKnights.CountSetBits() * 10 + undevelopedBishops.CountSetBits() * 10 + undevelopedRooks.CountSetBits() * 5 + undevelopedQueen.CountSetBits() * 5);
 }
 
 int PositionEvaluation::CountDoubledPawns(const Position& position, bool isWhite)
@@ -296,9 +294,9 @@ int PositionEvaluation::CountBackwardsPawns(const Position& position, bool isWhi
 	return count;
 }
 
-double PositionEvaluation::GeAdvancedPawnsBonus(const Position& position, bool isWhite)
+int PositionEvaluation::GeAdvancedPawnsBonus(const Position& position, bool isWhite)
 {
-	double bonus = 0.0;
+	int bonus = 0;
 	const Bitboard& pawns = isWhite ? position.GetWhitePawns() : position.GetBlackPawns();
 
 	for (int i = 4; i < 7; i++)
@@ -342,7 +340,7 @@ Bitboard PositionEvaluation::GetAttackedSquaresAroundKing(const Position& positi
 
 std::pair<int, int> PositionEvaluation::CountRooksOnOpenFiles(const Position& position, bool isWhite)
 {
-	std::pair<int, int> result = { 0,0 };
+	std::pair<int, int> result = { 0, 0 };
 	const Bitboard& rooks = (isWhite ? position.GetWhiteRooks() : position.GetBlackRooks());
 	Bitboard allPawns = position.GetWhitePawns() | position.GetBlackPawns();
 	const Bitboard& sameColorPawns = (isWhite ? position.GetWhitePawns() : position.GetBlackPawns());

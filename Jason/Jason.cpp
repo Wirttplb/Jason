@@ -39,7 +39,7 @@ int main()
     MoveMaker moveMaker;
     bool isGameOver = false;
     int evaluationDepth = 6; //Without quiescence search, evaluation depth should be even!
-    double score = 0.0; //ignored
+    int score = 0; //ignored
 
     while (!isGameOver)
     {

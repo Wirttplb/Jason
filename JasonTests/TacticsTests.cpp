@@ -6,11 +6,11 @@
 #include <iostream>
 
 static MoveMaker moveMaker;
-static double RunPosition(Position& position, int maxMoves, int evaluationDepth)
+static int RunPosition(Position& position, int maxMoves, int evaluationDepth)
 {
 	int moveCount = 0;
 	bool moveFound = true;
-	double score = 0.0; //ignored
+	int score = 0; //ignored
 	while (moveFound && moveCount < maxMoves)
 	{
 		moveFound = moveMaker.MakeMove(position, evaluationDepth, score);
@@ -50,13 +50,13 @@ void TacticsTests::Run()
 	static Position tactic2000("1k1r4/p1pnb3/1nQ1p3/P7/3P4/4PN2/1P2KPq1/RN6 w - - 0 1");
 	static Position tactic2200("8/p7/2N2p2/1P1Ppkpp/2K5/5P1P/5b2/8 w - - 0 46");
 
-	double score = RunPosition(queenMate, 1, 1);
+	int score = RunPosition(queenMate, 1, 1);
 	ASSERT(queenMate.GetGameStatus() == Position::GameStatus::CheckMate);
-	ASSERT(score < -9999.9);
+	ASSERT(score < -9999);
 
 	score = RunPosition(queenMate2, 1, 2);
 	ASSERT(queenMate2.GetGameStatus() == Position::GameStatus::CheckMate);
-	ASSERT(score > 9999.9);
+	ASSERT(score > 9999);
 
 	RunPosition(staircaseMate, 1, 2);
 	ASSERT(staircaseMate.GetGameStatus() == Position::GameStatus::CheckMate);
@@ -85,11 +85,10 @@ void TacticsTests::Run()
 	ASSERT(mateIn2.GetMoves()[0].GetTo() == Piece(PieceType::Queen, e1));
 
 	RunPosition(tactic1800, 2, 6);
-
 	std::vector<std::pair<Piece, Piece>> pieceMoves = tactic1800.GetPieceMoves();
-
 	ASSERT(tactic1800.GetMoves()[0].GetTo() == Piece(PieceType::Queen, e6));
-	ASSERT(tactic1800.GetMoves()[1].GetTo() == Piece(PieceType::King, h7));//After this, Queen f5 is best but Bishop f6 is still fine
+	ASSERT(tactic1800.GetMoves()[1].GetTo() == Piece(PieceType::King, h7) || tactic1800.GetMoves()[1].GetTo() == Piece(PieceType::King, h8));
+	//After this, Queen f5 is best but Bishop f6 is still fine
 
 	RunPosition(tactic1900, 1, 6);
 	ASSERT(tactic1900.GetMoves()[0].GetTo() == Piece(PieceType::Rook, d4));

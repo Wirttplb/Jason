@@ -45,6 +45,9 @@
     <ClInclude Include="BitboardUtility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TranspositionTable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">

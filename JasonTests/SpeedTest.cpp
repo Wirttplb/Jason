@@ -10,7 +10,7 @@ static void RunPosition(Position& position, int maxMoves, int evaluationDepth)
 {
 	int moveCount = 0;
 	bool moveFound = true;
-	double score = 0.0; //ignored
+	int score = 0; //ignored
 	while (moveFound && moveCount < maxMoves)
 	{
 		moveFound = moveMaker.MakeMove(position, evaluationDepth, score);
@@ -38,13 +38,13 @@ void SpeedTest::Run()
 	RunPosition(position1, 1, 7);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest1: %.2lf seconds.");
-	//ASSERT(difftime(end, start) < 10.0);
+	ASSERT(difftime(end, start) < 10.0);
 
 	time(&start);
 	RunPosition(position2, 1, 6);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest2: %.2lf seconds.");
-	//ASSERT(difftime(end, start) < 25.0);
+	ASSERT(difftime(end, start) < 3.0);
 
 	time(&start);
 	RunPosition(position3, 1, 6);
@@ -56,7 +56,7 @@ void SpeedTest::Run()
 	RunPosition(position4, 1, 7);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest4: %.2lf seconds.");
-	//ASSERT(difftime(end, start) < 15.0);
+	ASSERT(difftime(end, start) < 5.0);
 
 	time(&start);
 	RunPosition(position5, 1, 7);
@@ -74,7 +74,7 @@ void SpeedTest::Run()
 	RunPosition(position7, 1, 14);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest7: %.2lf seconds.");
-	ASSERT(difftime(end, start) < 3.0);
+	ASSERT(difftime(end, start) < 5.0);
 
 	time(&start);
 	RunPosition(position8, 1, 10);

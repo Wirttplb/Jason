@@ -165,6 +165,7 @@
     <ClInclude Include="NotationParser.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="PositionEvaluation.h" />
+    <ClInclude Include="TranspositionTable.h" />
     <ClInclude Include="ZobristHash.h" />
   </ItemGroup>
   <ItemGroup>

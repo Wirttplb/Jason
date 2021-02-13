@@ -2,9 +2,7 @@
 #include <stdint.h>
 #include "Bitboard.h"
 
-/// <summary>
-/// Loop over set bits from right to left, callback is called with index of set bit
-/// </summary>
+/// <summary>Loop over set bits from right to left, callback is called with index of set bit</summary>
 static void LoopOverSetBits(const Bitboard& bitboard, void callback(int idx))
 {
 	uint64_t bitset = bitboard;
