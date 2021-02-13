@@ -16,8 +16,8 @@ public:
 	/// <param>Maximum evaluation depth</param>
 	/// <param=name"score">leaf position score associated to returned best move</param>
 	/// <returns>true if move was applied, false if illegal or game is already over</returns>
-	bool MakeMove(double maxTime, Position& position, int depth, int& score);
-	bool MakeMove(Position& position, int depth, int& score);
+	bool MakeMove(double maxTime, Position& position, int maxDepth, int& score, int& searchDepth);
+	bool MakeMove(Position& position, int maxDepth, int& score);
 
 	/// <summary>
 	/// Make a move given a position
@@ -38,9 +38,9 @@ protected: //protected for testing
 
 private:
 	/// <returns>True if move found, false if StaleMate</returns>
-	/// <param=name"depth">Evaluation depth</param>
+	/// <param=name"maxDepth">max evaluation depth</param>
 	/// <param=name"score">leaf position score associated to returned best move</param>
-	std::optional<Move> FindMove(double maxTime, Position& position, int depth, int& score);
+	std::optional<Move> FindMove(double maxTime, Position& position, int maxDepth, int& score, int& searchDepth);
 
 	/// <summary>Depth limited alpha-beta negamax algorithm</summary>
 	/// <remark>Works best when it happens to test the best move first at most levels, in other words when eval function is quite good</remark>

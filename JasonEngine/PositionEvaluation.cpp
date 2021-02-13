@@ -128,7 +128,7 @@ int PositionEvaluation::EvaluatePosition(Position& position, int ply)
 	score -= CountBlockedEorDPawns(position, false) * Blocking_d_or_ePawnPunishment;
 
 	//Castling bonus: castling improves score during opening, importance of castling decays during the game
-	const int castleBonus = CastlingBonus * std::max(0, 40 - static_cast<int>(position.GetMoves().size())) * 0.25; //0.025 = 1/40
+	const int castleBonus = CastlingBonus * std::max(0, 40 - static_cast<int>(position.GetMoves().size())) / 40;
 	if (position.HasWhiteCastled())
 		score += castleBonus;
 	if (position.HasBlackCastled())
