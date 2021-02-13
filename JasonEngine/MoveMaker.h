@@ -12,9 +12,11 @@ public:
 	/// <summary>
 	/// Let computer make a move given a position
 	/// </summary>
-	/// <param>Evaluation depth</param>
+	/// <param=name"maxTime">max time to use, in seconds</param>
+	/// <param>Maximum evaluation depth</param>
 	/// <param=name"score">leaf position score associated to returned best move</param>
 	/// <returns>true if move was applied, false if illegal or game is already over</returns>
+	bool MakeMove(double maxTime, Position& position, int depth, int& score);
 	bool MakeMove(Position& position, int depth, int& score);
 
 	/// <summary>
@@ -38,7 +40,7 @@ private:
 	/// <returns>True if move found, false if StaleMate</returns>
 	/// <param=name"depth">Evaluation depth</param>
 	/// <param=name"score">leaf position score associated to returned best move</param>
-	std::optional<Move> FindMove(Position& position, int depth, int& score);
+	std::optional<Move> FindMove(double maxTime, Position& position, int depth, int& score);
 
 	/// <summary>Depth limited alpha-beta negamax algorithm</summary>
 	/// <remark>Works best when it happens to test the best move first at most levels, in other words when eval function is quite good</remark>
@@ -54,9 +56,6 @@ private:
 	/// <returns>Score (>0 for white advantage, <0 for black), 100.0 is value of a pawn</returns>
 	/// <param=name"ply">ply number to retrieve generated move list in m_MoveLists ; moves will be regenerated if < 0</param>
 	int EvaluatePosition(Position& position, int ply = -1);
-
-	//THIS TABLE SHOULD BE USED FOR PRINCIPAL VARIATION //ITERATIVE DEEPENING
-	//std::array<std::pair<uint64_t, const MoveList<MaxMoves>*>, 1000> m_LegalMovesTable; //table of legal moves generation results, key is Zobrist hash % size
 
 	std::array<std::array<Move, NbOfKillerMoves>, MaxPly> m_KillerMoves = {};
 

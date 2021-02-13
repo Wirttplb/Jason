@@ -26,6 +26,11 @@ void BlunderDebugTests()
 	static Position bishopTakesPawnBlunder("4kb1r/1p4pp/2n2n2/3p4/2B5/4P3/5P2/6K1 w k - 0 1");
 	RunPosition(bishopTakesPawnBlunder, 1, 6);
 	ASSERT(bishopTakesPawnBlunder.GetMoves()[0].GetTo() != Piece(PieceType::Bishop, d5));
+
+	static Position bishopTakesPawnBlunder2("r1bqnrk1/p1ppppbp/n5p1/1Q2P3/3P1P2/2N5/PPP1N1PP/R1B1KB1R b KQ - 0 1");
+	RunPosition(bishopTakesPawnBlunder2, 1, 6);
+	std::vector<std::pair<Piece, Piece>> moves = bishopTakesPawnBlunder2.GetPieceMoves();
+	ASSERT(bishopTakesPawnBlunder.GetMoves()[0].GetTo() != Piece(PieceType::Bishop, e5)); //bug in TT
 }
 
 void TacticsTests::Run()

@@ -40,6 +40,7 @@ int main()
     bool isGameOver = false;
     int evaluationDepth = 6; //Without quiescence search, evaluation depth should be even!
     int score = 0; //ignored
+    constexpr double maxTime = 3600.0;
 
     while (!isGameOver)
     {
@@ -47,7 +48,7 @@ int main()
 
         if ((isJasonWhite && position.IsWhiteToPlay()) || (isJasonBlack && !position.IsWhiteToPlay()))
         {
-            bool moveFound = moveMaker.MakeMove(position, evaluationDepth, score);
+            bool moveFound = moveMaker.MakeMove(maxTime, position, evaluationDepth, score);
             assert(moveFound);
         }
         else

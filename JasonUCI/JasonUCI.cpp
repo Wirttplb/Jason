@@ -49,13 +49,13 @@ std::vector<std::string> SplitString(const std::string& str, const std::string& 
 int main()
 {
 	std::string line;
-	std::cout.setf(std::ios::unitbuf); //make sure that the outputs are sent straight away to the GUI
+	std::cout.setf(std::ios::unitbuf); //make sure that the outputs are sent straight away
 
 	//Initialization
 	Position position;
 	MoveMaker moveMaker;
 	bool isGameOver = false;
-	int evaluationDepth = 7;
+	int evaluationDepth = 6;
 	int score = 0;
 
 	while (std::getline(std::cin, line))
@@ -109,14 +109,24 @@ int main()
 		}
 		else if (line.substr(0, 2) == "go")
 		{
-			/*size_t depthIdx = line.find("depth");
-			if (depthIdx != std::string::npos)
+			double wtime = 3600.0;
+			size_t wtimeIdx = line.find("wtime");
+			if (wtimeIdx != std::string::npos)
 			{
-				depthIdx += 6;
-				evaluationDepth = std::stoi(GetFirstWord(line.substr(depthIdx, std::string::npos)));
-			}*/
+				wtimeIdx += 6;
+				wtime = std::stod(GetFirstWord(line.substr(wtimeIdx, std::string::npos))) * 0.001; //ms to s
+			}
 
-			const bool moveFound = moveMaker.MakeMove(position, evaluationDepth, score);
+			double btime = 3600.0;
+			size_t btimeIdx = line.find("btime");
+			if (btimeIdx != std::string::npos)
+			{
+				btimeIdx += 6;
+				btime = std::stod(GetFirstWord(line.substr(btimeIdx, std::string::npos))) * 0.001;
+			}
+			
+			const double maxTime = position.IsWhiteToPlay() ? wtime : btime;
+			const bool moveFound = moveMaker.MakeMove(maxTime, position, evaluationDepth, score);
 			if (!moveFound)
 			{
 				std::cout << "no move found, game has already ended!" << std::endl;
@@ -138,7 +148,7 @@ int main()
 		}
 		else if (line == "quit")
 		{
-			std::cout << "Bye Bye" << std::endl;
+			std::cout << "Bye" << std::endl;
 			break;
 		}
 	}

@@ -32,6 +32,7 @@ static constexpr int CenterAttackedBonusFactor = 1; //Factor to multiply with ho
 static constexpr int KingSquaresAttackBonusFactor = 5; //Factor to multiply with how many squares around enemy king that are attacked by own pieces
 
 static constexpr int SamePieceTwicePunishment = -50; //Penaly for moving same piece twice in opening
+static constexpr int TempoBonus = 30;
 
 int PositionEvaluation::EvaluatePosition(Position& position, int ply)
 {
@@ -51,8 +52,11 @@ int PositionEvaluation::EvaluatePosition(Position& position, int ply)
 			break;
 	}
 
+	//Tempo bonus
+	int score = (position.IsWhiteToPlay() ? 1 : -1) * TempoBonus;
+
 	//Check material
-	int score = CountMaterial(position, true) - CountMaterial(position, false);
+	score += CountMaterial(position, true) - CountMaterial(position, false);
 
 	//Check development
 	if (position.GetMoves().size() < 25)
@@ -124,7 +128,7 @@ int PositionEvaluation::EvaluatePosition(Position& position, int ply)
 	score -= CountBlockedEorDPawns(position, false) * Blocking_d_or_ePawnPunishment;
 
 	//Castling bonus: castling improves score during opening, importance of castling decays during the game
-	const int castleBonus = CastlingBonus * std::max(0, 40 - static_cast<int>(position.GetMoves().size())) * 025; //025 = 1/40
+	const int castleBonus = CastlingBonus * std::max(0, 40 - static_cast<int>(position.GetMoves().size())) * 0.25; //0.025 = 1/40
 	if (position.HasWhiteCastled())
 		score += castleBonus;
 	if (position.HasBlackCastled())

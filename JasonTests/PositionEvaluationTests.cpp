@@ -5,22 +5,22 @@
 void TestMovesToMate()
 {
 	std::optional<int> movesToMate;
-	movesToMate = PositionEvaluation::GetMovesToMate(1000000);
+	movesToMate = PositionEvaluation::GetMovesToMate(Mate);
 	ASSERT(*movesToMate == 0);
 
-	movesToMate = PositionEvaluation::GetMovesToMate(999999);
+	movesToMate = PositionEvaluation::GetMovesToMate(Mate - 1);
 	ASSERT(*movesToMate == 1);
 
-	movesToMate = PositionEvaluation::GetMovesToMate(999998);
+	movesToMate = PositionEvaluation::GetMovesToMate(Mate - 2);
 	ASSERT(*movesToMate == 1);
 
-	movesToMate = PositionEvaluation::GetMovesToMate(999997);
+	movesToMate = PositionEvaluation::GetMovesToMate(Mate - 3);
 	ASSERT(*movesToMate == 2);
 
-	movesToMate = PositionEvaluation::GetMovesToMate(999996);
+	movesToMate = PositionEvaluation::GetMovesToMate(Mate - 4);
 	ASSERT(*movesToMate == 2);
 
-	movesToMate = PositionEvaluation::GetMovesToMate(999995);
+	movesToMate = PositionEvaluation::GetMovesToMate(Mate - 5);
 	ASSERT(*movesToMate == 3);
 
 	movesToMate = PositionEvaluation::GetMovesToMate(12345);

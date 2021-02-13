@@ -5,9 +5,9 @@
 #include <assert.h>
 #include <algorithm>
 
-bool MoveMaker::MakeMove(Position& position, int depth, int& score)
+bool MoveMaker::MakeMove(double maxTime, Position& position, int depth, int& score)
 {
-	std::optional<Move> bestMove = FindMove(position, depth, score);
+	std::optional<Move> bestMove = FindMove(maxTime, position, depth, score);
 
 	if (bestMove.has_value())
 		position.Update(*bestMove);
@@ -15,7 +15,12 @@ bool MoveMaker::MakeMove(Position& position, int depth, int& score)
 	return bestMove.has_value();
 }
 
-std::optional<Move> MoveMaker::FindMove(Position& position, int depth, int& score)
+bool MoveMaker::MakeMove(Position& position, int depth, int& score)
+{
+	return MakeMove(3600.0, position, depth, score);
+}
+
+std::optional<Move> MoveMaker::FindMove(double maxTime, Position& position, int depth, int& score)
 {
 	constexpr int alpha = -Mate;
 	constexpr int beta = Mate;
@@ -23,16 +28,23 @@ std::optional<Move> MoveMaker::FindMove(Position& position, int depth, int& scor
 	const bool allowNullMove = false;
 	m_KillerMoves = {};
 
+	time_t start;
+	time_t t;
+	time(&start);
 	//Iterative deepening
-	for (int currentDepth = 1; currentDepth <= depth; currentDepth++)// && !outOfTime(); distance++);
+	for (int currentDepth = 1; currentDepth <= depth; currentDepth++)
 	{
 		score = AlphaBetaNegamax(position, currentDepth, 0, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
+
 		//break if mate found
 		if (score > 10000)
 			break;
-	}
 
-	//score = AlphaBetaNegamax(position, depth, 0, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
+		//break if out of time
+		time(&t);
+		if (difftime(start, t) > maxTime)
+			break;
+	}
 		
 	score *= (position.IsWhiteToPlay() ? 1 : -1);
 	return bestMove;
@@ -164,7 +176,14 @@ int MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, int alph
 		position.Update(childMove);
 		std::optional<Move> bestMoveDummy; //only returns best move from 0 depth
 		const int score = -AlphaBetaNegamax(position, depth - 1, ply + 1, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
+		std::vector<std::pair<Piece, Piece>> pieceMoves = position.GetPieceMoves();
 		position.Undo(childMove);
+
+		if (abs(score) == 32000)
+		{
+			score;
+			value = score;
+		}
 
 		if (score > value)
 		{
@@ -192,6 +211,7 @@ int MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, int alph
 	assert(abs(value) <= Mate);
 	m_TranspositionTable[transpositionTableKey].m_Score = value;
 	m_TranspositionTable[transpositionTableKey].m_Depth = depth;
+	assert(bestMove.has_value());
 	m_TranspositionTable[transpositionTableKey].m_BestMove = *bestMove;
 	if (value <= originalAlpha)
 		m_TranspositionTable[transpositionTableKey].m_Flag = TranspositionTableEntry::Flag::UpperBound;
