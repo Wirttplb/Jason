@@ -43,10 +43,11 @@ std::optional<Move> MoveMaker::FindMove(double maxTime, Position& position, int 
 
 		//break if out of time
 		time(&t);
-		if (difftime(start, t) > (maxTime  * 0.5)) //dont go deeper if half time already spent
+		if (difftime(start, t) > (maxTime  * 0.33)) //dont go deeper if third of allowed time already spent
 			break;
 	}
-		
+	
+	searchDepth = std::min(searchDepth, maxDepth);
 	score *= (position.IsWhiteToPlay() ? 1 : -1);
 	return bestMove;
 }

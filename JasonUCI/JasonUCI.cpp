@@ -124,11 +124,11 @@ int main()
 				btime = std::stod(GetFirstWord(line.substr(btimeIdx, std::string::npos))) * 0.001;
 			}
 			
-			const int maxDepth = 8;
-			int searchDepth = 1;
+			constexpr int maxDepth = 4;
+			int actualSearchDepth = 1;
 			double maxTime = position.IsWhiteToPlay() ? wtime : btime;
-			maxTime = std::min(maxTime, 10.0); //10s max
-			const bool moveFound = moveMaker.MakeMove(maxTime, position, maxDepth, score, searchDepth);
+			maxTime = std::min(maxTime, 10.0);
+			const bool moveFound = moveMaker.MakeMove(maxTime, position, maxDepth, score, actualSearchDepth);
 			if (!moveFound)
 			{
 				std::cout << "no move found, game has already ended!" << std::endl;
@@ -138,7 +138,7 @@ int main()
 			const std::string moveString = NotationParser::TranslateToUciString(position.GetMoves().back());
 			std::cout << "bestmove " << moveString << std::endl;
 
-			std::cout << "info depth " << searchDepth;
+			std::cout << "info depth " << actualSearchDepth;
 			std::cout << " score cp " << static_cast<int>(score);
 			std::optional<int> mateCount = PositionEvaluation::GetMovesToMate(score);
 			if (mateCount.has_value())
