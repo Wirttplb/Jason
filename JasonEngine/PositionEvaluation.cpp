@@ -13,7 +13,8 @@ static constexpr int CenterPawnBonus = 40;
 static constexpr int DoubledPawnPunishment = -20; //40 for a pair
 static constexpr int IsolatedPawnPunishment = -40;
 static constexpr int BackwardsPawnPunishment = -20;
-static constexpr std::array<int, 3> AdvancedPawnBonus = {30, 50, 60}; //on rows 5, 6, 7 or 4, 3, 2
+static constexpr int PassedPawnBonus = 40;
+static constexpr std::array<int, 3> AdvancedPawnBonus = {30, 40, 50}; //on rows 5, 6, 7 or 4, 3, 2
 
 static constexpr int KnightEndgamePunishment = -10;
 static constexpr int BishopEndgamePunishment = 10;
@@ -102,26 +103,24 @@ int PositionEvaluation::EvaluatePosition(Position& position, int ply)
 	score -= CountCenterPawns(position, false) * CenterPawnBonus;
 
 	//Double pawn punishment
-	int whiteDoubledPawns = CountDoubledPawns(position, true);
-	int blackDoubledPawns = CountDoubledPawns(position, false);
-	score += static_cast<int>(whiteDoubledPawns) * DoubledPawnPunishment;
-	score -= static_cast<int>(blackDoubledPawns) * DoubledPawnPunishment;
+	score += CountDoubledPawns(position, true) * DoubledPawnPunishment;
+	score -= CountDoubledPawns(position, false) * DoubledPawnPunishment;
 
 	//Isolated pawn punishment
-	int whiteIsolatedPawns = CountIsolatedPawns(position, true);
-	int blackIsolatedPawns = CountIsolatedPawns(position, false);
-	score += static_cast<int>(whiteIsolatedPawns) * IsolatedPawnPunishment;
-	score -= static_cast<int>(blackIsolatedPawns) * IsolatedPawnPunishment;
+	score += CountIsolatedPawns(position, true) * IsolatedPawnPunishment;
+	score -= CountIsolatedPawns(position, false) * IsolatedPawnPunishment;
 
 	//Backwards pawn punishment
-	int whiteBackwardsPawns = CountBackwardsPawns(position, true);
-	int blackBackwardsPawns = CountBackwardsPawns(position, false);
-	score += static_cast<int>(whiteBackwardsPawns) * BackwardsPawnPunishment;
-	score -= static_cast<int>(blackBackwardsPawns) * BackwardsPawnPunishment;
+	score += CountBackwardsPawns(position, true) * BackwardsPawnPunishment;
+	score -= CountBackwardsPawns(position, false) * BackwardsPawnPunishment;
+
+	//Passed pawn bonus
+	score += CountPassedPawns(position, true) * PassedPawnBonus;
+	score -= CountPassedPawns(position, false) * PassedPawnBonus;
 
 	//Advanced pawns bonus
-	score += GeAdvancedPawnsBonus(position, true);
-	score -= GeAdvancedPawnsBonus(position, true);
+	score += GetAdvancedPawnsBonus(position, true);
+	score -= GetAdvancedPawnsBonus(position, false);
 
 	//Piece blocking d or e pawn punishment
 	score += CountBlockedEorDPawns(position, true) * Blocking_d_or_ePawnPunishment;
@@ -286,8 +285,8 @@ int PositionEvaluation::CountBackwardsPawns(const Position& position, bool isWhi
 			const int idx = static_cast<int>(_tzcnt_u64(bitset));
 			const int row = idx >> 3;// or / 8
 
-			Bitboard rowsBehind = (isWhite ? RowsUnder[row] : RowsAbove[row]);
-			Bitboard pawnsBehind = (pawns & sideFiles & rowsBehind);
+			const Bitboard rowsBehind = (isWhite ? RowsUnder[row] : RowsAbove[row]); //includes pawns on same rank
+			const Bitboard pawnsBehind = (pawns & sideFiles & rowsBehind);
 			if (!pawnsBehind)
 				count++;
 
@@ -298,7 +297,43 @@ int PositionEvaluation::CountBackwardsPawns(const Position& position, bool isWhi
 	return count;
 }
 
-int PositionEvaluation::GeAdvancedPawnsBonus(const Position& position, bool isWhite)
+int PositionEvaluation::CountPassedPawns(const Position& position, bool isWhite)
+{
+	int count = 0;
+	const Bitboard& pawns = isWhite ? position.GetWhitePawns() : position.GetBlackPawns();
+	const Bitboard& enemyPawns = isWhite ? position.GetBlackPawns() : position.GetWhitePawns();
+	for (int i = 0; i <= 7; i++)
+	{
+		//check absence of enemy pawns in front and on the sides
+		const Bitboard pawnsOnFile = (pawns & _files[i]);
+		Bitboard sideBySideFiles = _files[i];
+		if (i > 0)
+			sideBySideFiles |= _files[i - 1];
+		if (i < 7)
+			sideBySideFiles |= _files[i + 1];
+		
+		//loop over set bits
+		uint64_t bitset = pawnsOnFile;
+		while (bitset != 0)
+		{
+			const uint64_t t = bitset & (~bitset + 1);
+			const int idx = static_cast<int>(_tzcnt_u64(bitset));
+			const int row = idx >> 3;// or / 8
+
+			assert((row + 1 < 8) && (row - 1 >= 0));
+			const Bitboard rowsInFront = (isWhite ? RowsAbove[row + 1] : RowsUnder[row - 1]);
+			const Bitboard blockingPawns = (sideBySideFiles & rowsInFront & enemyPawns); //doesn't include pawns on same rank
+			if (!blockingPawns)
+				count++;
+
+			bitset ^= t;
+		}
+	}
+
+	return count;
+}
+
+int PositionEvaluation::GetAdvancedPawnsBonus(const Position& position, bool isWhite)
 {
 	int bonus = 0;
 	const Bitboard& pawns = isWhite ? position.GetWhitePawns() : position.GetBlackPawns();

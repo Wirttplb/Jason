@@ -28,7 +28,8 @@ private:
 	static int CountCenterPawns(const Position& position, bool isWhite);
 	static int CountIsolatedPawns(const Position& position, bool isWhite);
 	static int CountBackwardsPawns(const Position& position, bool isWhite);
-	static int GeAdvancedPawnsBonus(const Position& position, bool isWhite);
+	static int CountPassedPawns(const Position& position, bool isWhite);
+	static int GetAdvancedPawnsBonus(const Position& position, bool isWhite);
 	static int CountBlockedEorDPawns(const Position& position, bool isWhite);
 
 	static Bitboard GetAttackedSquares(Position& position, bool isWhite);
