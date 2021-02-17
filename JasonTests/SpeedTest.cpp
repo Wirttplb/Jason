@@ -16,8 +16,6 @@ static void RunPosition(Position& position, int maxMoves, int evaluationDepth)
 		moveFound = moveMaker.MakeMove(position, evaluationDepth, score);
 		moveCount++;
 	}
-
-	moveMaker.CheckGameOver(position);
 }
 
 void SpeedTest::Run()

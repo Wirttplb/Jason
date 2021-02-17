@@ -4,10 +4,8 @@
 class PositionEvaluation
 {
 public:
-	/// <summary>
-	/// Evaluate a position at depth 0, tactics won't be taken into account
-	/// </summary>
-	/// <returns>Score (>0 for white advantage, <0 for black), 100.0 is value of a pawn</returns>
+	/// <summary>Static evaluation of a position at depth 0, tactics/hanging pieces won't be taken into account</summary>
+	/// <returns>Score (>0 for white advantage, <0 for black), in centipawns</returns>
 	static int EvaluatePosition(Position& position, int ply);
 
 	static bool IsPositionQuiet(const Position& position);
@@ -31,6 +29,9 @@ private:
 	static int CountPassedPawns(const Position& position, bool isWhite);
 	static int GetAdvancedPawnsBonus(const Position& position, bool isWhite);
 	static int CountBlockedEorDPawns(const Position& position, bool isWhite);
+
+	/// <returns>Returns number of squares behind pawns</returns>
+	static int GetSpaceBehindPawns(const Position& position, bool isWhite);
 
 	static Bitboard GetAttackedSquares(Position& position, bool isWhite);
 

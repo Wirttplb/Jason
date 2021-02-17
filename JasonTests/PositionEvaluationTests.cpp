@@ -178,4 +178,20 @@ void PositionEvaluationTests::Run()
 	blackPassedPawn = PositionEvaluation::CountPassedPawns(position, false);
 	ASSERT(whitePassedPawn == 3);
 	ASSERT(blackPassedPawn == 3);
+
+	position = Position();
+	int whiteSpace = PositionEvaluation::GetSpaceBehindPawns(position, true);
+	int blackSpace = PositionEvaluation::GetSpaceBehindPawns(position, false);
+	ASSERT(whiteSpace == 8);
+	ASSERT(blackSpace == 8);
+	position = Position("rnbqkbnr/8/pppppppp/8/PPPPPPPP/8/8/RNBQKBNR w KQkq - 0 1");
+	whiteSpace = PositionEvaluation::GetSpaceBehindPawns(position, true);
+	blackSpace = PositionEvaluation::GetSpaceBehindPawns(position, false);
+	ASSERT(whiteSpace == 24);
+	ASSERT(blackSpace == 16);
+	position = Position("2kr1qnr/3bb3/pPp1p2p/PpP1P3/1PnP3P/2N1PN1P/1B2Q1B1/R5RK w Qk - 0 1");
+	whiteSpace = PositionEvaluation::GetSpaceBehindPawns(position, true);
+	blackSpace = PositionEvaluation::GetSpaceBehindPawns(position, false);
+	ASSERT(whiteSpace == 18);
+	ASSERT(blackSpace == 14);
 }

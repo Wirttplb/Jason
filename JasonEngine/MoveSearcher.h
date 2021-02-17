@@ -46,15 +46,14 @@ private:
 	/// <returns>All legal moves for every piece for a given position, a move being the positions before and after of a piece (and type because of queening)</returns>
 	/// <remark>Very slow, not used at runtime, only for table generation</remark>
 	static std::vector<Move> GetLegalMoves(const Position& position);
+
 	/// <returns>All legal moves for ONE piece, a move being the positions before and after of a piece (and type because of queening)</returns>
 	/// <remark>Very slow, not used at runtime</remark>
 	static std::vector<Move> GetLegalMoves(const Position& position, const Piece& piece, bool isWhitePiece);
 
 	static bool IsKingInCheck(const Position& position, bool isWhiteKing);
 
-	/// <summary>
-	/// Get all accessible squares for a piece (where they can move if there was no collision)
-	/// </summary>
+	/// <summary>Get all accessible squares for a piece (where they can move if there was no collision)</summary>
 	/// <param name="piece">piece to move</param>
 	/// <param name="isWhitePiece">true for a white piece</param>
 	/// <returns>list of squares</returns>
@@ -66,18 +65,13 @@ private:
 	/// <remark>public for testing</remark>
 	static std::vector<std::array<int, 2>> GetPawnCaptureSquares(const Position& position, const Piece& piece, bool isWhitePiece);
 
-
-	/// <summary>
-	/// Returns true if move is blocked because of collision
-	/// </summary>
+	/// <summary>Returns true if move is blocked because of collision</summary>
 	static bool IsMoveBlocked(const Piece& blockingPiece, const Piece& piece, const std::array<int, 2>& square);
 	
-	/// <summary>
-	/// Returns true if move is illegal because of check
-	/// <param name=="position">original position (before move), updated with move and undone</param>
-	/// <param name=="move">move to check</param>
-	/// <param name=="isWhitePiece">true if piece to move is white</param>
-	/// </summary>
+	/// <summary>Returns true if move is illegal because of check</summary>
+	/// <param name="position">original position (before move), updated with move and undone</param>
+	/// <param name="move">move to check</param>
+	/// <param name="isWhitePiece">true if piece to move is white</param>
 	static bool IsMoveIllegal(const Position& position, const Move& move, bool isWhitePiece);
 	static bool IsMoveIllegalFromBitboards(Position& position, Move& move, bool isWhitePiece);
 

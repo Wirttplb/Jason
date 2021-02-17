@@ -9,19 +9,15 @@
 class MoveMaker
 {
 public:
-	/// <summary>
-	/// Let computer make a move given a position
-	/// </summary>
-	/// <param=name"maxTime">max time to use, in seconds</param>
-	/// <param>Maximum evaluation depth</param>
-	/// <param=name"score">leaf position score associated to returned best move</param>
+	/// <summary>Let computer make a move given a position</summary>
+	/// <param name="maxTime">max time to use, in seconds</param>
+	/// <param name="maxDepth">Maximum evaluation depth</param>
+	/// <param name="score">leaf position score associated to returned best move</param>
 	/// <returns>true if move was applied, false if illegal or game is already over</returns>
 	bool MakeMove(double maxTime, Position& position, int maxDepth, int& score, int& searchDepth);
 	bool MakeMove(Position& position, int maxDepth, int& score);
 
-	/// <summary>
-	/// Make a move given a position
-	/// </summary>
+	/// <summary>Make a move given a position</summary>
 	/// <returns>true if move was applied, false if illegal or game is already over</returns>
 	bool MakeMove(Position& position, Move& move);
 
@@ -52,8 +48,8 @@ private:
 
 	int QuiescentSearch(Position& position, int ply, int alpha, int beta, bool maximizeWhite);
 
-	/// <summary>Evaluate a position at depth 0</summary>
-	/// <returns>Score (>0 for white advantage, <0 for black), 100.0 is value of a pawn</returns>
+	/// <summary>Static evaluation of a position at depth 0</summary>
+	/// <returns>Score (>0 for white advantage, <0 for black), in centipawns</returns>
 	/// <param=name"ply">ply number to retrieve generated move list in m_MoveLists ; moves will be regenerated if < 0</param>
 	int EvaluatePosition(Position& position, int ply = -1);
 

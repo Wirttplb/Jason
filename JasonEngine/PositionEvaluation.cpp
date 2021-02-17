@@ -15,6 +15,7 @@ static constexpr int IsolatedPawnPunishment = -40;
 static constexpr int BackwardsPawnPunishment = -20;
 static constexpr int PassedPawnBonus = 40;
 static constexpr std::array<int, 3> AdvancedPawnBonus = {30, 40, 50}; //on rows 5, 6, 7 or 4, 3, 2
+static constexpr int SquareBehindPawnBonus = 1;
 
 static constexpr int KnightEndgamePunishment = -10;
 static constexpr int BishopEndgamePunishment = 10;
@@ -125,6 +126,10 @@ int PositionEvaluation::EvaluatePosition(Position& position, int ply)
 	//Piece blocking d or e pawn punishment
 	score += CountBlockedEorDPawns(position, true) * Blocking_d_or_ePawnPunishment;
 	score -= CountBlockedEorDPawns(position, false) * Blocking_d_or_ePawnPunishment;
+
+	//Space
+	score += GetSpaceBehindPawns(position, true) * SquareBehindPawnBonus;
+	score -= GetSpaceBehindPawns(position, false) * SquareBehindPawnBonus;
 
 	//Castling bonus: castling improves score during opening, importance of castling decays during the game
 	const int castleBonus = CastlingBonus * std::max(0, 40 - static_cast<int>(position.GetMoves().size())) / 40;
@@ -362,6 +367,35 @@ int PositionEvaluation::CountBlockedEorDPawns(const Position& position, bool isW
 		return (((blockingSquares & pieces) >> 8) & (centerPawns & pawns)).CountSetBits();
 	else
 		return (((blockingSquares & pieces) << 8) & (centerPawns & pawns)).CountSetBits();
+}
+
+int PositionEvaluation::GetSpaceBehindPawns(const Position& position, bool isWhite)
+{
+	int count = 0;
+	const Bitboard& allPawns = position.GetWhitePawns() | position.GetBlackPawns();
+	for (int i = 0; i <= 7; i++)
+	{
+		const Bitboard pawnsOnFile = (allPawns & _files[i]);
+
+		//loop over set bits
+		uint64_t bitset = pawnsOnFile;
+		int lastPawnOnFile = (isWhite ? 7 : 0);
+		while (bitset != 0)
+		{
+			const uint64_t t = bitset & (~bitset + 1);
+			const int idx = static_cast<int>(_tzcnt_u64(bitset));
+			const int row = idx >> 3;// or / 8
+
+			lastPawnOnFile = (isWhite ? std::min(lastPawnOnFile, row) : std::max(lastPawnOnFile, row));
+
+			bitset ^= t;
+		}
+
+		if (lastPawnOnFile > 0 && lastPawnOnFile < 7)
+			count += (isWhite ? lastPawnOnFile : (7 - lastPawnOnFile));
+	}
+
+	return count;
 }
 
 Bitboard PositionEvaluation::GetAttackedSquares(Position& position, bool isWhite)
