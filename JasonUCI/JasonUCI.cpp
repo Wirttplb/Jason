@@ -26,7 +26,7 @@ static void WriteToFile(const std::string& s)
 	myfile.close();
 }
 
-std::vector<std::string> SplitString(const std::string& str, const std::string& delim)
+static std::vector<std::string> SplitString(const std::string& str, const std::string& delim)
 {
 	std::vector<std::string> tokens;
 	size_t prev = 0, pos = 0;
@@ -44,6 +44,55 @@ std::vector<std::string> SplitString(const std::string& str, const std::string& 
 	} while (pos < str.length() && prev < str.length());
 	
 	return tokens;
+}
+
+static void ParseMoveTime(const std::string& line, double& moveTime)
+{
+	moveTime = 3600.0;
+	size_t idx = line.find("movetime");
+	if (idx != std::string::npos)
+	{
+		idx += 9;
+		moveTime = std::stod(GetFirstWord(line.substr(idx, std::string::npos))) * 0.001; //ms to s
+	}
+}
+
+static void ParseGoCommand(const std::string& line, double& wtime, double& btime, double& winc, double& binc)
+{
+	double moveTime = 3600.0;
+	ParseMoveTime(line, moveTime);
+
+	wtime = moveTime;
+	size_t idx = line.find("wtime");
+	if (idx != std::string::npos)
+	{
+		idx += 6;
+		wtime = std::stod(GetFirstWord(line.substr(idx, std::string::npos))) * 0.001; //ms to s
+	}
+
+	btime = moveTime;
+	idx = line.find("btime");
+	if (idx != std::string::npos)
+	{
+		idx += 6;
+		btime = std::stod(GetFirstWord(line.substr(idx, std::string::npos))) * 0.001;
+	}
+
+	winc = 0.0;
+	idx = line.find("winc");
+	if (idx != std::string::npos)
+	{
+		idx += 5;
+		winc = std::stod(GetFirstWord(line.substr(idx, std::string::npos))) * 0.001; //ms to s
+	}
+
+	binc = 0.0;
+	idx = line.find("binc");
+	if (idx != std::string::npos)
+	{
+		idx += 5;
+		binc = std::stod(GetFirstWord(line.substr(idx, std::string::npos))) * 0.001; //ms to s
+	}
 }
 
 int main()
@@ -108,27 +157,18 @@ int main()
 		}
 		else if (line.substr(0, 2) == "go")
 		{
-			double wtime = 3600.0;
-			size_t wtimeIdx = line.find("wtime");
-			if (wtimeIdx != std::string::npos)
-			{
-				wtimeIdx += 6;
-				wtime = std::stod(GetFirstWord(line.substr(wtimeIdx, std::string::npos))) * 0.001; //ms to s
-			}
-
-			double btime = 3600.0;
-			size_t btimeIdx = line.find("btime");
-			if (btimeIdx != std::string::npos)
-			{
-				btimeIdx += 6;
-				btime = std::stod(GetFirstWord(line.substr(btimeIdx, std::string::npos))) * 0.001;
-			}
 			
-			constexpr int maxDepth = 4;
+			double wtime = 0.0;
+			double btime = 0.0;
+			double winc = 0.0;
+			double binc = 0.0;
+			ParseGoCommand(line, wtime, btime, winc, binc);
+
+			constexpr int maxDepth = 8;
 			int actualSearchDepth = 1;
 			double maxTime = position.IsWhiteToPlay() ? wtime : btime;
-			maxTime = std::min(maxTime, 10.0);
-			const bool moveFound = moveMaker.MakeMove(maxTime, position, maxDepth, score, actualSearchDepth);
+			double timeIncrement = position.IsWhiteToPlay() ? winc : binc;
+			const bool moveFound = moveMaker.MakeMove(maxTime, timeIncrement, position, maxDepth, score, actualSearchDepth);
 			if (!moveFound)
 			{
 				std::cout << "no move found, game has already ended!" << std::endl;

@@ -5,16 +5,18 @@
 #include "PositionEvaluation.h"
 #include "MoveSearcher.h"
 #include "TranspositionTable.h"
+#include "TimeManager.h"
 
 class MoveMaker
 {
 public:
 	/// <summary>Let computer make a move given a position</summary>
 	/// <param name="maxTime">max time to use, in seconds</param>
+	/// <param name="increment">time increment per move, for time management</param>
 	/// <param name="maxDepth">Maximum evaluation depth</param>
 	/// <param name="score">leaf position score associated to returned best move</param>
 	/// <returns>true if move was applied, false if illegal or game is already over</returns>
-	bool MakeMove(double maxTime, Position& position, int maxDepth, int& score, int& searchDepth);
+	bool MakeMove(double maxTime, double increment, Position& position, int maxDepth, int& score, int& searchDepth);
 	bool MakeMove(Position& position, int maxDepth, int& score);
 
 	/// <summary>Make a move given a position</summary>
@@ -57,4 +59,6 @@ private:
 
 	///<summary>Generated lists of moves should be statically allocated, we use one such MoveList per search depth</summary>
 	std::array<MoveList<MaxMoves>, MaxPly> m_MoveLists = {};
+
+	TimeManager m_TimeManager;
 };

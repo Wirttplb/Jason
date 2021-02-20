@@ -5,8 +5,13 @@
 #include <assert.h>
 #include <algorithm>
 
-bool MoveMaker::MakeMove(double maxTime, Position& position, int maxDepth, int& score, int& searchDepth)
+bool MoveMaker::MakeMove(double maxTime, double increment, Position& position, int maxDepth, int& score, int& searchDepth)
 {
+	m_TimeManager.SetMaxTime(maxTime);
+	m_TimeManager.SetIncrement(increment);
+	m_TimeManager.InitStartTime();
+	m_TimeManager.SetMoveCount(static_cast<int>(position.GetMoves().size()));
+
 	std::optional<Move> bestMove = FindMove(maxTime, position, maxDepth, score, searchDepth);
 
 	if (bestMove.has_value())
@@ -18,7 +23,7 @@ bool MoveMaker::MakeMove(double maxTime, Position& position, int maxDepth, int& 
 bool MoveMaker::MakeMove(Position& position, int maxDepth, int& score)
 {
 	int searchDepth = 1; //ignored
-	return MakeMove(3600.0, position, maxDepth, score, searchDepth);
+	return MakeMove(3600.0, 0.0, position, maxDepth, score, searchDepth);
 }
 
 std::optional<Move> MoveMaker::FindMove(double maxTime, Position& position, int maxDepth, int& score, int& searchDepth)
@@ -26,24 +31,44 @@ std::optional<Move> MoveMaker::FindMove(double maxTime, Position& position, int 
 	constexpr int alpha = -Mate;
 	constexpr int beta = Mate;
 	std::optional<Move> bestMove;
+	score = std::numeric_limits<int>::lowest();
 	const bool allowNullMove = false;
 	m_KillerMoves = {};
 
-	time_t start;
-	time_t t;
-	time(&start);
+	double lastIterationDuration = 0.0;
+
 	//Iterative deepening
 	for (searchDepth = 1; searchDepth <= maxDepth; searchDepth++)
 	{
-		score = AlphaBetaNegamax(position, searchDepth, 0, alpha, beta, position.IsWhiteToPlay(), allowNullMove, bestMove);
+		if (!m_TimeManager.HasTimeForNewIteration(searchDepth, m_TimeManager.GetCounterDiff()))
+		{
+			searchDepth--;
+			break;
+		}
+		
+		std::optional<Move> move;
+		m_TimeManager.StartCounter();
+		const int moveScore = AlphaBetaNegamax(position, searchDepth, 0, alpha, beta, position.IsWhiteToPlay(), allowNullMove, move);
+		m_TimeManager.EndCounter();
+
+		if (m_TimeManager.IsTimeOut())
+		{
+			//Can't use result of incomplete search because of terminated quiescence search
+			/*if (moveScore > score)
+			{
+				bestMove = move;
+				score = moveScore;
+			}*/
+
+			searchDepth--;
+			break;
+		}
+
+		bestMove = move;
+		score = moveScore;
 
 		//break if mate found
 		if (score > 10000)
-			break;
-
-		//break if out of time
-		time(&t);
-		if (difftime(start, t) > (maxTime  * 0.33)) //dont go deeper if third of allowed time already spent
 			break;
 	}
 	
@@ -159,6 +184,9 @@ int MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, int alph
 
 			if (score >= beta)
 				return score;//cutoff
+
+			if (m_TimeManager.IsTimeOut())
+				return score;
 		}
 	}
 
@@ -185,6 +213,9 @@ int MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, int alph
 			value = score;
 			bestMove = childMove;
 		}
+
+		if (m_TimeManager.IsTimeOut())
+			return value;
 		
 		alpha = std::max(alpha, value);
 
@@ -303,6 +334,9 @@ int MoveMaker::QuiescentSearch(Position& position, int ply, int alpha, int beta,
 				alpha = score;
 		}
 		position.Undo(childMove);
+
+		if (m_TimeManager.IsTimeOut())
+			return alpha;
 	}
 
 	return alpha;

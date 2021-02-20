@@ -33,16 +33,16 @@ void SpeedTest::Run()
 	time_t end;
 
 	time(&start);
-	RunPosition(position1, 1, 7);
+	RunPosition(position1, 1, 12);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest1: %.2lf seconds.");
-	ASSERT(difftime(end, start) < 10.0);
+	//ASSERT(difftime(end, start) < 10.0);
 
 	time(&start);
-	RunPosition(position2, 1, 6);
+	RunPosition(position2, 1, 10);
 	time(&end);
 	PrintTestDuration(start, end, "SpeedTest2: %.2lf seconds.");
-	ASSERT(difftime(end, start) < 3.0);
+	//ASSERT(difftime(end, start) < 3.0);
 
 	time(&start);
 	RunPosition(position3, 1, 6);
