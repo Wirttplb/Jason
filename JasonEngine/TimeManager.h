@@ -6,13 +6,7 @@ class TimeManager
 {
 public:
 
-	void SetMaxTime(double maxTime)
-	{
-		if (m_TotalTime < maxTime)
-			m_TotalTime = maxTime;
-
-		m_MaxTime = maxTime;
-	};
+	void SetMaxTime(double maxTime);
 
 	void SetIncrement(double increment) { m_Increment = increment; };
 
@@ -20,7 +14,7 @@ public:
 
 	void SetMoveCount(int moveCount) { m_MoveCount = moveCount; }
 
-	bool IsTimeOut() const;
+	bool IsTimeOut();
 
 	bool HasTimeForNewIteration(int iteration, double lastIterationDuration) const;
 
@@ -34,6 +28,7 @@ private:
 	double m_MaxTime = 0.0;
 	double m_Increment = 0.0;
 	int m_MoveCount = 0;
+	int m_CheckCount = 0;
 
 	int64_t m_CpuFreqKHz = 0;
 	int64_t m_Start = 0;

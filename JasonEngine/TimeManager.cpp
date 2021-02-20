@@ -7,6 +7,14 @@
 
 const double TimeManager::m_TimeFactorsTotal = std::accumulate(m_TimeFactorByMove.begin(), m_TimeFactorByMove.end(), 0.0, std::plus<double>());
 
+void TimeManager::SetMaxTime(double maxTime)
+{
+	if (m_TotalTime < maxTime)
+		m_TotalTime = maxTime;
+
+	m_MaxTime = maxTime;
+}
+
 void TimeManager::InitStartTime()
 {
 	LARGE_INTEGER cpuFreqKhz;
@@ -17,13 +25,18 @@ void TimeManager::InitStartTime()
 	m_Start = start.QuadPart;
 }
 
-bool TimeManager::IsTimeOut() const
+bool TimeManager::IsTimeOut()
 {
+	m_CheckCount++; //only check every 1024 nodes
+	if (m_CheckCount < 1024)
+		return false;
+
+	m_CheckCount = 0;
 	LARGE_INTEGER time;
 	QueryPerformanceCounter(&time);
 	const double timeSpent = static_cast<double>(time.QuadPart - m_Start) / static_cast<double>(m_CpuFreqKHz); //in seconds
 
-	if (timeSpent > (m_MaxTime - 1.0))
+	if (timeSpent > (m_MaxTime - 0.1))
 		return true; //time out by out of time
 	if (timeSpent > (0.5 * m_Increment +
 		2.0 * m_TotalTime * (m_TimeFactorByMove[std::min(m_MoveCount, static_cast<int>(m_TimeFactorByMove.size() - 1))] / m_TimeFactorsTotal)))
