@@ -43,7 +43,7 @@ private:
 	/// <summary>Depth limited alpha-beta negamax algorithm</summary>
 	/// <remark>Works best when it happens to test the best move first at most levels, in other words when eval function is quite good</remark>
 	/// <remark>Returns subjective score for maximizing player (> 0 is a good score even if maximizing black)</remark>
-	int AlphaBetaNegamax(Position& position, int depth, int ply, int alpha, int beta, bool maximizeWhite, bool allowNullMove, std::optional<Move>& bestMove);
+	int Search(Position& position, int depth, int ply, int alpha, int beta, bool maximizeWhite, bool allowNullMove, std::optional<Move>& bestMove);
 
 	/// <summary>Depth limited minimax algorithm, very slow, only for testing against alpha-beta negamax</summary>
 	int Minimax(Position& position, int depth, bool maximizeWhite, std::optional<Move>& bestMove);

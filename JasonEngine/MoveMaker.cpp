@@ -28,8 +28,10 @@ bool MoveMaker::MakeMove(Position& position, int maxDepth, int& score)
 
 std::optional<Move> MoveMaker::FindMove(double maxTime, Position& position, int maxDepth, int& score, int& searchDepth)
 {
-	constexpr int alpha = -Mate;
-	constexpr int beta = Mate;
+	int alpha = -Mate;
+	int beta = Mate;
+	constexpr int aspirationWindowSize = 15; //may use 25 to 50 (1/4 to 1/2 pawn) in the future with more complicated evaluation function
+	int aspirationWindowFailCount = 0;
 	std::optional<Move> bestMove;
 	score = std::numeric_limits<int>::lowest();
 	const bool allowNullMove = false;
@@ -48,18 +50,12 @@ std::optional<Move> MoveMaker::FindMove(double maxTime, Position& position, int 
 		
 		std::optional<Move> move;
 		m_TimeManager.StartCounter();
-		const int moveScore = AlphaBetaNegamax(position, searchDepth, 0, alpha, beta, position.IsWhiteToPlay(), allowNullMove, move);
+		const int moveScore = Search(position, searchDepth, 0, alpha, beta, position.IsWhiteToPlay(), allowNullMove, move);
 		m_TimeManager.EndCounter();
 
 		if (m_TimeManager.IsTimeOut())
 		{
 			//Can't use result of incomplete search because of terminated quiescence search
-			/*if (moveScore > score)
-			{
-				bestMove = move;
-				score = moveScore;
-			}*/
-
 			searchDepth--;
 			break;
 		}
@@ -70,6 +66,29 @@ std::optional<Move> MoveMaker::FindMove(double maxTime, Position& position, int 
 		//break if mate found
 		if (score > 10000)
 			break;
+
+		if (score < alpha)
+		{
+			//fail-low, extend window
+			alpha -= (aspirationWindowSize * static_cast<int>(std::pow(2, aspirationWindowFailCount)));
+			aspirationWindowFailCount++;
+			searchDepth--;
+			continue;
+		}
+
+		if (score > beta)
+		{
+			//fail-high, extend window
+			beta += (aspirationWindowSize * static_cast<int>(std::pow(2, aspirationWindowFailCount)));
+			aspirationWindowFailCount++;
+			searchDepth--;
+			continue;
+		}
+
+		//We didn't fall out of the aspiration window, and can move on to next depth
+		alpha = score - aspirationWindowSize;
+		beta = score + aspirationWindowSize;
+		aspirationWindowFailCount = 0;
 	}
 	
 	searchDepth = std::min(searchDepth, maxDepth);
@@ -127,7 +146,7 @@ void MoveMaker::CheckGameOver(Position& position, int ply)
 	}
 }
 
-int MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, int alpha, int beta, bool maximizeWhite, bool allowNullMove, std::optional<Move>& bestMove)
+int MoveMaker::Search(Position& position, int depth, int ply, int alpha, int beta, bool maximizeWhite, bool allowNullMove, std::optional<Move>& bestMove)
 {
 	const int originalAlpha = alpha;
 
@@ -179,7 +198,7 @@ int MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, int alph
 			nullMove.SetNullMove();
 			position.Update(nullMove);
 			std::optional<Move> bestMoveDummy;
-			const int score = -AlphaBetaNegamax(position, depth - 1 - R, ply + 1 ,-beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
+			const int score = -Search(position, depth - 1 - R, ply + 1 ,-beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
 			position.Undo(nullMove);
 
 			if (score >= beta)
@@ -201,11 +220,55 @@ int MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, int alph
 
 	//Search child nodes
 	int value = std::numeric_limits<int>::lowest();
+	bool isFirstChild = true;
 	for (Move& childMove : childMoves)
 	{
 		position.Update(childMove);
 		std::optional<Move> bestMoveDummy; //only returns best move from 0 depth
-		const int score = -AlphaBetaNegamax(position, depth - 1, ply + 1, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
+		int score = -Search(position, depth - 1, ply + 1, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
+		
+		//if (isFirstChild)
+		//{
+		//	value = -Search(position, depth - 1, ply + 1, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy); //score = value
+		//	position.Undo(childMove);
+		//	bestMove = childMove;
+		//	isFirstChild = false;
+		//}
+		//else
+		//{
+		//	int score = -Search(position, depth - 1, ply + 1, -alpha - 1, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy); //search with null window (PVS)
+		//	if ((alpha < score) && (score < beta))
+		//		score = -Search(position, depth - 1, ply + 1, -beta, -score, !maximizeWhite, !allowNullMove, bestMoveDummy); //if it failed high, do a full re-search
+
+		//	position.Undo(childMove);
+
+		//	//if (score > value)
+		//	//{
+		//	//	value = score;
+		//	//	bestMove = childMove;
+		//	//}
+
+		//	//alpha = std::max(alpha, score);
+
+		//	if (score > alpha)
+		//	{
+		//		alpha = score;
+		//		bestMove = childMove;
+		//	}
+
+		//	if (alpha >= beta)
+		//	{
+		//		//Store killer move
+		//		if (!childMove.IsCapture())
+		//		{
+		//			std::rotate(m_KillerMoves[ply].begin(), m_KillerMoves[ply].end() - 1, m_KillerMoves[ply].end());
+		//			m_KillerMoves[ply][0] = childMove;
+		//		}
+
+		//		break;//cutoff
+		//	}
+		//}
+
 		position.Undo(childMove);
 
 		if (score > value)
@@ -231,6 +294,8 @@ int MoveMaker::AlphaBetaNegamax(Position& position, int depth, int ply, int alph
 			break;//cutoff
 		}
 	}
+
+	//value = alpha;
 
 	//Transposition Table Store
 	m_TranspositionTable[transpositionTableKey].m_ZobristHash = position.GetZobristHash();
