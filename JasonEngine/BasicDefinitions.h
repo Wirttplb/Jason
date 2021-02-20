@@ -2,12 +2,12 @@
 #include <array>
 #include <optional>
 
-static constexpr size_t MaxMoves = 256;
-static constexpr size_t MaxPly = 256;
-static constexpr size_t NbOfKillerMoves = 2;
-static constexpr size_t PerftMaxDepth = 7;
-static constexpr size_t TranspositionTableSizeMb = 24 * 1024 * 1024;//in bytes
-static constexpr size_t TranspositionTableSize = TranspositionTableSizeMb / 24;//in number of entries
+static constexpr int MaxMoves = 256;
+static constexpr int MaxPly = 256;
+static constexpr int NbOfKillerMoves = 2;
+static constexpr int PerftMaxDepth = 7;
+static constexpr int TranspositionTableSizeMb = 24 * 1024 * 1024;//in bytes
+static constexpr int TranspositionTableSize = TranspositionTableSizeMb / 24;//in number of entries
 static constexpr int Mate = 32000; //has to be under std::numeric_limits<int16_t>::max()
 
 /// <summary> Simple enum for square indices </summary>

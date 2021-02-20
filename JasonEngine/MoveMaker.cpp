@@ -30,7 +30,7 @@ std::optional<Move> MoveMaker::FindMove(double maxTime, Position& position, int 
 {
 	int alpha = -Mate;
 	int beta = Mate;
-	constexpr int aspirationWindowSize = 15; //may use 25 to 50 (1/4 to 1/2 pawn) in the future with more complicated evaluation function
+	constexpr int aspirationWindowSize = 10; //may use 25 to 50 (1/4 to 1/2 pawn) in the future with more complicated evaluation function
 	int aspirationWindowFailCount = 0;
 	std::optional<Move> bestMove;
 	score = std::numeric_limits<int>::lowest();
@@ -64,10 +64,10 @@ std::optional<Move> MoveMaker::FindMove(double maxTime, Position& position, int 
 		score = moveScore;
 
 		//break if mate found
-		if (score > 10000)
+		if (score > (Mate - MaxPly))
 			break;
 
-		if (score < alpha)
+		if (score <= alpha)
 		{
 			//fail-low, extend window
 			alpha -= (aspirationWindowSize * static_cast<int>(std::pow(2, aspirationWindowFailCount)));
@@ -76,7 +76,7 @@ std::optional<Move> MoveMaker::FindMove(double maxTime, Position& position, int 
 			continue;
 		}
 
-		if (score > beta)
+		if (score >= beta)
 		{
 			//fail-high, extend window
 			beta += (aspirationWindowSize * static_cast<int>(std::pow(2, aspirationWindowFailCount)));
@@ -225,49 +225,19 @@ int MoveMaker::Search(Position& position, int depth, int ply, int alpha, int bet
 	{
 		position.Update(childMove);
 		std::optional<Move> bestMoveDummy; //only returns best move from 0 depth
-		int score = -Search(position, depth - 1, ply + 1, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy);
-		
-		//if (isFirstChild)
-		//{
-		//	value = -Search(position, depth - 1, ply + 1, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy); //score = value
-		//	position.Undo(childMove);
-		//	bestMove = childMove;
-		//	isFirstChild = false;
-		//}
-		//else
-		//{
-		//	int score = -Search(position, depth - 1, ply + 1, -alpha - 1, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy); //search with null window (PVS)
-		//	if ((alpha < score) && (score < beta))
-		//		score = -Search(position, depth - 1, ply + 1, -beta, -score, !maximizeWhite, !allowNullMove, bestMoveDummy); //if it failed high, do a full re-search
+		int score = 0;
 
-		//	position.Undo(childMove);
-
-		//	//if (score > value)
-		//	//{
-		//	//	value = score;
-		//	//	bestMove = childMove;
-		//	//}
-
-		//	//alpha = std::max(alpha, score);
-
-		//	if (score > alpha)
-		//	{
-		//		alpha = score;
-		//		bestMove = childMove;
-		//	}
-
-		//	if (alpha >= beta)
-		//	{
-		//		//Store killer move
-		//		if (!childMove.IsCapture())
-		//		{
-		//			std::rotate(m_KillerMoves[ply].begin(), m_KillerMoves[ply].end() - 1, m_KillerMoves[ply].end());
-		//			m_KillerMoves[ply][0] = childMove;
-		//		}
-
-		//		break;//cutoff
-		//	}
-		//}
+		if (isFirstChild)
+		{
+			score = -Search(position, depth - 1, ply + 1, -beta, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy); //value
+			isFirstChild = false;
+		}
+		else
+		{
+			score = -Search(position, depth - 1, ply + 1, -alpha - 1, -alpha, !maximizeWhite, !allowNullMove, bestMoveDummy); //search with null window for PVS
+			if ((alpha < score) && (score < beta))
+				score = -Search(position, depth - 1, ply + 1, -beta, -score, !maximizeWhite, !allowNullMove, bestMoveDummy); //if it failed high, do a full re-search
+		}
 
 		position.Undo(childMove);
 
@@ -277,9 +247,6 @@ int MoveMaker::Search(Position& position, int depth, int ply, int alpha, int bet
 			bestMove = childMove;
 		}
 
-		if (m_TimeManager.IsTimeOut())
-			return value;
-		
 		alpha = std::max(alpha, value);
 
 		if (alpha >= beta)
@@ -293,9 +260,10 @@ int MoveMaker::Search(Position& position, int depth, int ply, int alpha, int bet
 
 			break;//cutoff
 		}
-	}
 
-	//value = alpha;
+		if (m_TimeManager.IsTimeOut())
+			return value;
+	}
 
 	//Transposition Table Store
 	m_TranspositionTable[transpositionTableKey].m_ZobristHash = position.GetZobristHash();

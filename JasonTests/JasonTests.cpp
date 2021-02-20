@@ -23,7 +23,7 @@ int main()
     //MoveMakerTests::Run();
     //MoveSearcherTests::Run();
     //PositionEvaluationTests::Run();
-    //TacticsTests::Run();
+    TacticsTests::Run();
     SpeedTest::Run();
     time(&end);
 

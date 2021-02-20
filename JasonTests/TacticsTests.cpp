@@ -35,7 +35,7 @@ void BlunderDebugTests()
 
 void TacticsTests::Run()
 {
-	BlunderDebugTests();
+	//BlunderDebugTests();
 
 	time_t start;
 	time_t end;
@@ -114,5 +114,5 @@ void TacticsTests::Run()
 
 	time(&end);
 	PrintTestDuration(start, end, "TacticsTest: %.2lf seconds.");
-	//ASSERT(difftime(end, start) < 15.0);
+	ASSERT(difftime(end, start) < 15.0);
 }
