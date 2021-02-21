@@ -6,35 +6,35 @@
 #include <assert.h>
 
 /// <summary>Absolute score for a mate</summary>
-static constexpr int BishopPairBonus = 15;
-static constexpr int CastlingBonus = 50;
+static int BishopPairBonus = 15;
+static int CastlingBonus = 50;
 
-static constexpr int CenterPawnBonus = 40;
-static constexpr int DoubledPawnPunishment = -20; //40 for a pair
-static constexpr int IsolatedPawnPunishment = -40;
-static constexpr int BackwardsPawnPunishment = -20;
-static constexpr int PassedPawnBonus = 40;
-static constexpr std::array<int, 3> AdvancedPawnBonus = {30, 40, 50}; //on rows 5, 6, 7 or 4, 3, 2
-static constexpr int SquareBehindPawnBonus = 1;
+static int CenterPawnBonus = 40;
+static int DoubledPawnPunishment = -20; //40 for a pair
+static int IsolatedPawnPunishment = -40;
+static int BackwardsPawnPunishment = -20;
+static int PassedPawnBonus = 40;
+static std::array<int, 3> AdvancedPawnBonus = {30, 40, 50}; //on rows 5, 6, 7 or 4, 3, 2
+static int SquareBehindPawnBonus = 1;
 
-static constexpr int KnightEndgamePunishment = -10;
-static constexpr int BishopEndgamePunishment = 10;
+static int KnightEndgamePunishment = -10;
+static int BishopEndgamePunishment = 10;
 
-static constexpr int RookOnSemiOpenFileBonus = 20;
-static constexpr int RookOnOpenFileBonus = 30;
+static int RookOnSemiOpenFileBonus = 20;
+static int RookOnOpenFileBonus = 30;
 
-static constexpr int Blocking_d_or_ePawnPunishment = -40; //Punishment for blocking unmoved pawns on d and e files
+static int Blocking_d_or_ePawnPunishment = -40; //Punishment for blocking unmoved pawns on d and e files
 
-static constexpr int KnightPawnBonus = 2; //Knights better with lots of pawns
-static constexpr int BishopPawnPunishment = -2; //Bishops worse with lots of pawns
-static constexpr int RookPawnPunishment = -2; //Rooks worse with lots of pawns
+static int KnightPawnBonus = 2; //Knights better with lots of pawns
+static int BishopPawnPunishment = -2; //Bishops worse with lots of pawns
+static int RookPawnPunishment = -2; //Rooks worse with lots of pawns
 
-static constexpr int AttackedSquareBonusFactor = 0;
-static constexpr int CenterAttackedBonusFactor = 1; //Factor to multiply with how many center squares are attacked by own pieces
-static constexpr int KingSquaresAttackBonusFactor = 5; //Factor to multiply with how many squares around enemy king that are attacked by own pieces
+static int AttackedSquareBonusFactor = 0;
+static int CenterAttackedBonusFactor = 1; //Factor to multiply with how many center squares are attacked by own pieces
+static int KingSquaresAttackBonusFactor = 5; //Factor to multiply with how many squares around enemy king that are attacked by own pieces
 
-static constexpr int SamePieceTwicePunishment = -50; //Penaly for moving same piece twice in opening
-static constexpr int TempoBonus = 30;
+static int SamePieceTwicePunishment = -50; //Penaly for moving same piece twice in opening
+static int TempoBonus = 30;
 
 int PositionEvaluation::EvaluatePosition(Position& position, int ply)
 {
@@ -171,6 +171,110 @@ std::optional<int> PositionEvaluation::GetMovesToMate(int score)
 	if (diff < MaxPly)
 		count = static_cast<int>(ceil(diff / 2));
 	return count;
+}
+
+void PositionEvaluation::LoadParameters(std::vector<int> parameters)
+{
+	BishopPairBonus = parameters[0];
+	CastlingBonus = parameters[1];
+
+	CenterPawnBonus = parameters[2];
+	DoubledPawnPunishment = parameters[3];
+	IsolatedPawnPunishment = parameters[4];
+	BackwardsPawnPunishment = parameters[5];
+	PassedPawnBonus = parameters[6];
+	AdvancedPawnBonus = { parameters[7], parameters[8], parameters[9] };
+	SquareBehindPawnBonus = parameters[10];
+
+	KnightEndgamePunishment = parameters[11];
+	BishopEndgamePunishment = parameters[12];
+
+	RookOnSemiOpenFileBonus = parameters[13];
+	RookOnOpenFileBonus = parameters[14];
+
+	Blocking_d_or_ePawnPunishment = parameters[15];
+
+	KnightPawnBonus = parameters[16];
+	BishopPawnPunishment = parameters[17];
+	RookPawnPunishment = parameters[18];
+
+	AttackedSquareBonusFactor = parameters[19];
+	CenterAttackedBonusFactor = parameters[20];
+	KingSquaresAttackBonusFactor = parameters[21];
+
+	SamePieceTwicePunishment = parameters[22];
+	TempoBonus = parameters[23];
+}
+
+std::vector<int> PositionEvaluation::GetParameters()
+{
+	std::vector<int> parameters = {
+	BishopPairBonus,
+	CastlingBonus,
+
+	CenterPawnBonus,
+	DoubledPawnPunishment,
+	IsolatedPawnPunishment,
+	BackwardsPawnPunishment,
+	PassedPawnBonus,
+	AdvancedPawnBonus[0],
+	AdvancedPawnBonus[1],
+	AdvancedPawnBonus[2],
+	SquareBehindPawnBonus,
+
+	KnightEndgamePunishment,
+	BishopEndgamePunishment,
+
+	RookOnSemiOpenFileBonus,
+	RookOnOpenFileBonus,
+
+	Blocking_d_or_ePawnPunishment,
+
+	KnightPawnBonus,
+	BishopPawnPunishment,
+	RookPawnPunishment,
+
+	AttackedSquareBonusFactor,
+	CenterAttackedBonusFactor,
+	KingSquaresAttackBonusFactor,
+
+	SamePieceTwicePunishment,
+	TempoBonus };
+
+	return parameters;
+}
+
+void PositionEvaluation::InitParameters()
+{
+	BishopPairBonus = 15;
+	CastlingBonus = 50;
+
+	CenterPawnBonus = 40;
+	DoubledPawnPunishment = -20;
+	IsolatedPawnPunishment = -40;
+	BackwardsPawnPunishment = -20;
+	PassedPawnBonus = 40;
+	AdvancedPawnBonus = { 30, 40, 50 };
+	SquareBehindPawnBonus = 1;
+
+	KnightEndgamePunishment = -10;
+	BishopEndgamePunishment = 10;
+
+	RookOnSemiOpenFileBonus = 20;
+	RookOnOpenFileBonus = 30;
+
+	Blocking_d_or_ePawnPunishment = -40;
+
+	KnightPawnBonus = 2;
+	BishopPawnPunishment = -2;
+	RookPawnPunishment = -2;
+
+	AttackedSquareBonusFactor = 0;
+	CenterAttackedBonusFactor = 1;
+	KingSquaresAttackBonusFactor = 5;
+
+	SamePieceTwicePunishment = -50;
+	TempoBonus = 30;
 }
 
 int PositionEvaluation::CountMaterial(const Position& position, bool isWhite)

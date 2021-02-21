@@ -13,8 +13,13 @@ public:
 	/// <returns>Number of moves (not plies) to mate</returns>
 	static std::optional<int> GetMovesToMate(int score);
 
-private:
+	static void LoadParameters(std::vector<int> parameters);
+	static std::vector<int> GetParameters();
+
 	static int CountMaterial(const Position& position, bool isWhite);
+
+private:
+	static void InitParameters();
 
 	/// <summary> Returns value in points of a given piece </summary>
 	static constexpr int GetPieceValue(PieceType type);
