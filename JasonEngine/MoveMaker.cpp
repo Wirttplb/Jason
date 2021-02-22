@@ -5,14 +5,18 @@
 #include <assert.h>
 #include <algorithm>
 
-bool MoveMaker::MakeMove(double maxTime, double increment, Position& position, int maxDepth, int& score, int& searchDepth)
+bool MoveMaker::MakeMove(double time, bool isMoveTime, double increment, Position& position, int maxDepth, int& score, int& searchDepth)
 {
-	m_TimeManager.SetMaxTime(maxTime);
+	if (isMoveTime)
+		m_TimeManager.SetMoveTime(time);
+	else
+		m_TimeManager.SetMaxTime(time);
+	
 	m_TimeManager.SetIncrement(increment);
 	m_TimeManager.InitStartTime();
 	m_TimeManager.SetMoveCount(static_cast<int>(position.GetMoves().size()));
 
-	std::optional<Move> bestMove = FindMove(maxTime, position, maxDepth, score, searchDepth);
+	std::optional<Move> bestMove = FindMove(position, maxDepth, score, searchDepth);
 
 	if (bestMove.has_value())
 		position.Update(*bestMove);
@@ -23,10 +27,10 @@ bool MoveMaker::MakeMove(double maxTime, double increment, Position& position, i
 bool MoveMaker::MakeMove(Position& position, int maxDepth, int& score)
 {
 	int searchDepth = 1; //ignored
-	return MakeMove(3600.0, 0.0, position, maxDepth, score, searchDepth);
+	return MakeMove(3600.0, false, 0.0, position, maxDepth, score, searchDepth);
 }
 
-std::optional<Move> MoveMaker::FindMove(double maxTime, Position& position, int maxDepth, int& score, int& searchDepth)
+std::optional<Move> MoveMaker::FindMove(Position& position, int maxDepth, int& score, int& searchDepth)
 {
 	int alpha = -Mate;
 	int beta = Mate;
@@ -42,7 +46,7 @@ std::optional<Move> MoveMaker::FindMove(double maxTime, Position& position, int 
 	//Iterative deepening
 	for (searchDepth = 1; searchDepth <= maxDepth; searchDepth++)
 	{
-		if (!m_TimeManager.HasTimeForNewIteration(searchDepth, m_TimeManager.GetCounterDiff()))
+		if ((searchDepth > 1) && !m_TimeManager.HasTimeForNewIteration(m_TimeManager.GetCounterDiff()))
 		{
 			searchDepth--;
 			break;

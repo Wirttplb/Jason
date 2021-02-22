@@ -46,21 +46,25 @@ static std::vector<std::string> SplitString(const std::string& str, const std::s
 	return tokens;
 }
 
-static void ParseMoveTime(const std::string& line, double& moveTime)
+static bool ParseMoveTime(const std::string& line, double& moveTime)
 {
+	bool isMoveTime = false;
 	moveTime = 3600.0;
 	size_t idx = line.find("movetime");
 	if (idx != std::string::npos)
 	{
 		idx += 9;
 		moveTime = std::stod(GetFirstWord(line.substr(idx, std::string::npos))) * 0.001; //ms to s
+		isMoveTime = true;
 	}
+
+	return isMoveTime;
 }
 
-static void ParseGoCommand(const std::string& line, double& wtime, double& btime, double& winc, double& binc)
+static void ParseGoCommand(const std::string& line, double& wtime, double& btime, double& winc, double& binc, bool& isMoveTime)
 {
 	double moveTime = 3600.0;
-	ParseMoveTime(line, moveTime);
+	isMoveTime = ParseMoveTime(line, moveTime);
 
 	wtime = moveTime;
 	size_t idx = line.find("wtime");
@@ -162,13 +166,14 @@ int main()
 			double btime = 0.0;
 			double winc = 0.0;
 			double binc = 0.0;
-			ParseGoCommand(line, wtime, btime, winc, binc);
+			bool isMoveTime = false;
+			ParseGoCommand(line, wtime, btime, winc, binc, isMoveTime);
 
 			constexpr int maxDepth = 8;
 			int actualSearchDepth = 1;
 			double maxTime = position.IsWhiteToPlay() ? wtime : btime;
 			double timeIncrement = position.IsWhiteToPlay() ? winc : binc;
-			const bool moveFound = moveMaker.MakeMove(maxTime, timeIncrement, position, maxDepth, score, actualSearchDepth);
+			const bool moveFound = moveMaker.MakeMove(maxTime, isMoveTime, timeIncrement, position, maxDepth, score, actualSearchDepth);
 			if (!moveFound)
 			{
 				std::cout << "no move found, game has already ended!" << std::endl;

@@ -42,6 +42,7 @@ int main()
     int searchDepth = 1; //ignored
     int score = 0; //ignored
     constexpr double maxTime = 3600.0;
+    constexpr bool isMoveTime = false;
     constexpr double timeIncrement = 0.0;
 
     while (!isGameOver)
@@ -50,7 +51,7 @@ int main()
 
         if ((isJasonWhite && position.IsWhiteToPlay()) || (isJasonBlack && !position.IsWhiteToPlay()))
         {
-            bool moveFound = moveMaker.MakeMove(maxTime, timeIncrement, position, maxDepth, score, searchDepth);
+            bool moveFound = moveMaker.MakeMove(maxTime, isMoveTime, timeIncrement, position, maxDepth, score, searchDepth);
             assert(moveFound);
         }
         else

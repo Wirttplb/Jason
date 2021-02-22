@@ -11,12 +11,13 @@ class MoveMaker
 {
 public:
 	/// <summary>Let computer make a move given a position</summary>
-	/// <param name="maxTime">max time to use, in seconds</param>
+	/// <param name="time">max time to use for move, in seconds</param>
+	/// <param name="isMoveTime">if true, time is time for move, otherwise it is the remaining total time for the game</param>
 	/// <param name="increment">time increment per move, for time management</param>
 	/// <param name="maxDepth">Maximum evaluation depth</param>
 	/// <param name="score">leaf position score associated to returned best move</param>
 	/// <returns>true if move was applied, false if illegal or game is already over</returns>
-	bool MakeMove(double maxTime, double increment, Position& position, int maxDepth, int& score, int& searchDepth);
+	bool MakeMove(double moveTime, bool isMoveTime, double increment, Position& position, int maxDepth, int& score, int& searchDepth);
 	bool MakeMove(Position& position, int maxDepth, int& score);
 
 	/// <summary>Make a move given a position</summary>
@@ -38,7 +39,7 @@ private:
 	/// <returns>True if move found, false if StaleMate</returns>
 	/// <param=name"maxDepth">max evaluation depth</param>
 	/// <param=name"score">leaf position score associated to returned best move</param>
-	std::optional<Move> FindMove(double maxTime, Position& position, int maxDepth, int& score, int& searchDepth);
+	std::optional<Move> FindMove(Position& position, int maxDepth, int& score, int& searchDepth);
 
 	/// <summary>Depth limited alpha-beta negamax algorithm</summary>
 	/// <remark>Works best when it happens to test the best move first at most levels, in other words when eval function is quite good</remark>

@@ -7,12 +7,19 @@
 
 const double TimeManager::m_TimeFactorsTotal = std::accumulate(m_TimeFactorByMove.begin(), m_TimeFactorByMove.end(), 0.0, std::plus<double>());
 
+void TimeManager::SetMoveTime(double moveTime)
+{
+	m_MoveTime = moveTime;
+}
+
 void TimeManager::SetMaxTime(double maxTime)
 {
 	if (m_TotalTime < maxTime)
 		m_TotalTime = maxTime;
 
-	m_MaxTime = maxTime;
+	//we define what should be spent on move
+	m_MoveTime = std::min(maxTime,
+		0.5 * m_Increment + 2.0 * m_TotalTime * (m_TimeFactorByMove[std::min(m_MoveCount, static_cast<int>(m_TimeFactorByMove.size() - 1))] / m_TimeFactorsTotal));
 }
 
 void TimeManager::InitStartTime()
@@ -36,23 +43,20 @@ bool TimeManager::IsTimeOut()
 	QueryPerformanceCounter(&time);
 	const double timeSpent = static_cast<double>(time.QuadPart - m_Start) / static_cast<double>(m_CpuFreqKHz); //in seconds
 
-	if (timeSpent > (m_MaxTime - 0.1))
-		return true; //time out by out of time
-	if (timeSpent > (0.5 * m_Increment +
-		2.0 * m_TotalTime * (m_TimeFactorByMove[std::min(m_MoveCount, static_cast<int>(m_TimeFactorByMove.size() - 1))] / m_TimeFactorsTotal)))
-		return true; //time out by t > what should be spent on move
+	if (timeSpent > (m_MoveTime - 0.1))
+		return true;
 
 	return false;
 }
 
-bool TimeManager::HasTimeForNewIteration(int iteration, double lastIterationDuration) const
+bool TimeManager::HasTimeForNewIteration(double lastIterationDuration) const
 {
 	LARGE_INTEGER time;
 	QueryPerformanceCounter(&time);
 	const double timeSpent = static_cast<double>(time.QuadPart - m_Start) / static_cast<double>(m_CpuFreqKHz);
-	const double timeRemaining = m_MaxTime - timeSpent;
-	//dont start next iteration if remaining time < 12 * last iteration, this is a very rough guess, ok up to 8th iteration...
-	return (timeRemaining > 12 * lastIterationDuration);
+	const double timeRemaining = m_MoveTime - timeSpent;
+	//dont start next iteration if remaining time < 5 * last iteration, this is a very rough guess...
+	return (timeRemaining > 5 * lastIterationDuration);
 }
 
 void TimeManager::StartCounter()

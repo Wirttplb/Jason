@@ -6,6 +6,9 @@ class TimeManager
 {
 public:
 
+	/// <summary>Two ways to set time management: move time or max time (total game time)</summary>
+	void SetMoveTime(double moveTime);
+
 	void SetMaxTime(double maxTime);
 
 	void SetIncrement(double increment) { m_Increment = increment; };
@@ -16,7 +19,7 @@ public:
 
 	bool IsTimeOut();
 
-	bool HasTimeForNewIteration(int iteration, double lastIterationDuration) const;
+	bool HasTimeForNewIteration(double lastIterationDuration) const;
 
 	void StartCounter();
 	void EndCounter();
@@ -25,7 +28,8 @@ public:
 private:
 
 	double m_TotalTime = 0.0;
-	double m_MaxTime = 0.0;
+	double m_MoveTime = 0.0;
+
 	double m_Increment = 0.0;
 	int m_MoveCount = 0;
 	int m_CheckCount = 0;
