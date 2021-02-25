@@ -594,6 +594,9 @@ std::optional<Move> NotationParser::TranslateFromAlgebraic(const Position& posit
 	if (move.has_value() && !isUciString || (moveString.size() == 5))
 		move->SetToType(toType);
 
+	if (move->IsQueening() && (move->GetToType() == PieceType::Pawn))
+		move->SetToType(PieceType::Queen); //make queening queen by default
+
 	return move;
 }
 

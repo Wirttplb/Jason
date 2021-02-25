@@ -152,16 +152,13 @@ int main()
 					if (move.has_value() && !move->IsNullMove())
 						position.Update(*move);
 					else
-					{
 						std::cout << "invalid move string!" << std::endl;
-						return 1;
-					}
 				}
 			}			
 		}
 		else if (line.substr(0, 2) == "go")
 		{
-			
+
 			double wtime = 0.0;
 			double btime = 0.0;
 			double winc = 0.0;
@@ -177,7 +174,7 @@ int main()
 			if (!moveFound)
 			{
 				std::cout << "no move found, game has already ended!" << std::endl;
-				return 1;
+				continue;
 			}
 
 			const std::string moveString = NotationParser::TranslateToUciString(position.GetMoves().back());
