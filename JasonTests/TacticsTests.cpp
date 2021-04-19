@@ -54,6 +54,7 @@ void TacticsTests::Run()
 	static Position tactic1900("3r2k1/1n3pp1/p3p1qp/P3P3/RprPN3/4Q2P/5PP1/1R4K1 b - - 4 28");
 	static Position tactic2000("1k1r4/p1pnb3/1nQ1p3/P7/3P4/4PN2/1P2KPq1/RN6 w - - 0 1");
 	static Position tactic2200("8/p7/2N2p2/1P1Ppkpp/2K5/5P1P/5b2/8 w - - 0 46");
+	static Position insaneRedditPuzzle("8/5Pp1/3b2pq/p1p3p1/p1PpR1P1/Pk1PpB1b/1P2P2P/1K6 w - - 0 1");
 
 	int score = RunPosition(queenMate, 1, 1);
 	ASSERT(queenMate.GetGameStatus() == Position::GameStatus::CheckMate);
@@ -111,6 +112,21 @@ void TacticsTests::Run()
 	ASSERT(tactic2200.GetMoves()[2].GetTo() == Piece(PieceType::Pawn, d6));
 	ASSERT(tactic2200.GetMoves()[3].GetTo() == Piece(PieceType::Bishop, b6));
 	ASSERT(tactic2200.GetMoves()[4].GetTo() == Piece(PieceType::Knight, d5));*/
+
+	RunPosition(insaneRedditPuzzle, 11, 12);
+	ASSERT(insaneRedditPuzzle.GetMoves()[0].GetTo() == Piece(PieceType::Rook, e7));
+	ASSERT(insaneRedditPuzzle.GetMoves()[1].GetTo() == Piece(PieceType::Bishop, e7));
+	ASSERT(insaneRedditPuzzle.GetMoves()[2].GetTo() == Piece(PieceType::Queen, f8));
+	//ASSERT(insaneRedditPuzzle.GetMoves()[3].GetTo() == Piece(PieceType::Bishop, f8)); //multiple solutions for this move
+	ASSERT(insaneRedditPuzzle.GetMoves()[4].GetTo() == Piece(PieceType::Bishop, c6));
+	//ASSERT(insaneRedditPuzzle.GetMoves()[5].GetTo() == Piece(PieceType::Bishop, g6)); //multiple solution's for this move
+	ASSERT(insaneRedditPuzzle.GetMoves()[6].GetTo() == Piece(PieceType::Bishop, a4));
+	ASSERT(insaneRedditPuzzle.GetMoves()[7].GetTo() == Piece(PieceType::King, a4));
+	ASSERT(insaneRedditPuzzle.GetMoves()[8].GetTo() == Piece(PieceType::King, a2));
+	//ASSERT(insaneRedditPuzzle.GetMoves()[9].GetTo() == Piece(PieceType::Bishop, g6)); //any move, does not matter
+	ASSERT(insaneRedditPuzzle.GetMoves()[10].GetTo() == Piece(PieceType::Pawn, b3));
+	ASSERT(insaneRedditPuzzle.GetGameStatus() == Position::GameStatus::CheckMate);
+	ASSERT(score > 9999);
 
 	time(&end);
 	PrintTestDuration(start, end, "TacticsTest: %.2lf seconds.");

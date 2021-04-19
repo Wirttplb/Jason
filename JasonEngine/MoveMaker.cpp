@@ -64,6 +64,7 @@ std::optional<Move> MoveMaker::FindMove(Position& position, int maxDepth, int& s
 			break;
 		}
 
+		assert(move.has_value() && !move->IsNullMove() && (move->GetFrom() != move->GetTo()));
 		bestMove = move;
 		score = moveScore;
 
