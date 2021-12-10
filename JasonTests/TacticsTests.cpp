@@ -119,7 +119,7 @@ void TacticsTests::Run()
 	ASSERT(insaneRedditPuzzle.GetMoves()[2].GetTo() == Piece(PieceType::Queen, f8));
 	//ASSERT(insaneRedditPuzzle.GetMoves()[3].GetTo() == Piece(PieceType::Bishop, f8)); //multiple solutions for this move
 	ASSERT(insaneRedditPuzzle.GetMoves()[4].GetTo() == Piece(PieceType::Bishop, c6));
-	//ASSERT(insaneRedditPuzzle.GetMoves()[5].GetTo() == Piece(PieceType::Bishop, g6)); //multiple solution's for this move
+	//ASSERT(insaneRedditPuzzle.GetMoves()[5].GetTo() == Piece(PieceType::Bishop, g6)); //multiple solutions for this move
 	ASSERT(insaneRedditPuzzle.GetMoves()[6].GetTo() == Piece(PieceType::Bishop, a4));
 	ASSERT(insaneRedditPuzzle.GetMoves()[7].GetTo() == Piece(PieceType::King, a4));
 	ASSERT(insaneRedditPuzzle.GetMoves()[8].GetTo() == Piece(PieceType::King, a2));
